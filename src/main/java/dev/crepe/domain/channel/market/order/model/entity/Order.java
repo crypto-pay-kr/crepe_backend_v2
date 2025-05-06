@@ -1,0 +1,72 @@
+package dev.crepe.domain.channel.market.order.model.entity;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import dev.crepe.domain.channel.actor.store.model.entity.Store;
+import dev.crepe.domain.channel.actor.user.model.entity.User;
+import dev.crepe.domain.channel.market.order.model.OrderStatus;
+import dev.crepe.domain.channel.market.order.model.OrderType;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.UuidGenerator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+@Entity
+@Table(name = "orders")
+@Builder
+@Getter
+@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Order {
+    @Id
+    @GeneratedValue
+    @UuidGenerator
+    @Column(columnDefinition = "VARCHAR(36)")
+    private UUID id;
+
+    @Column(nullable = false)
+    private int totalPrice;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderType type;
+
+    @Column(nullable = false)
+    private String currency;
+
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<OrderDetail> orderDetails =  new ArrayList<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "store_id", nullable = false)
+    @JsonIgnore
+    private Store store;
+
+    // 주문 접수
+    public void accept() {
+        this.status = OrderStatus.PAID;
+    }
+
+    // 주문 거절
+    public void refuse() {
+        this.status = OrderStatus.CANCELLED;
+    }
+
+    // 주문 완료
+    public void complete() {
+        this.status = OrderStatus.COMPLETED;
+    }
+
+}
