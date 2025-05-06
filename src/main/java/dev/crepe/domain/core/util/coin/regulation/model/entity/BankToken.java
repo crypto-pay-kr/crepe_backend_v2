@@ -14,8 +14,9 @@ public class BankToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "bank_id", nullable = false)
-    private Bank bankId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id", nullable = false)
+    private Bank bank;
 
     @Column(name = "name", length = 100, nullable = false)
     private String name;
@@ -23,6 +24,7 @@ public class BankToken {
     @Column(name = "symbol", length = 5, nullable = false)
     private String symbol;
 
+    //총 발행량
     @Column(name = "total_supply", precision = 20, scale = 8, nullable = false)
     private BigDecimal totalSupply;
 

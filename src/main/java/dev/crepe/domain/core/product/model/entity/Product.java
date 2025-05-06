@@ -29,9 +29,16 @@ public class Product {
     @Column(name = "product_name", length = 100, nullable = false)
     private String productName;
 
+    // 은행 상품 유형
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private BankProductType type;
+
+    // 은행 상품 승인 상태
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BankProductStatus status;
+
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
@@ -50,16 +57,14 @@ public class Product {
     @Column(name = "preferred_interest_rate")
     private Float preferredInterestRate;
 
-    //최대
+    //월 최대 입금액
     @Column(name = "min_monthly_payment", precision = 20, scale = 8)
     private BigDecimal maxMonthlyPayment;
 
+    //최대 가입 인원
     @Column(name = "max_participants")
     private Integer maxParticipants;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private BankProductStatus status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

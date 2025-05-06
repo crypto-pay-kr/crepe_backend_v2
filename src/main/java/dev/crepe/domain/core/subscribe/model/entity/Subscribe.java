@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 
 @Entity
@@ -16,7 +15,7 @@ public class Subscribe {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private UUID id;
+    private Long id;
 
     // 사용자와의 연관관계
     @ManyToOne(fetch = FetchType.LAZY)

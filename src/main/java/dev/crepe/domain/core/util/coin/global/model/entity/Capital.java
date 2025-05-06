@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+// 자본금
 @Entity
 @Table(name = "capital")
 public class Capital {

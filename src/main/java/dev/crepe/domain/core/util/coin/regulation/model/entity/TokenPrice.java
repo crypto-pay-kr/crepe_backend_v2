@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+//토큰시세
 @Entity
 @Table(name = "token_price")
 public class TokenPrice {
@@ -16,6 +17,7 @@ public class TokenPrice {
     @JoinColumn(name = "bank_token_id", nullable = false)
     private BankToken bankToken;
 
+    // 기준 가격
     @Column(name = "price", precision = 20, scale = 8, nullable = false)
     private BigDecimal price;
 
