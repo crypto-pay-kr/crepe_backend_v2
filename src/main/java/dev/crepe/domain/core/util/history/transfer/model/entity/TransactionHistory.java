@@ -6,11 +6,20 @@ import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 
 // 입금 출금 등 자금 거래 내역
 @Entity
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
 @Table(name = "transaction_history")
 public class TransactionHistory extends BaseEntity {
 
@@ -41,8 +50,9 @@ public class TransactionHistory extends BaseEntity {
     @Column(name = "type", nullable = false)
     private TransactionType type;
 
-    //참조코드
-    @Column(name = "reference_code", length = 100)
-    private String referenceCode;
+    public void acceptedTransactionStatus() {
+        this.status = TransactionStatus.ACCEPTED;
+    }
+
 
 }
