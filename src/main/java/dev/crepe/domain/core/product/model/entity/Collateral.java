@@ -1,8 +1,6 @@
 package dev.crepe.domain.core.product.model.entity;
 
-
-
-import dev.crepe.domain.channel.actor.user.model.entity.User;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -20,7 +18,7 @@ public class Collateral {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Actor user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)

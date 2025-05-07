@@ -1,8 +1,8 @@
 package dev.crepe.domain.channel.market.order.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dev.crepe.domain.channel.actor.store.model.entity.Store;
-import dev.crepe.domain.channel.actor.user.model.entity.User;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderResponse;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
 import jakarta.persistence.*;
@@ -20,11 +20,12 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order {
+
     @Id
     @GeneratedValue
     @UuidGenerator
     @Column(columnDefinition = "VARCHAR(36)")
-    private UUID id;
+    private String id;
 
     @Column(nullable = false)
     private int totalPrice;
@@ -47,12 +48,12 @@ public class Order {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @JsonIgnore
-    private User user;
+    private Actor user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
     @JsonIgnore
-    private Store store;
+    private Actor store;
 
     // 주문 접수
     public void accept() {
@@ -67,6 +68,22 @@ public class Order {
     // 주문 완료
     public void complete() {
         this.status = OrderStatus.COMPLETED;
+    }
+
+    public StoreOrderResponse toStoreOrderResponse() {
+        return StoreOrderResponse.builder()
+                .orderId(this.id)
+                .totalPrice(this.totalPrice)
+                .status(this.status)
+                .orderType(this.type.name())
+                .orderDetails(this.orderDetails.stream()
+                        .map(detail -> StoreOrderResponse.OrderDetailResponse.builder()
+                                .menuName(detail.getMenu().getName())
+                                .menuCount(detail.getMenuCount())
+                                .menuPrice(detail.getMenu().getPrice())
+                                .build())
+                        .toList())
+                .build();
     }
 
 }

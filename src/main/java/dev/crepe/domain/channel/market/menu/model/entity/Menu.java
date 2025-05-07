@@ -1,7 +1,8 @@
 package dev.crepe.domain.channel.market.menu.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dev.crepe.domain.channel.actor.store.model.entity.Store;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +15,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class Menu {
+public class Menu extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,7 +30,16 @@ public class Menu {
     private String image;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "store_id", nullable = false)
+    @JoinColumn(name = "actor_id", nullable = false)
     @JsonIgnore
-    private Store store;
+    private Actor store;
+
+    public void updateMenu(String name, int price, String image) {
+        this.name = name;
+        this.price = price;
+        this.image = image;
+    }
+    public void delete() {
+        setDataStatus(false);
+    }
 }
