@@ -3,6 +3,8 @@ package dev.crepe.domain.core.account.model.entity;
 import dev.crepe.domain.channel.actor.store.model.entity.Store;
 import dev.crepe.domain.channel.actor.user.model.entity.User;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
+
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import jakarta.persistence.*;
@@ -24,12 +26,12 @@ public class Account {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "user_id", nullable = false)
+    private Actor user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id")
-    private Store store ;
+    private Actor store ;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "coin_id", nullable = false)

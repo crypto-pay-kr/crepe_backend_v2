@@ -1,6 +1,6 @@
 package dev.crepe.domain.core.subscribe.model.entity;
 
-import dev.crepe.domain.channel.actor.user.model.entity.User;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import jakarta.persistence.*;
@@ -20,7 +20,7 @@ public class Subscribe {
     // 사용자와의 연관관계
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    private Actor user;
 
     // 상품과의 연관관계
     @ManyToOne(fetch = FetchType.LAZY)

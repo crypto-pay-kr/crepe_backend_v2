@@ -1,0 +1,26 @@
+package dev.crepe.domain.channel.actor.store.model.dto.response;
+
+import dev.crepe.domain.channel.market.order.model.OrderStatus;
+import lombok.Builder;
+import lombok.Getter;
+
+import java.util.List;
+import java.util.UUID;
+
+@Getter
+@Builder
+public class StoreOrderResponse {
+    private String orderId;
+    private int totalPrice;
+    private OrderStatus status;
+    private String orderType;
+    private List<OrderDetailResponse> orderDetails;
+
+    @Getter
+    @Builder
+    public static class OrderDetailResponse {
+        private String menuName;
+        private int menuCount;
+        private int menuPrice;
+    }
+}

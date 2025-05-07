@@ -15,11 +15,10 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Bank extends BaseEntity {
+
     @Id
-    @GeneratedValue
-    @UuidGenerator
-    @Column(columnDefinition = "VARCHAR(36)")
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     @Column(nullable = false)
     private String email;
@@ -27,7 +26,7 @@ public class Bank extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id", nullable = false)
-    private Bank bank;
+    @Column(nullable = false)
+    private String bankcode;
+
 }
