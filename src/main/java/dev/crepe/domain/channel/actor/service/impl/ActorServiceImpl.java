@@ -39,7 +39,7 @@ public class ActorServiceImpl  implements ActorService {
     public ApiResponse<TokenResponse> login(LoginRequest request) {
 
         Actor actor = actorRepository.findByEmail(request.getEmail())
-                .orElseThrow(LoginFailedException::new); // Optional에서 Actor 추출
+                .orElseThrow(LoginFailedException::new);
 
         if (!encoder.matches(request.getPassword(), actor.getPassword())) {
             throw new LoginFailedException();
@@ -47,7 +47,6 @@ public class ActorServiceImpl  implements ActorService {
 
         AuthenticationToken token;
         token = jwtTokenProvider.createToken(actor.getEmail(),actor.getRole());
-
 
 
         tokenRepository.findById(actor.getId())

@@ -25,7 +25,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         String token = jwtTokenProvider.resolveToken(request);
-        if (uri.startsWith("/upbit") || uri.contains("/signup") ) {
+        if (uri.startsWith("/upbit") ) {
+            filterChain.doFilter(request, response);
             return;
         }
 

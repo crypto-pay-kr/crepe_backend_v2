@@ -19,7 +19,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/channel")
+@RequestMapping()
 @RequiredArgsConstructor
 public class ActorController {
 
@@ -39,7 +39,6 @@ public class ActorController {
     @Operation(summary = "비밀번호 변경", description = "가맹점 회원의 비밀번호를 변경합니다.")
     @PatchMapping("/change/password")
     @ActorAuth
-    @PreAuthorize("hasAnyRole('USER', 'SELLER')")
     @SecurityRequirement(name = "bearer-jwt")
     public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request, AppAuthentication auth) {
         actorService.changePassword(request, auth.getUserEmail());
@@ -49,7 +48,6 @@ public class ActorController {
     @Operation(summary = "휴대폰번호 변경", description = "가맹점 회원의 휴대폰 번호를 변경합니다.")
     @PatchMapping("/change/phone")
     @ActorAuth
-    @PreAuthorize("hasAnyRole('USER', 'SELLER')")
     @SecurityRequirement(name = "bearer-jwt")
     public ResponseEntity<Void> changePhone(@Valid @RequestBody ChangePhoneRequest request, AppAuthentication auth) {
         actorService.changePhone(request, auth.getUserEmail());
@@ -59,7 +57,6 @@ public class ActorController {
     @Operation(summary = "이름 변경", description = "가맹점, 또는 회원의 이름을 변경합니다.")
     @PatchMapping("/change/name")
     @ActorAuth
-    @PreAuthorize("hasAnyRole('USER', 'SELLER')")
     @SecurityRequirement(name = "bearer-jwt")
     public ResponseEntity<Void> changeStoreName(@Valid @RequestBody ChangeNameRequest request, AppAuthentication auth) {
         actorService.changeName(request, auth.getUserEmail());

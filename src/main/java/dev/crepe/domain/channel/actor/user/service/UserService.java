@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 
 public interface UserService {
 
-//    ApiResponse<ResponseEntity<Void>> signup(UserSignupRequest request);
+    ApiResponse<ResponseEntity<Void>> signup(UserSignupRequest request);
 
     void changeNickname(ChangeNicknameRequest request, String userEmail);
 

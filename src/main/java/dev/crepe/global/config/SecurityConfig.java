@@ -23,7 +23,9 @@ import org.springframework.stereotype.Component;
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private static final String[] PUBLIC_URI = {
-            "/api/auth/**",
+            "/user/signup",
+            "/store/signup",
+            "/login",
             "/sms/**",
             "/swagger-ui/**",
             "/swagger-ui.html",

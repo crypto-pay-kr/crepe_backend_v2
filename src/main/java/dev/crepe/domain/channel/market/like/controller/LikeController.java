@@ -2,6 +2,7 @@ package dev.crepe.domain.channel.market.like.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.market.like.service.impl.LikeServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -20,9 +21,8 @@ public class LikeController {
     private final LikeServiceImpl likeService;
 
     @PostMapping("/{storeId}")
-    @ActorAuth
+    @UserAuth
     @Operation(summary = "가게 찜하기", description = "사용자가 특정 가게를 찜합니다.")
-    @PreAuthorize(value = "USER")
     @SecurityRequirement(name = "bearer-jwt")
     public ResponseEntity<Void> registerStoreLike(@PathVariable Long storeId, AppAuthentication auth) {
         likeService.addLike(auth.getUserEmail(),storeId);
@@ -30,6 +30,7 @@ public class LikeController {
     }
 
     @PatchMapping("/{storeId}")
+    @UserAuth
     @SecurityRequirement(name = "bearer-jwt")
     @Operation(summary = "가게 찜 취소하기", description = "사용자가 특정 가게 찜을 취소합니다.")
     public ResponseEntity<Void> removeStoreLike(@PathVariable Long storeId, AppAuthentication auth) {
