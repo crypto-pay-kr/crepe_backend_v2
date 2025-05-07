@@ -1,0 +1,79 @@
+package dev.crepe.domain.channel.actor.user.service.impl;
+
+import dev.crepe.domain.channel.actor.exception.AlreadyNicknameException;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
+import dev.crepe.domain.channel.actor.user.model.dto.ChangeNicknameRequest;
+import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;
+import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
+import dev.crepe.domain.channel.actor.user.repository.UserRepository;
+import dev.crepe.domain.channel.actor.user.service.UserService;
+import dev.crepe.global.model.dto.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+    private final ActorRepository actorRepository;
+
+//
+//    @Override
+//    @Transactional
+//    public ApiResponse<ResponseEntity<Void>> signup(UserSignupRequest request) {
+//
+//
+//        // sms 인증 비활성화 -> 사용시 주석 해제
+////        InMemorySmsAuthService.SmsAuthData smsAuthData = smsManageService.getSmsAuthData(request.getPhoneNumber(), SmsType.SIGN_UP);
+////        String validatePhone = smsAuthData.getPhoneNumber();
+//
+//        checkAlreadyField(request);
+//
+//        Actor user = Actor.builder()
+//                .email(request.getEmail())
+//                .password(encoder.encode(request.getPassword()))
+//                .nickname(request.getNickname())
+////                .phoneNum(validatePhone)
+//                .phoneNum(request.getPhoneNumber())
+//                .name(request.getName())
+//                .role(UserRole.USER)
+//                .build();
+//        userRepository.save(user);
+//        return ApiResponse.success("회원가입 성공", null);
+//    }
+
+    @Override
+    @Transactional
+    public void changeNickname(ChangeNicknameRequest request, String userEmail) {
+
+        Actor actor = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+
+        if(userRepository.existsByNickName(request.getNewNickname())) throw  new AlreadyNicknameException();
+
+        actor.changeNickname(request.getNewNickname());
+    }
+
+
+    // 회원 정보 조회
+    @Override
+    public UserInfoResponse getUserInfo(String userEmail) {
+
+        Actor actor = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        return UserInfoResponse.builder()
+                .email(actor.getEmail())
+                .nickname(actor.getNickName())
+                .phoneNumber(actor.getPhoneNum())
+                .role(actor.getRole().name())
+                .build();
+    }
+
+
+}

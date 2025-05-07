@@ -1,7 +1,6 @@
 package dev.crepe.domain.channel.market.like.model.entity;
 
-import dev.crepe.domain.channel.actor.store.model.entity.Store;
-import dev.crepe.domain.channel.actor.user.model.entity.User;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,8 +9,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "store_like",
-        uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id", "store_id"})})
+@Table(name = "likes",
+        uniqueConstraints = {@UniqueConstraint(columnNames = {"user_id","store_id"})})
 @Getter
 @Builder
 @AllArgsConstructor
@@ -26,12 +25,12 @@ public class Like extends BaseEntity {
     private boolean active = false;  // 좋아요 상태 (true: 활성, false: 비활성)
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private Actor user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "store_id", nullable = false)
-    private Store store;
+    private Actor store;
 
     public void activate() {
         this.active = true;
