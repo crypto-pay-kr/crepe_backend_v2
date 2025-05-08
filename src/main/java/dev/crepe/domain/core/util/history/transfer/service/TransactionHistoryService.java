@@ -5,7 +5,7 @@ import java.util.List;
 
 public interface TransactionHistoryService {
 
-    List<GetTransactionHistoryResponse> getSettlementHistory(String email, String unit);
+    List<GetTransactionHistoryResponse> getTransactionHistory(String email, String unit);
 
 
 }

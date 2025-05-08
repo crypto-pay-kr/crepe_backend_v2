@@ -35,7 +35,7 @@ public class HistoryController {
             @RequestParam("currency") String currency
     ) {
         //TODO 환전및 결제 내역도 추가
-        List<GetTransactionHistoryResponse> response = transactionHistoryService.getSettlementHistory(auth.getUserEmail(), currency);
+        List<GetTransactionHistoryResponse> response = transactionHistoryService.getTransactionHistory(auth.getUserEmail(), currency);
         return ResponseEntity.ok( response);
     }
 }
