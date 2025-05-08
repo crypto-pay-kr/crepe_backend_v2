@@ -18,4 +18,10 @@ public class LoginRequest {
     @NotNull
     @Schema(description = "비밀번호", example = "CrepeUser123!")
     private String password;
+
+    @Schema(description = "캡차 키", example = "6NcD7YkIZA")
+    private String captchaKey;
+
+    @Schema(description = "캡차 입력값", example = "a5x9z2")
+    private String captchaValue;
 }

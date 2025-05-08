@@ -24,9 +24,18 @@ public class Bank extends BaseEntity {
     private String email;
 
     @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)
-    private String bankcode;
+    private String phoneNum;
+
+    @Column(nullable = false)
+    private String imageUrl;
+
+    @Column(nullable = false)
+    private String bankCode;
 
 }
