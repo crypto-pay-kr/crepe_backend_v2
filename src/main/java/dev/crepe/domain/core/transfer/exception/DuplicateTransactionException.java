@@ -1,8 +1,10 @@
 package dev.crepe.domain.core.transfer.exception;
 
+import dev.crepe.global.error.exception.LocalizedMessageException;
+import org.springframework.http.HttpStatus;
 
-public class DuplicateTransactionException extends RuntimeException {
+public class DuplicateTransactionException extends LocalizedMessageException {
     public DuplicateTransactionException(String txid) {
-        super("이미 처리된 거래입니다. txid=" + txid);
+        super(HttpStatus.CONFLICT, "duplicate.transaction", txid);
     }
 }

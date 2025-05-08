@@ -24,7 +24,7 @@ public class StoreDepositServiceImpl implements StoreDepositService {
     public void userWithdrawForOrder(Order order) {
 
         Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getUser().getEmail(),order.getCurrency())
-                .orElseThrow(() -> new AccountNotFoundException());
+                .orElseThrow(() -> new AccountNotFoundException(order.getUser().getEmail()));
 
 
         TransactionHistory history = TransactionHistory.builder()
@@ -44,7 +44,7 @@ public class StoreDepositServiceImpl implements StoreDepositService {
     public void pendingStoreDepositForOrder(Order order, Long storeId) {
 
         Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getUser().getEmail(),order.getCurrency())
-                .orElseThrow(() -> new AccountNotFoundException());
+                .orElseThrow(() -> new AccountNotFoundException(order.getUser().getEmail()));
 
 
 
