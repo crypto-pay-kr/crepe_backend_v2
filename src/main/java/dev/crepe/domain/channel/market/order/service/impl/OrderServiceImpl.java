@@ -124,7 +124,7 @@ public class OrderServiceImpl implements OrderService {
                         .menuCount(detail.getMenuCount())
                         .order(orders)
                         .menu(menuRepository.findById(detail.getMenuId())
-                                .orElseThrow(MenuNotFoundException::new))
+                                .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId())))
                         .build())
                 .collect(Collectors.toList());
 
@@ -139,7 +139,7 @@ public class OrderServiceImpl implements OrderService {
     private int calculateTotalPrice(CreateOrderRequest request) {
         return request.getOrderDetails().stream()
                 .mapToInt(detail -> menuRepository.findById(detail.getMenuId())
-                        .orElseThrow(MenuNotFoundException::new)
+                        .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId()))
                         .getPrice() * detail.getMenuCount())
                 .sum();
     }

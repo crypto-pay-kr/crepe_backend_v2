@@ -11,6 +11,7 @@ import dev.crepe.domain.channel.actor.store.model.StoreStatus;
 import dev.crepe.domain.channel.actor.store.model.dto.request.*;
 import dev.crepe.domain.channel.actor.store.model.dto.response.*;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
+import dev.crepe.domain.channel.actor.store.repository.StoreRepository;
 import dev.crepe.domain.channel.actor.store.service.StoreService;
 import dev.crepe.domain.channel.market.like.repository.LikeRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
@@ -37,6 +38,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class StoreServiceImpl implements StoreService {
     private final ActorRepository actorRepository;
+    private final StoreRepository storeRepository;
     private final LikeRepository likeRepository;
     private final MenuRepository menuRepository;
     private final PasswordEncoder encoder;
@@ -203,7 +205,7 @@ public class StoreServiceImpl implements StoreService {
 
     @Override
     public List<GetOpenStoreResponse> getAllOpenStoreList() {
-        List<Actor> actor  = actorRepository.findByDataStatusTrueAndStatus(StoreStatus.OPEN);
+        List<Actor> actor  = storeRepository.findByDataStatusTrueAndStatus(StoreStatus.OPEN);
 
         return actor.stream()
                 .map(store -> GetOpenStoreResponse.builder()

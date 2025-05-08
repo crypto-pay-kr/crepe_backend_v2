@@ -6,6 +6,6 @@ import org.springframework.http.HttpStatus;
 
 public class InvalidActionException extends LocalizedMessageException {
     public InvalidActionException(String action) {
-        super(HttpStatus.BAD_REQUEST, "error.invalid.action", action);
+        super(HttpStatus.BAD_REQUEST, "invalid.action", action);
     }
 }
