@@ -48,7 +48,7 @@ public class AccountController {
     )
     @ActorAuth
     @GetMapping("/address")
-    public ResponseEntity<GetAddressResponse> getStoreAddress(
+    public ResponseEntity<GetAddressResponse> getAddress(
             @Parameter(description = "코인 단위 (예: XRP, SOL, USDT)", example = "XRP")
             @RequestParam("currency") String currency,
             AppAuthentication auth
@@ -79,7 +79,7 @@ public class AccountController {
     )
     @ActorAuth
     @GetMapping("/balance")
-    public ResponseEntity<List<GetBalanceResponse>> getUserBalanceList(AppAuthentication auth) {
+    public ResponseEntity<List<GetBalanceResponse>> getBalanceList(AppAuthentication auth) {
         List<GetBalanceResponse> balanceList = accountService.getBalanceList(auth.getUserEmail());
         return ResponseEntity.ok(balanceList);
     }
@@ -92,7 +92,7 @@ public class AccountController {
     )
     @ActorAuth
     @GetMapping("/balance/{currency}")
-    public ResponseEntity<GetBalanceResponse> getUserBalanceByCurrency(@PathVariable String currency,
+    public ResponseEntity<GetBalanceResponse> getBalanceByCurrency(@PathVariable String currency,
                                                                        AppAuthentication auth) {
         GetBalanceResponse response = accountService.getBalanceByCurrency(auth.getUserEmail(), currency);
         return ResponseEntity.ok(response);

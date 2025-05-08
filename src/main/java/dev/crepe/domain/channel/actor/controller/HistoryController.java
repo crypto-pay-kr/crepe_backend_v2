@@ -29,7 +29,7 @@ public class HistoryController {
     )
     @ActorAuth
     @GetMapping("/history")
-    public ResponseEntity<List<GetTransactionHistoryResponse>> getSettlementHistory(
+    public ResponseEntity<List<GetTransactionHistoryResponse>> getHistory(
             AppAuthentication auth,
             @Parameter(description = "조회할 코인 단위", example = "XRP")
             @RequestParam("currency") String currency
