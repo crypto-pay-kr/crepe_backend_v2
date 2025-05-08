@@ -14,7 +14,7 @@ public class TokenPrice {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_token_id", nullable = false)
+    @JoinColumn(name = "bank_token_id")
     private BankToken bankToken;
 
     // 기준 가격

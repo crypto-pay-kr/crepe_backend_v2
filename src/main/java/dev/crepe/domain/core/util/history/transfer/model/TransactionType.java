@@ -4,7 +4,6 @@ public enum TransactionType {
     DEPOSIT,        // 입금
     WITHDRAW,       // 출금
     TRANSFER,       // 이체
-    PAYMENT,        // 결제
     INTEREST,       // 이자지급
     SETTLEMENT,     // 정산
     REFUND,         // 환불
