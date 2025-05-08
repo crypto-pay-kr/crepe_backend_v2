@@ -27,6 +27,7 @@ public class SecurityConfig {
             "/store/signup",
             "/login",
             "/sms/**",
+            "/ocr/**",
             "/swagger-ui/**",
             "/swagger-ui.html",
             "/v3/api-docs/**",
