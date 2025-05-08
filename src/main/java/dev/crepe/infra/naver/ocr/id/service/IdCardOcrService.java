@@ -1,11 +1,11 @@
-package dev.crepe.infra.naver.id_ocr.service;
+package dev.crepe.infra.naver.ocr.id.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.infra.naver.id_ocr.entity.IdCardType;
-import dev.crepe.infra.naver.id_ocr.entity.dto.IdCardOcrResponse;
-import dev.crepe.infra.naver.id_ocr.util.IdCardOcrUtil;
-import dev.crepe.infra.naver.id_ocr.util.MultipartInputStreamFileResource;
+import dev.crepe.infra.naver.ocr.id.entity.IdCardType;
+import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
+import dev.crepe.infra.naver.ocr.id.util.IdCardOcrUtil;
+import dev.crepe.infra.naver.ocr.id.util.MultipartInputStreamFileResource;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;

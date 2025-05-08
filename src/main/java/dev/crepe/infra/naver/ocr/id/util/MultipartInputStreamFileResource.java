@@ -1,4 +1,4 @@
-package dev.crepe.infra.naver.id_ocr.util;
+package dev.crepe.infra.naver.ocr.id.util;
 
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.web.multipart.MultipartFile;
