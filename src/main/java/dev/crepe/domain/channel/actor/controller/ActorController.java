@@ -11,15 +11,13 @@ import dev.crepe.domain.channel.actor.model.dto.request.ChangePhoneRequest;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.service.ActorService;
-import dev.crepe.infra.captcha.service.NaverCaptchaService;
+import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.json.JSONParser;
-import org.h2.util.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

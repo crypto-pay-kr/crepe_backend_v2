@@ -1,8 +1,9 @@
-package dev.crepe.infra.naver.ocr;
+package dev.crepe.infra.naver.ocr.business.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import dev.crepe.infra.naver.ocr.business.dto.BusinessOcrResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +27,7 @@ public class BusinessOcrService {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
-    public String processMultipartImage(MultipartFile file) throws IOException {
+    public BusinessOcrResponse processMultipartImage(MultipartFile file) throws IOException {
         String boundary = UUID.randomUUID().toString();
         URL url = new URL(baseUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -73,41 +74,35 @@ public class BusinessOcrService {
         }
     }
 
-    private String parseResponseData(String response) throws IOException {
+    private BusinessOcrResponse parseResponseData(String response) throws IOException {
         JsonNode root = objectMapper.readTree(response);
-        StringBuilder result = new StringBuilder();
-
-        System.out.println("OCR Raw Response: " + response);
-
         JsonNode images = root.path("images");
-        if (images.isArray() && images.size() > 0) {
-            JsonNode image = images.get(0);
 
-            JsonNode bizLicense = image.path("bizLicense").path("result");
-            if (!bizLicense.isMissingNode()) {
-
-                append(result, "사업자등록번호: ", bizLicense, "registerNumber");
-                append(result, "상호: ", bizLicense, "corpName");
-                append(result, "대표자: ", bizLicense, "repName");
-                append(result, "개업일자: ", bizLicense, "openDate");
-                append(result, "사업장소재지: ", bizLicense, "bisAddress");
-                append(result, "업태: ", bizLicense, "bisType");
-                append(result, "종목: ", bizLicense, "bisItem");
-
-            }
+        if (!images.isArray() || images.isEmpty()) {
+            throw new IllegalStateException("이미지 분석 결과가 없습니다.");
         }
 
-        return result.toString().trim();
+        JsonNode bizLicense = images.get(0).path("bizLicense").path("result");
+
+        return BusinessOcrResponse.builder()
+                .registerNumber(getText(bizLicense, "registerNumber"))
+                .corpName(getText(bizLicense, "corpName"))
+                .representativeName(getText(bizLicense, "repName"))
+                .openDate(getText(bizLicense, "openDate"))
+                .address(getText(bizLicense, "bisAddress"))
+                .businessType(getText(bizLicense, "bisType"))
+                .businessItem(getText(bizLicense, "bisItem"))
+                .build();
     }
 
-    private void append(StringBuilder builder, String label, JsonNode parent, String fieldName) {
+    private String getText(JsonNode parent, String fieldName) {
         JsonNode arr = parent.path(fieldName);
         if (arr.isArray() && arr.size() > 0) {
-            String text = arr.get(0).path("text").asText(null);
+            String text = arr.get(0).path("text").asText();
             if (text != null && !text.isBlank()) {
-                builder.append(label).append(text).append("\n");
+                return text;
             }
         }
+        return null;
     }
-
 }
