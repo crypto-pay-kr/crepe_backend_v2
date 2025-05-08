@@ -1,4 +1,4 @@
-package dev.crepe.infra.naver.id_ocr.entity.dto;
+package dev.crepe.infra.naver.ocr.id.entity.dto;
 
 
 import lombok.Data;
