@@ -1,4 +1,4 @@
-package dev.crepe.domain.auth.model;
+package dev.crepe.domain.auth.jwt.model.entity;
 
 import dev.crepe.domain.auth.UserRole;
 import jakarta.persistence.Column;
@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "jwt_tokens")

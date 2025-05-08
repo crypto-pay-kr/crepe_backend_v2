@@ -1,10 +1,9 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
-import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.auth.jwt.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
-import dev.crepe.domain.auth.model.JwtToken;
+import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.channel.actor.exception.*;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.entity.Actor;

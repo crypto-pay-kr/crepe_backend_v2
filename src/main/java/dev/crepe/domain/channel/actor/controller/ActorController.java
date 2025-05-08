@@ -4,6 +4,8 @@ package dev.crepe.domain.channel.actor.controller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.otp.model.dto.OtpSetupResponse;
+import dev.crepe.domain.auth.otp.service.OtpService;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.model.dto.request.ChangeNameRequest;
 import dev.crepe.domain.channel.actor.model.dto.request.ChangePasswordRequest;
@@ -11,15 +13,13 @@ import dev.crepe.domain.channel.actor.model.dto.request.ChangePhoneRequest;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.service.ActorService;
+import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-
 import lombok.extern.slf4j.Slf4j;
-import org.apache.tomcat.util.json.JSONParser;
-import org.h2.util.json.JSONObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -35,6 +35,7 @@ public class ActorController {
 
     private final ActorService actorService;
     private final NaverCaptchaService captchaService;
+    private final OtpService otpService;
 
     @GetMapping("/captcha")
     @Operation(summary = "로그인에 필요한 captcha 키 발급", description = "captcha 키 발급")
@@ -90,6 +91,34 @@ public class ActorController {
                 errorResponse.put("message", e.getMessage());
                 return ResponseEntity.badRequest().body(errorResponse);
             }
+    }
+
+    @PostMapping("/setup")
+    @Operation(summary = "OTP 설정", description = "사용자의 OTP 초기 설정")
+    public ResponseEntity<?> setupOtp(@RequestParam String email) {
+        try {
+            ApiResponse<OtpSetupResponse> response = otpService.setupOtp(email);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    @PostMapping("/verify")
+    @Operation(summary = "OTP 검증 및 활성화", description = "OTP 코드 검증 및 활성화")
+    public ResponseEntity<?> verifyAndEnableOtp(@RequestParam String email, @RequestParam int otpCode) {
+        try {
+            ApiResponse<Boolean> response = otpService.verifyAndEnableOtp(email, otpCode);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
     }
 
 
