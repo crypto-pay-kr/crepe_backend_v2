@@ -1,9 +1,7 @@
 package dev.crepe.domain.core.account.service.impl;
 
-import dev.crepe.domain.channel.actor.store.model.entity.Store;
-import dev.crepe.domain.channel.actor.store.repository.StoreRepository;
-import dev.crepe.domain.channel.actor.user.model.entity.User;
-import dev.crepe.domain.channel.actor.user.repository.UserRepository;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
 import dev.crepe.domain.core.account.exception.TagRequiredException;
@@ -21,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -29,12 +26,11 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final CoinRepository coinRepository;
-    private final UserRepository userRepository;
-    private final StoreRepository storeRepository;
+    private final ActorRepository actorRepository;
 
     @Override
     public List<GetBalanceResponse> getBalanceList(String email) {
-        List<Account> accounts = getAccountsByEmail(email);
+        List<Account> accounts = accountRepository.findByActor_Email(email);
 
         return accounts.stream()
                 .map(account -> GetBalanceResponse.builder()
@@ -47,7 +43,7 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public GetBalanceResponse getBalanceByCurrency(String email, String currency) {
-        return getAccountsByEmail(email).stream()
+        return accountRepository.findByActor_Email(email).stream()
                 .filter(account -> account.getCoin().getCurrency().equalsIgnoreCase(currency))
                 .map(account -> GetBalanceResponse.builder()
                         .coinName(account.getCoin().getName())
@@ -58,37 +54,31 @@ public class AccountServiceImpl implements AccountService {
                 .orElse(null);
     }
 
-    private List<Account> getAccountsByEmail(String email) {
-        List<Account> userAccounts = accountRepository.findByUser_Email(email);
-        if (!userAccounts.isEmpty()) {
-            return userAccounts;
-        }
-        return accountRepository.findByStore_Email(email);
-    }
-
     @Transactional
     @Override
     public void submitAccountRegistrationRequest(GetAddressRequest request, String email) {
+        Actor actor = actorRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자 이메일입니다: " + email));
+
         Coin coin = coinRepository.findByCurrency(request.getCurrency());
 
         if (coin.isTag() && (request.getTag() == null || request.getTag().isBlank())) {
             throw new TagRequiredException(request.getCurrency());
         }
 
-        if (existsByEmailAndCurrency(email, request.getCurrency())) {
+        if (accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency()).isPresent()) {
             throw new DuplicateAccountException(request.getCurrency());
         }
 
-        Account.AccountBuilder builder = Account.builder()
+        Account account = Account.builder()
                 .coin(coin)
                 .accountAddress(request.getAddress())
                 .tag(request.getTag())
-                .addressRegistryStatus(AddressRegistryStatus.REGISTERING);
+                .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
+                .actor(actor)
+                .build();
 
-        userRepository.findByEmail(email).ifPresent(builder::user);
-        storeRepository.findByEmail(email).ifPresent(builder::store);
-
-        accountRepository.save(builder.build());
+        accountRepository.save(account);
     }
 
     @Transactional(readOnly = true)
@@ -96,31 +86,30 @@ public class AccountServiceImpl implements AccountService {
     public GetAddressResponse getAddressByCurrency(String currency, String email) {
         Coin coin = coinRepository.findByCurrency(currency);
 
-        Account account = findAccountByEmailAndCurrency(email, currency)
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
                 .orElseThrow(() -> new AccountNotFoundException(currency));
 
-        GetAddressResponse.GetAddressResponseBuilder responseBuilder = GetAddressResponse.builder()
+        GetAddressResponse.GetAddressResponseBuilder builder = GetAddressResponse.builder()
                 .currency(coin.getCurrency())
                 .address(account.getAccountAddress())
                 .addressRegistryStatus(account.getAddressRegistryStatus().name());
 
         if (coin.isTag()) {
-            responseBuilder.tag(account.getTag());
+            builder.tag(account.getTag());
         }
 
-        return responseBuilder.build();
+        return builder.build();
     }
 
     @Transactional
     @Override
     public void reRegisterAddress(String email, GetAddressRequest request) {
-        Account account = findAccountByEmailAndCurrency(email, request.getCurrency())
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(request.getCurrency()));
 
         Account renewAccount = Account.builder()
                 .id(account.getId())
-                .user(account.getUser())
-                .store(account.getStore())
+                .actor(account.getActor())
                 .coin(account.getCoin())
                 .balance(account.getBalance())
                 .accountAddress(request.getAddress())
@@ -129,17 +118,5 @@ public class AccountServiceImpl implements AccountService {
                 .build();
 
         accountRepository.save(renewAccount);
-    }
-
-    // 중복 확인 함수
-    private boolean existsByEmailAndCurrency(String email, String currency) {
-        return accountRepository.findByUser_EmailAndCoin_Currency(email, currency).isPresent()
-                || accountRepository.findByStore_EmailAndCoin_Currency(email, currency).isPresent();
-    }
-
-    // 유저 or 스토어 계정 조회 통합 함수
-    private Optional<Account> findAccountByEmailAndCurrency(String email, String currency) {
-        return accountRepository.findByUser_EmailAndCoin_Currency(email, currency)
-                .or(() -> accountRepository.findByStore_EmailAndCoin_Currency(email, currency));
     }
 }

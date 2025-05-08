@@ -33,7 +33,7 @@ public class AdminAddressServiceImpl implements AdminAddressService {
 
         return accounts.map(account -> GetPendingWithdrawAddressListResponse.builder()
                 .id(account.getId())
-                .storeName(account.getStore().getName())
+                .storeName(account.getActor().getName())
                 .currency(account.getCoin().getCurrency())
                 .address(account.getAccountAddress())
                 .tag(account.getTag())

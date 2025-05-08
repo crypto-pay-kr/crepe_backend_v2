@@ -1,10 +1,9 @@
-package dev.crepe.domain.channel.actor.store.controller;
+package dev.crepe.domain.channel.actor.controller;
 
+import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHistoryResponse;
 import dev.crepe.domain.core.util.history.transfer.service.TransactionHistoryService;
-import dev.crepe.domain.store.model.dto.response.GetSettlementHistoryResponse;
-import dev.crepe.global.auth.jwt.AppAuthentication;
-import dev.crepe.global.auth.role.SellerAuth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -16,25 +15,26 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/store")
+@RequestMapping
 @AllArgsConstructor
-@Tag(name = "store Withdraw API", description = "가맹점 출금 관련 API")
+@Tag(name = "history API", description = "거래 내역 API")
 public class HistoryController {
 
     private final TransactionHistoryService transactionHistoryService;
 
     @Operation(
             summary = " 내역 조회",
-            description = "가맹점의 특정 코인 내역을 조회합니다.",
+            description = "유저, 가맹점의 특정 코인 내역을 조회합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
-    @SellerAuth
+    @ActorAuth
     @GetMapping("/history")
     public ResponseEntity<List<GetTransactionHistoryResponse>> getSettlementHistory(
             AppAuthentication auth,
             @Parameter(description = "조회할 코인 단위", example = "XRP")
             @RequestParam("currency") String currency
     ) {
+        //TODO 환전및 결제 내역도 추가
         List<GetTransactionHistoryResponse> response = transactionHistoryService.getSettlementHistory(auth.getUserEmail(), currency);
         return ResponseEntity.ok( response);
     }

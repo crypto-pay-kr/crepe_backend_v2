@@ -12,13 +12,10 @@ import java.util.List;
 
 @Repository
 public interface AccountRepository extends JpaRepository<Account, Long> {
-    Optional<Account> findByUser_EmailAndCoin_Currency(String email, String currency);
 
-    Optional<Account> findByStore_EmailAndCoin_Currency(String email, String currency);
+    Optional<Account> findByActor_EmailAndCoin_Currency(String email, String currency);
 
-    List<Account> findByUser_Email(String email);
-
-    List<Account> findByStore_Email(String email);
+    List<Account> findByActor_Email(String email);
 
     Page<Account> findByAddressRegistryStatus(AddressRegistryStatus status, Pageable pageable);
 }

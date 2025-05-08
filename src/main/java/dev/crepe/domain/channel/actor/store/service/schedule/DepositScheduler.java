@@ -1,6 +1,6 @@
-package dev.crepe.domain.core.transfer.service.scheduler;
+package dev.crepe.domain.channel.actor.store.service.schedule;
 
-import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
@@ -18,27 +18,24 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class StoreDepositScheduler {
+public class DepositScheduler {
 
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final AccountRepository accountRepository;
 
     /**
-     * 1시간마다 실행되며, 3일 지난 PENDING 상태의 정산을 처리함
+     * 00시마다, 3일 지난 PENDING 상태의 정산을 처리함
      */
-    @Scheduled(fixedDelay = 3600000)
+    @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void checkPendingDeposit() {
 
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
         List<TransactionHistory> scheduledPayments = transactionHistoryRepository.findByStatusAndTypeAndCreatedAtBefore(
-                TransactionStatus.PENDING, TransactionType.DEPOSIT,threeDaysAgo
+                TransactionStatus.PENDING, TransactionType.SETTLEMENT,threeDaysAgo
         );
 
         for (TransactionHistory history : scheduledPayments) {
-            if (history.getAccount().getStore() == null) {
-                continue;
-            }
             try {
                 history.acceptedTransactionStatus();
                 history.getAccount().addAmount(history.getAmount());

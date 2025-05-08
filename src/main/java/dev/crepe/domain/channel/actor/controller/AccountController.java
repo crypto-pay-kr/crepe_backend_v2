@@ -1,5 +1,7 @@
-package dev.crepe.domain.channel.actor.store.controller;
+package dev.crepe.domain.channel.actor.controller;
 
+import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
@@ -16,9 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/store")
+@RequestMapping
 @RequiredArgsConstructor
-@Tag(name = "Store Account API", description = "가맹점 계좌 관리 API")
+@Tag(name = "Account API", description = "계좌 관련 API")
 public class AccountController {
 
     private final AccountService accountService;
@@ -29,7 +31,7 @@ public class AccountController {
             description = "코인 단위(currency), 주소, 태그(optional)를 입력받아 계좌 등록 요청을 보냅니다. 이미 등록된 코인은 중복 등록이 불가합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
-    @SellrAuth
+    @ActorAuth
     @PostMapping("/save/address")
     public ResponseEntity<Void> submitAccountRegistrationRequest(
             AppAuthentication auth,
@@ -44,7 +46,7 @@ public class AccountController {
             description = "코인 단위(currency) 기준으로 등록된 출금 주소를 조회합니다. 등록 중일 경우 '진행중' 상태 메시지를 반환합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
-    @SellerAuth
+    @ActorAuth
     @GetMapping("/address")
     public ResponseEntity<GetAddressResponse> getStoreAddress(
             @Parameter(description = "코인 단위 (예: XRP, SOL, USDT)", example = "XRP")
@@ -60,7 +62,7 @@ public class AccountController {
             description = "기존 등록된 입금 주소를 새로운 값으로 재등록합니다.",
             security = @SecurityRequirement(name = "bearer-jwt"))
     @PatchMapping("/resave/address")
-    @UserAuth
+    @ActorAuth
     public ResponseEntity<Void> reRegisterAddress(
             AppAuthentication auth,
             @RequestBody GetAddressRequest request
@@ -71,11 +73,11 @@ public class AccountController {
 
 
     @Operation(
-            summary = "사용자 잔액 조회",
-            description = "현재 로그인한 사용자의 코인별 잔액 목록을 조회합니다.",
+            summary = "잔액 조회",
+            description = "현재 로그인한 유저, 가맹점의 전체 잔액 목록을 조회합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
-    @SellerAuth
+    @ActorAuth
     @GetMapping("/balance")
     public ResponseEntity<List<GetBalanceResponse>> getUserBalanceList(AppAuthentication auth) {
         List<GetBalanceResponse> balanceList = accountService.getBalanceList(auth.getUserEmail());
@@ -85,10 +87,10 @@ public class AccountController {
 
     @Operation(
             summary = "특정 종목 잔액 조회",
-            description = "현재 로그인한 사용자의 특정 코인 잔액을 조회합니다.",
+            description = "현재 로그인한 유저, 가맹점의 특정 코인 잔액을 조회합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
-    @SellerAuth
+    @ActorAuth
     @GetMapping("/balance/{currency}")
     public ResponseEntity<GetBalanceResponse> getUserBalanceByCurrency(@PathVariable String currency,
                                                                        AppAuthentication auth) {

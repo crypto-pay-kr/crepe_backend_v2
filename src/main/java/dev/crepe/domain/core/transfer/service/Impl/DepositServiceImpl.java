@@ -18,7 +18,6 @@ import dev.crepe.domain.core.util.history.transfer.repository.TransactionHistory
 import dev.crepe.domain.core.util.upbit.Service.UpbitDepositService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,8 +28,8 @@ import java.util.Optional;
 @Slf4j
 public class DepositServiceImpl implements DepositService {
 
-    private static final int MAX_RETRY_COUNT = 5;
-    private static final int RETRY_INTERVAL_MS = 1000;
+    private static final int MAX_RETRY_COUNT = 5; // 입금 상태 확인을 재시도할 최대 횟수
+    private static final int RETRY_INTERVAL_MS = 1000; // 재시도 간격(ms)
 
     private final AccountRepository accountRepository;
     private final CoinRepository coinRepository;
@@ -39,78 +38,77 @@ public class DepositServiceImpl implements DepositService {
 
     @Override
     public void requestDeposit(GetDepositRequest request, String email) {
-
         String txid = request.getTxid();
         String currency = request.getCurrency();
 
+        // 1. 코인 정보 조회
         Coin coin = coinRepository.findByCurrency(currency);
 
-        Optional<Account> optionalAccount = accountRepository.findByUser_EmailAndCoin_Currency(email, currency);
-        if (optionalAccount.isEmpty()) {
-            optionalAccount = accountRepository.findByStore_EmailAndCoin_Currency(email, currency);
-        }
+        // 2. 해당 이메일, 코인에 해당하는 계좌 조회 하고 없으면 계좌 생성
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
+                .orElseGet(() -> accountRepository.save(
+                        Account.builder()
+                                .coin(coin)
+                                .balance(BigDecimal.ZERO)
+                                .accountAddress(null)
+                                .tag(null)
+                                .addressRegistryStatus(AddressRegistryStatus.NOT_REGISTERED)
+                                .build()
+                ));
 
-        Account account = optionalAccount.orElseGet(() -> {
-            Account newAccount = Account.builder()
-                    .coin(coin)
-                    .balance(BigDecimal.ZERO)
-                    .accountAddress(null)
-                    .tag(null)
-                    .addressRegistryStatus(AddressRegistryStatus.NOT_REGISTERED)
-                    .build();
-            return accountRepository.save(newAccount);
-        });
-
+        // 3. 이미 처리된 txid인지 확인
         if (transactionHistoryRepository.existsByTransactionId(txid)) {
             log.warn("이미 처리된 거래입니다. txid={}", txid);
             throw new DuplicateTransactionException(txid);
         }
 
+        // 4. 업비트 API로 입금 내역 조회
         List<GetDepositResponse> depositList = upbitDepositService.getDepositListById(currency, txid);
         if (depositList.isEmpty()) {
             throw new DepositNotFoundException(txid);
         }
 
+
+        // 5. 중복 입금 안되도록 방지
         if (depositList.size() != 1) {
-            log.warn("거래 ID에 여러 개의 입금 내역이 존재합니다. txid={}, count={}", txid, depositList.size());
+            log.warn("중복된 입금 내역 존재. txid={}, count={}", txid, depositList.size());
             throw new IllegalStateException("유효하지 않은 거래: 중복 입금 내역 존재");
         }
+
 
         GetDepositResponse deposit = depositList.get(0);
         BigDecimal amount = new BigDecimal(deposit.getAmount());
 
         if (!deposit.getCurrency().equalsIgnoreCase(currency)) {
-            log.warn("요청한 코인과 실제 입금된 코인이 일치하지 않습니다. 요청: {}, 실제: {}, txid: {}", currency, deposit.getCurrency(), txid);
+            log.warn("입금된 코인과 요청 코인이 일치하지 않음. 요청={}, 실제={}", currency, deposit.getCurrency());
             throw new CurrencyMismatchException(currency, deposit.getCurrency(), txid);
         }
 
         TransactionHistory history = null;
 
+        // 6. 상태가 ACCEPTED 인지 최대 5번 재시도하면서 확인
         for (int i = 0; i < MAX_RETRY_COUNT; i++) {
             depositList = upbitDepositService.getDepositListById(currency, txid);
             if (depositList.isEmpty()) {
-                throw new IllegalStateException("입금 내역을 재조회했지만 여전히 찾을 수 없습니다.");
+                throw new IllegalStateException("재조회했지만 입금 내역이 없음");
             }
 
             deposit = depositList.get(0);
 
+            // ACCEPTED 상태면 계좌에 금액 추가 및 내역 저장
             if (TransactionStatus.ACCEPTED.name().equals(deposit.getState())) {
                 account.addAmount(amount);
-
-                TransactionStatus status = (account.getStore() != null)
-                        ? TransactionStatus.PENDING
-                        : TransactionStatus.ACCEPTED;
-
                 history = TransactionHistory.builder()
                         .account(account)
                         .amount(amount)
                         .transactionId(txid)
-                        .status(status)
+                        .status(TransactionStatus.ACCEPTED)
                         .type(TransactionType.DEPOSIT)
                         .build();
                 break;
             }
 
+            // ACCEPTED 상태가 아닐 경우 대기
             try {
                 Thread.sleep(RETRY_INTERVAL_MS);
             } catch (InterruptedException e) {
@@ -120,6 +118,7 @@ public class DepositServiceImpl implements DepositService {
             }
         }
 
+        // 7. ACCEPTED로 전환되지 못했다면 FAILED 상태로 저장
         if (history == null) {
             history = TransactionHistory.builder()
                     .account(account)
@@ -130,6 +129,7 @@ public class DepositServiceImpl implements DepositService {
                     .build();
         }
 
+        // 8. 입금 내역 저장
         transactionHistoryRepository.save(history);
     }
 }

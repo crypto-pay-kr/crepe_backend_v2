@@ -36,9 +36,8 @@ public class WithdrawServiceImpl implements WithdrawService {
     @Override
     public void requestWithdraw(GetWithdrawRequest request,String email) {
 
-        // 1. 유저 또는 스토어 계정 조회
-        Account account = accountRepository.findByUser_EmailAndCoin_Currency(email, request.getCurrency())
-                .or(() -> accountRepository.findByStore_EmailAndCoin_Currency(email, request.getCurrency()))
+        // 1.계좌 조회
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(email));
 
         // 2. 주소 등록 여부 확인

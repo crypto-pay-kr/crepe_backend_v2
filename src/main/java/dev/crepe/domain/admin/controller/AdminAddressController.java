@@ -2,8 +2,8 @@ package dev.crepe.domain.admin.controller;
 
 import dev.crepe.domain.admin.dto.response.GetPendingWithdrawAddressListResponse;
 import dev.crepe.domain.admin.service.AdminAddressService;
+import dev.crepe.domain.auth.role.AdminAuth;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
-import dev.crepe.global.auth.role.AdminAuth;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -14,7 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/address")
+@RequestMapping("/admin/address")
 @AllArgsConstructor
 @Tag(name = "Admin Address API", description = "관리자 출금 주소 관리 API")
 public class AdminAddressController {

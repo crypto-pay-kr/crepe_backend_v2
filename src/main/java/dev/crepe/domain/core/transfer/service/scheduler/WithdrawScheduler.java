@@ -43,7 +43,7 @@ public class WithdrawScheduler {
                     log.info("출금 중");
                 }
             } catch (Exception e) {
-                log.error("출금 상태 확인 실패: txId={}", payment.getAccount().getStore().getName(), e);
+                log.error("출금 상태 확인 실패: txId={}", payment.getAccount().getActor().getName(), e);
             }
         }
     }

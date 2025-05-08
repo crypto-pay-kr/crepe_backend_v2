@@ -21,8 +21,7 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
 
     public List<GetTransactionHistoryResponse> getSettlementHistory (String email, String currency) {
 
-        Account account = accountRepository.findByUser_EmailAndCoin_Currency(email, currency)
-                .or(() -> accountRepository.findByStore_EmailAndCoin_Currency(email, currency))
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
                 .orElseThrow(() -> new AccountNotFoundException(email));
 
         return transactionHistoryRepository.findByAccount_IdOrderByCreatedAtDesc(account.getId())
