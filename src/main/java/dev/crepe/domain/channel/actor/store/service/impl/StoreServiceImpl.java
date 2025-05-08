@@ -7,6 +7,7 @@ import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
+import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
 import dev.crepe.domain.channel.actor.store.model.dto.request.*;
 import dev.crepe.domain.channel.actor.store.model.dto.response.*;
@@ -47,6 +48,7 @@ public class StoreServiceImpl implements StoreService {
     private final SmsManageService smsManageService;
 
 
+    // 가맹점 회원가입
     @Transactional
     @Override
     public ApiResponse<ResponseEntity<Void>> storeSignup(
@@ -79,6 +81,9 @@ public class StoreServiceImpl implements StoreService {
 
         return ApiResponse.success("가맹점 회원가입 성공", null);
     }
+
+
+    // 입력 필드 체크
     private void checkAlreadyField(StoreSignupRequest request) {
         if (actorRepository.existsByEmail(request.getEmail())) {
             throw new AlreadyEmailException();
@@ -93,23 +98,27 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
+
+    // 가맹점 주소 변경
     @Override
     public ResponseEntity<Void> changeAddress(ChangeAddressRequest request, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         store.changeStoreAddress(request.getNewAddress());
         actorRepository.save(store);
         return ResponseEntity.ok(null);
     }
 
+
+    // 가맹점 대표 이미지 변경
     @Override
     @Transactional
     public String changeStoreImage(MultipartFile storeImage, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         String oldImageUrl = store.getStoreImage();
         if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
@@ -126,12 +135,14 @@ public class StoreServiceImpl implements StoreService {
         return newImageUrl;
     }
 
+
+    // 가맹점 사업자등록증 변경
     @Override
     @Transactional
     public ChangeBusinessInfoResponse changeBusinessInfo(String businessNumber, MultipartFile businessImage, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         String oldImageUrl = store.getBusinessImage();
         if(oldImageUrl != null && !oldImageUrl.isEmpty()) {
@@ -152,12 +163,14 @@ public class StoreServiceImpl implements StoreService {
         return res;
     }
 
+
+    // 결제코인 등록
     @Transactional
     @Override
     public ChangeCoinStatusResponse registerStoreCoin(ChangeCoinStatusRequest request, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         store.changeSupportedCoins(request.getSupportedCoins());
         ChangeCoinStatusResponse res = ChangeCoinStatusResponse.builder()
@@ -166,12 +179,14 @@ public class StoreServiceImpl implements StoreService {
         return res;
     }
 
+
+    // 영업중 상태 변경
     @Transactional
     @Override
     public ChangeStoreStatusResponse changeStoreStatus(ChangeStoreStatusRequest request, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         store.changeStoreStatus(request.getStoreStatus());
         ChangeStoreStatusResponse res = ChangeStoreStatusResponse.builder()
@@ -180,11 +195,13 @@ public class StoreServiceImpl implements StoreService {
         return res;
     }
 
+
+    // 내 가게 조회
     @Override
     public GetMyStoreAllDetailResponse getMyStoreAllDetails(String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         List<Menu> menus = menuRepository.findAllByStoreId(store.getId());
         List<GetMenuDetailResponse> menuResponse = menus.stream()
@@ -203,6 +220,8 @@ public class StoreServiceImpl implements StoreService {
         return res;
     }
 
+
+    // 영업중인 모든 가게 조회
     @Override
     public List<GetOpenStoreResponse> getAllOpenStoreList() {
         List<Actor> actor  = storeRepository.findByDataStatusTrueAndStatus(StoreStatus.OPEN);
@@ -219,12 +238,14 @@ public class StoreServiceImpl implements StoreService {
                 .collect(Collectors.toList());
     }
 
+
+    // 가게 상세 조회
     @Override
     @Transactional(readOnly = true)
     public GetOneStoreDetailResponse getOneStoreDetail(Long storeId) {
 
         Actor store = actorRepository.findById(storeId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가게입니다."));
+                .orElseThrow(() -> new StoreNotFoundException(storeId));
 
         Long likeCount = likeRepository.countByStoreAndActiveTrue(store);
 

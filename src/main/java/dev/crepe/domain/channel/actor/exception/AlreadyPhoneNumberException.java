@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class AlreadyPhoneNumberException extends LocalizedMessageException {
     public AlreadyPhoneNumberException() {
-        super(HttpStatus.FORBIDDEN, "already.exist.phonenumber");
+        super(HttpStatus.FORBIDDEN, "already.phonenumber");
     }
 }

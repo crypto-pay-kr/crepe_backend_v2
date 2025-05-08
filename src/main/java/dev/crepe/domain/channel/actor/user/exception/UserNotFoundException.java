@@ -4,7 +4,7 @@ import dev.crepe.global.error.exception.LocalizedMessageException;
 import org.springframework.http.HttpStatus;
 
 public class UserNotFoundException extends LocalizedMessageException {
-    public UserNotFoundException() {
-        super(HttpStatus.NOT_FOUND, "notfound.user");
+    public UserNotFoundException(String userEmail) {
+        super(HttpStatus.NOT_FOUND, "notfound.user", userEmail);
     }
 }

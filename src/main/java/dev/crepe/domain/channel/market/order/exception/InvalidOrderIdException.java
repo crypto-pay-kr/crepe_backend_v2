@@ -1,12 +1,11 @@
 package dev.crepe.domain.channel.market.order.exception;
 
-public class InvalidOrderIdException extends RuntimeException {
+import dev.crepe.global.error.exception.LocalizedMessageException;
+import org.springframework.http.HttpStatus;
 
-    public InvalidOrderIdException(String message) {
-        super(message);
-    }
+public class InvalidOrderIdException extends LocalizedMessageException {
 
-    public InvalidOrderIdException(String message, Throwable cause) {
-        super(message, cause);
+    public InvalidOrderIdException() {
+        super(HttpStatus.BAD_REQUEST, "invalid.order.id");
     }
 }

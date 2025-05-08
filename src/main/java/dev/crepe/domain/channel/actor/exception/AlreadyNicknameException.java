@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class AlreadyNicknameException extends LocalizedMessageException {
     public AlreadyNicknameException() {
-        super(HttpStatus.FORBIDDEN, "already.exist.nickname");
+        super(HttpStatus.FORBIDDEN, "already.nickname");
     }
 }
