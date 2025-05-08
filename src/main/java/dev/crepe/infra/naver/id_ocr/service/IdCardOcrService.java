@@ -7,7 +7,6 @@ import dev.crepe.infra.naver.id_ocr.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.id_ocr.util.IdCardOcrUtil;
 import dev.crepe.infra.naver.id_ocr.util.MultipartInputStreamFileResource;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -20,14 +19,13 @@ import java.io.IOException;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class IdCardOcrService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${ncp.id-ocr.secret-key}") private String secretKey;
-    @Value("${ncp.id-ocr.base-url}") private String baseUrl;
+    @Value("${naver.cloud.id-ocr.secret-key}") private String secretKey;
+    @Value("${naver.cloud.id-ocr.base-url}") private String baseUrl;
 
     public IdCardOcrResponse recognizeIdentityCard(MultipartFile file) throws IOException {
         String jsonMessage = IdCardOcrUtil.buildJsonMessage(file);
@@ -59,8 +57,6 @@ public class IdCardOcrService {
             throw new IllegalArgumentException("OCR 응답에 신분증 데이터가 없습니다.");
         }
 
-        log.info("idCard: " + idCard.toString());
-
         String idType = idCard.path("idtype").asText();
         if ("ID Card".equalsIgnoreCase(idType)) {
             return parseIdCardByType(idCard, IdCardType.ID_CARD);
@@ -74,8 +70,6 @@ public class IdCardOcrService {
     private IdCardOcrResponse parseIdCardByType(JsonNode idCard, IdCardType idCardType) {
         IdCardOcrResponse response = new IdCardOcrResponse();
         String parentField = idCardType.getParentField();
-
-        log.info("신분증 유형" + parentField);
 
         response.setName(IdCardOcrUtil.cleanText(getFieldText(idCard, "name", parentField)));
         response.setPersonalNum(IdCardOcrUtil.cleanText(getFieldText(idCard, "personalNum", parentField)));
