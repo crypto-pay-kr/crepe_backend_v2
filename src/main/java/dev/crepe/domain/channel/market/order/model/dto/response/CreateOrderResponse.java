@@ -5,8 +5,8 @@ import dev.crepe.domain.channel.market.order.model.entity.OrderDetail;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
@@ -17,6 +17,9 @@ public class CreateOrderResponse {
     private int totalPrice;
     private String orderStatus;
     private String orderType;
+    private String storeName;
+    private String storeAddress;
+    private LocalDateTime createdAt;
     private List<OrderDetailResponse> orderDetails;
 
     public static CreateOrderResponse from(Order order) {
@@ -25,6 +28,9 @@ public class CreateOrderResponse {
                 .totalPrice(order.getTotalPrice())
                 .orderStatus(order.getStatus().name())
                 .orderType(order.getType().name())
+                .storeName(order.getStore().getName())
+                .storeAddress(order.getStore().getStoreAddress())
+                .createdAt(order.getCreatedAt())
                 .orderDetails(order.getOrderDetails().stream()
                         .map(OrderDetailResponse::from)
                         .collect(Collectors.toList()))
@@ -46,5 +52,4 @@ public class CreateOrderResponse {
                     .build();
         }
     }
-
 }

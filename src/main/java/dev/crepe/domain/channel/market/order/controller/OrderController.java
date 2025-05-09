@@ -46,7 +46,7 @@ public class OrderController {
     @UserAuth
     @Operation(summary = "주문 생성", description = "새로운 주문을 생성합니다.", security = @SecurityRequirement(name = "bearer-jwt"))
     public ResponseEntity<String> createOrder(@RequestBody CreateOrderRequest orderRequest, AppAuthentication auth) {
-        orderService.createOrder(orderRequest, auth.getUserEmail());
-        return ResponseEntity.ok("주문 생성 성공");
+        String orderId = orderService.createOrder(orderRequest, auth.getUserEmail());
+        return ResponseEntity.ok(orderId);
     }
 }
