@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -66,19 +67,33 @@ public class AccountServiceImpl implements AccountService {
             throw new TagRequiredException(request.getCurrency());
         }
 
-        if (accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency()).isPresent()) {
-            throw new DuplicateAccountException(request.getCurrency());
+        Optional<Account> optionalAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency());
+
+        if (optionalAccount.isPresent()) {
+            Account existingAccount = optionalAccount.get();
+            if (existingAccount.getAccountAddress() != null) {
+                throw new DuplicateAccountException(request.getCurrency());
+            }
+            Account updatedAccount = Account.builder()
+                    .id(existingAccount.getId())
+                    .coin(existingAccount.getCoin())
+                    .actor(existingAccount.getActor())
+                    .balance(existingAccount.getBalance())
+                    .accountAddress(request.getAddress())
+                    .tag(request.getTag())
+                    .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
+                    .build();
+            accountRepository.save(updatedAccount);
+        } else {
+            Account account = Account.builder()
+                    .coin(coin)
+                    .accountAddress(request.getAddress())
+                    .tag(request.getTag())
+                    .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
+                    .actor(actor)
+                    .build();
+            accountRepository.save(account);
         }
-
-        Account account = Account.builder()
-                .coin(coin)
-                .accountAddress(request.getAddress())
-                .tag(request.getTag())
-                .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
-                .actor(actor)
-                .build();
-
-        accountRepository.save(account);
     }
 
     @Transactional(readOnly = true)
