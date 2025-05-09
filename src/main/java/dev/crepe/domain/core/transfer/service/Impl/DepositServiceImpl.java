@@ -1,5 +1,8 @@
 package dev.crepe.domain.core.transfer.service.Impl;
 
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
@@ -35,6 +38,7 @@ public class DepositServiceImpl implements DepositService {
     private final CoinRepository coinRepository;
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final UpbitDepositService upbitDepositService;
+    private final ActorRepository actorRepository;
 
     @Override
     public void requestDeposit(GetDepositRequest request, String email) {
@@ -44,10 +48,14 @@ public class DepositServiceImpl implements DepositService {
         // 1. 코인 정보 조회
         Coin coin = coinRepository.findByCurrency(currency);
 
+        Actor actor = actorRepository.findByEmail(email)
+        .orElseThrow(() -> new UserNotFoundException());
+
         // 2. 해당 이메일, 코인에 해당하는 계좌 조회 하고 없으면 계좌 생성
         Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
                 .orElseGet(() -> accountRepository.save(
                         Account.builder()
+                                .actor(actor)
                                 .coin(coin)
                                 .balance(BigDecimal.ZERO)
                                 .accountAddress(null)
