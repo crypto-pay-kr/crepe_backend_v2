@@ -4,6 +4,7 @@ package dev.crepe.domain.channel.actor.store.service.impl;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
+import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
 import dev.crepe.domain.channel.actor.store.model.dto.request.RegisterOrChangeMenuRequest;
 import dev.crepe.domain.channel.actor.store.model.dto.response.GetMenuDetailResponse;
 import dev.crepe.domain.channel.actor.store.model.dto.response.GetMenuListResponse;
@@ -36,18 +37,15 @@ public class StoreMenuServiceImpl implements MenuService {
     @Transactional
     public ResponseEntity<Void> registerStoreMenu(RegisterOrChangeMenuRequest request, MultipartFile menuImage, String userEmail) {
 
-        Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
-        if (!"SELLER".equals(actor.getRole())) {
-            throw new UnauthorizedException("해당 가게의 메뉴를 등록할 권한이 없습니다.");
-        }
         String storeImageUrl = s3Service.uploadFile(menuImage, "menu-images");
         Menu menu = Menu.builder()
                 .name(request.getName())
                 .price(request.getPrice())
                 .image(storeImageUrl)
-                .store(actor)
+                .store(store)
                 .build();
 
         menuRepository.save(menu);
@@ -57,11 +55,12 @@ public class StoreMenuServiceImpl implements MenuService {
     @Transactional
     @Override
     public ResponseEntity<Void> changeStoreMenu(RegisterOrChangeMenuRequest request, Long menuId, MultipartFile menuImage, String userEmail) {
-        Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
 
-        Long storeId = actor.getId();
-        if (!"SELLER".equals(actor.getRole())) {
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+
+        Long storeId = store.getId();
+        if (!"SELLER".equals(store.getRole())) {
             throw new SecurityException("해당 가게의 메뉴를 변경할 권한이 없습니다.");
         }
         Menu menu = menuRepository.findById(menuId)
@@ -81,10 +80,11 @@ public class StoreMenuServiceImpl implements MenuService {
 
     @Override
     public ResponseEntity<Void> deleteStoreMenu(Long menuId, String userEmail) {
-        Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
 
-        Long storeId = actor.getId();
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+
+        Long storeId = store.getId();
         Menu menu = menuRepository.findByIdAndStoreId(menuId, storeId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 메뉴를 찾을 수 없습니다."));
 
@@ -99,9 +99,9 @@ public class StoreMenuServiceImpl implements MenuService {
 
     @Override
     public GetMenuDetailResponse getMenuDetailById(Long menuId, String userEmail) {
-        Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
-        Long storeId = actor.getId();
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+        Long storeId = store.getId();
         Menu menu = menuRepository.findByIdAndStoreId(menuId, storeId)
                 .orElseThrow(() -> new EntityNotFoundException("해당 메뉴를 찾을 수 없습니다."));
 
@@ -112,14 +112,15 @@ public class StoreMenuServiceImpl implements MenuService {
     }
 
     public GetMenuListResponse getAllMenusByStore(Long storeId, String userEmail) {
-        Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
-        if (!actor.getEmail().equals(userEmail) || !"SELLER".equals(actor.getRole())) {
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+
+        if (!store.getEmail().equals(userEmail) || !"SELLER".equals(store.getRole())) {
             throw new AccessDeniedException("해당 가맹점에 접근 권한이 없습니다.");
         }
 
 
-        List<Menu> menuList = menuRepository.findAllByStoreId(storeId);
+        List<Menu> menuList = menuRepository.findAllByStoreId(store.getId());
 
         List<GetMenuDetailResponse> menuDetails = menuList.stream()
                 .map(menu -> GetMenuDetailResponse.builder()

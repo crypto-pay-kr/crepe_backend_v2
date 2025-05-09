@@ -5,5 +5,5 @@ import org.springframework.http.HttpStatus;
 
 public class AlreadyEmailException extends LocalizedMessageException {
     public AlreadyEmailException() {
-        super(HttpStatus.FORBIDDEN, "already.exist.email");
+        super(HttpStatus.FORBIDDEN, "already.email");
 }}

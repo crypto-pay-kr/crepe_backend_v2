@@ -6,9 +6,9 @@ import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.transfer.exception.CurrencyMismatchException;
-import dev.crepe.domain.core.transfer.exception.DepositNotFoundException;
+import dev.crepe.domain.core.transfer.exception.DepositRequestFailedException;
 import dev.crepe.domain.core.transfer.exception.DuplicateTransactionException;
+import dev.crepe.domain.core.transfer.exception.InvalidDepositException;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetDepositRequest;
 import dev.crepe.domain.core.transfer.model.dto.response.GetDepositResponse;
 import dev.crepe.domain.core.transfer.service.DepositService;
@@ -25,7 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -73,33 +73,22 @@ public class DepositServiceImpl implements DepositService {
         // 4. 업비트 API로 입금 내역 조회
         List<GetDepositResponse> depositList = upbitDepositService.getDepositListById(currency, txid);
         if (depositList.isEmpty()) {
-            throw new DepositNotFoundException(txid);
+            throw new DepositRequestFailedException(txid);
         }
 
-
-        // 5. 중복 입금 안되도록 방지
+        // 5. 거래 ID에 정확히 하나의 입금 내역만 유효하도록 검증
         if (depositList.size() != 1) {
-            log.warn("중복된 입금 내역 존재. txid={}, count={}", txid, depositList.size());
-            throw new IllegalStateException("유효하지 않은 거래: 중복 입금 내역 존재");
+            throw new InvalidDepositException();
         }
-
 
         GetDepositResponse deposit = depositList.get(0);
         BigDecimal amount = new BigDecimal(deposit.getAmount());
-
-        if (!deposit.getCurrency().equalsIgnoreCase(currency)) {
-            log.warn("입금된 코인과 요청 코인이 일치하지 않음. 요청={}, 실제={}", currency, deposit.getCurrency());
-            throw new CurrencyMismatchException(currency, deposit.getCurrency(), txid);
-        }
 
         TransactionHistory history = null;
 
         // 6. 상태가 ACCEPTED 인지 최대 5번 재시도하면서 확인
         for (int i = 0; i < MAX_RETRY_COUNT; i++) {
             depositList = upbitDepositService.getDepositListById(currency, txid);
-            if (depositList.isEmpty()) {
-                throw new IllegalStateException("재조회했지만 입금 내역이 없음");
-            }
 
             deposit = depositList.get(0);
 

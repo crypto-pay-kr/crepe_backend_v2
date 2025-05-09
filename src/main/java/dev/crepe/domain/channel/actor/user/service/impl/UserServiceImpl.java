@@ -7,6 +7,7 @@ import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
+import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.channel.actor.user.model.dto.ChangeNicknameRequest;
 import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;
 import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
@@ -76,7 +77,7 @@ public class UserServiceImpl implements UserService {
     public void changeNickname(ChangeNicknameRequest request, String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         if(userRepository.existsByNickName(request.getNewNickname())) throw  new AlreadyNicknameException();
 
@@ -89,7 +90,7 @@ public class UserServiceImpl implements UserService {
     public UserInfoResponse getUserInfo(String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         return UserInfoResponse.builder()
                 .email(actor.getEmail())

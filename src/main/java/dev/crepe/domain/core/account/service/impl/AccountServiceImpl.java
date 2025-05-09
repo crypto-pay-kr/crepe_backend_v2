@@ -102,7 +102,7 @@ public class AccountServiceImpl implements AccountService {
         Coin coin = coinRepository.findByCurrency(currency);
 
         Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
-                .orElseThrow(() -> new AccountNotFoundException(currency));
+                .orElseThrow(() -> new AccountNotFoundException(email));
 
         GetAddressResponse.GetAddressResponseBuilder builder = GetAddressResponse.builder()
                 .currency(coin.getCurrency())

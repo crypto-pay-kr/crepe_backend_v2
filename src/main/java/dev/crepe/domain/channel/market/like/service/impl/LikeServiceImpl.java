@@ -23,11 +23,11 @@ public class LikeServiceImpl implements LikeService {
 
     @Transactional
     public void addLike(String userEmail, Long storeId) {
-        Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(UserNotFoundException::new);
+        Actor user= actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         Actor store = actorRepository.findById(storeId)
-                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+                .orElseThrow(() -> new StoreNotFoundException(storeId));
 
         Optional<Like> existingLike = likeRepository.findByUserAndStore(user, store);
 
@@ -52,11 +52,12 @@ public class LikeServiceImpl implements LikeService {
 
     @Transactional
     public void removeLike(String userEmail, Long storeId) {
-        Actor user =  actorRepository.findByEmail(userEmail)
-                .orElseThrow(UserNotFoundException::new);
+        Actor user = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         Actor store = actorRepository.findById(storeId)
-                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + storeId));
+                .orElseThrow(() -> new StoreNotFoundException(storeId));
+
 
         Optional<Like> existingLike = likeRepository.findByUserAndStore(user, store);
 

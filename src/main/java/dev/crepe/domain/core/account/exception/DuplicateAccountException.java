@@ -5,6 +5,6 @@ import org.springframework.http.HttpStatus;
 
 public class DuplicateAccountException extends LocalizedMessageException {
     public DuplicateAccountException(String currency) {
-        super(HttpStatus.BAD_REQUEST, "storeaccount.duplicate", currency);
+        super(HttpStatus.BAD_REQUEST, "account.duplicate", currency);
     }
 }

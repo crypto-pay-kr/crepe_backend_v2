@@ -1,4 +1,4 @@
-package dev.crepe.domain.channel.actor.store.exception;
+package dev.crepe.domain.core.account.exception;
 
 
 import dev.crepe.global.error.exception.LocalizedMessageException;

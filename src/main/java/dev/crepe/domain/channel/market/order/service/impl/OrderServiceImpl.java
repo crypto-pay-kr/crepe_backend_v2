@@ -17,7 +17,6 @@ import dev.crepe.domain.channel.market.order.model.entity.OrderDetail;
 import dev.crepe.domain.channel.market.order.repository.OrderDetailRepository;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
 import dev.crepe.domain.channel.market.order.service.OrderService;
-import dev.crepe.global.base.UserBaseEntity;
 import dev.crepe.global.error.exception.NotSingleObjectException;
 import dev.crepe.global.error.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
@@ -44,8 +43,8 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(readOnly = true)
     public List<CreateOrderResponse> getCustomerOrderList(String userEmail) {
 
-        Actor user =  actorRepository.findByEmail(userEmail)
-                .orElseThrow(UserNotFoundException::new);
+        Actor user= actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         List<Order> ordersList = orderRepository.findByUserId(user.getId());
 
@@ -103,10 +102,10 @@ public class OrderServiceImpl implements OrderService {
     public void createOrder(CreateOrderRequest request, String userEmail) {
 
         Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(UserNotFoundException::new);
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         Actor store = actorRepository.findById(request.getStoreId())
-                .orElseThrow(() -> new StoreNotFoundException("Store not found: " + request.getStoreId()));
+                .orElseThrow(() -> new StoreNotFoundException(request.getStoreId()));
 
         Order orders = Order.builder()
                 .totalPrice(calculateTotalPrice(request))
@@ -124,7 +123,7 @@ public class OrderServiceImpl implements OrderService {
                         .menuCount(detail.getMenuCount())
                         .order(orders)
                         .menu(menuRepository.findById(detail.getMenuId())
-                                .orElseThrow(MenuNotFoundException::new))
+                                .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId())))
                         .build())
                 .collect(Collectors.toList());
 
@@ -139,7 +138,7 @@ public class OrderServiceImpl implements OrderService {
     private int calculateTotalPrice(CreateOrderRequest request) {
         return request.getOrderDetails().stream()
                 .mapToInt(detail -> menuRepository.findById(detail.getMenuId())
-                        .orElseThrow(MenuNotFoundException::new)
+                        .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId()))
                         .getPrice() * detail.getMenuCount())
                 .sum();
     }

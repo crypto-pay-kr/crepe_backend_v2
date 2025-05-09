@@ -54,7 +54,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     @Transactional
     public StoreOrderManageResponse acceptOrder(String orderId, Long storeId, StoreOrderActionRequest request) {
         Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
-                .orElseThrow(() -> new InvalidOrderIdException("Invalid order ID: " + orderId));
+                .orElseThrow(InvalidOrderIdException::new);
 
         if(order.getStatus() != OrderStatus.WAITING) {
             return StoreOrderManageResponse.builder()
@@ -91,7 +91,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     @Transactional
     public StoreOrderManageResponse refuseOrder(String orderId, Long storeId, StoreOrderActionRequest request) {
         Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
-                .orElseThrow(() -> new InvalidOrderIdException("Invalid order ID: " + orderId));
+                .orElseThrow(InvalidOrderIdException::new);
 
         if(order.getStatus() != OrderStatus.WAITING) {
             return StoreOrderManageResponse.builder()
@@ -122,7 +122,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     @Transactional
     public StoreOrderManageResponse completeOrder(String orderId, Long storeId) {
         Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
-                .orElseThrow(() -> new InvalidOrderIdException("Invalid order ID: " + orderId));
+                .orElseThrow(InvalidOrderIdException::new);
 
 
         // 주문 상태 확인

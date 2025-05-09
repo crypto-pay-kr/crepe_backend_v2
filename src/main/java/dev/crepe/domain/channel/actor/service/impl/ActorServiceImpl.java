@@ -11,6 +11,7 @@ import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorService;
+import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
 import dev.crepe.infra.sms.model.SmsType;
@@ -63,7 +64,7 @@ public class ActorServiceImpl  implements ActorService {
     public ResponseEntity<Void> changePassword(ChangePasswordRequest request, String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         if(!encoder.matches(request.getOldPassword(), actor.getPassword())) {
             throw new InvalidPasswordException();
@@ -81,13 +82,13 @@ public class ActorServiceImpl  implements ActorService {
     @Transactional
     public ResponseEntity<Void> changePhone(ChangePhoneRequest request, String userEmail) {
 
-        Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+        Actor actor = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         InMemorySmsAuthService.SmsAuthData smsAuthData = smsManageService.getSmsAuthData(request.getPhoneNumber(), SmsType.SIGN_UP);
         String successNewPhone = smsAuthData.getPhoneNumber();
 
-        store.changePhone(successNewPhone);
+        actor.changePhone(successNewPhone);
         return ResponseEntity.ok(null);
     }
 
@@ -97,7 +98,7 @@ public class ActorServiceImpl  implements ActorService {
     public ResponseEntity<Void> changeName(ChangeNameRequest request, String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new StoreNotFoundException(userEmail));
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
 
         actor.changeName(request.getNewName());
         return ResponseEntity.ok(null);
