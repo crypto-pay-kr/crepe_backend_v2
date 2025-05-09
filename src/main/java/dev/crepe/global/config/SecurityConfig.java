@@ -36,7 +36,10 @@ public class SecurityConfig {
             "/api/**",
             "/swagger-resources/**",
             "/v3/api-docs/**",
-            "/captcha"
+            "/captcha",
+            "/verify",
+            "/setup"
+
     };
 
     private static final String[] ADMIN_URI = {
