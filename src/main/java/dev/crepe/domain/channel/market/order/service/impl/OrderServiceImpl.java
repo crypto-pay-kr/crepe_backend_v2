@@ -7,6 +7,7 @@ import dev.crepe.domain.channel.actor.store.exception.MenuNotFoundException;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.channel.market.order.exception.ExchangePriceNotMatchException;
 import dev.crepe.domain.channel.market.order.exception.OrderNotFoundException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
@@ -114,7 +115,6 @@ public class OrderServiceImpl implements OrderService {
 
         validateExchangeRate(request.getExchangeRate(),request.getCurrency());
 
-
         Order orders = Order.builder()
                 .totalPrice(calculateTotalPrice(request))
                 .status(OrderStatus.WAITING)
@@ -163,11 +163,11 @@ public class OrderServiceImpl implements OrderService {
         // 서버에서 실시간으로 가져온 시세
         BigDecimal serverRate = upbitExchangeService.getLatestRate(currency);
 
-        // 허용 가능한 시세 차이 범위 (절댓값 기준): +-100 추후 수정
-        BigDecimal allowedDiff = new BigDecimal("100");
+        // 허용 가능한 시세 차이 범위 (절댓값 기준): +-10
+        BigDecimal allowedDiff = new BigDecimal("10");
 
         if (clientRate.subtract(serverRate).abs().compareTo(allowedDiff) > 0) {
-            throw new IllegalArgumentException("시세가 일치하지 않습니다. 다시 시도해주세요.");
+            throw new ExchangePriceNotMatchException(currency);
         }
     }
 }

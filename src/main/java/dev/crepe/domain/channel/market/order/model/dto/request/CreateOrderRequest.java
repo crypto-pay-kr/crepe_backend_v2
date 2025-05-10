@@ -1,11 +1,13 @@
 package dev.crepe.domain.channel.market.order.model.dto.request;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
+@NoArgsConstructor
 public class CreateOrderRequest {
 
     private Long storeId;

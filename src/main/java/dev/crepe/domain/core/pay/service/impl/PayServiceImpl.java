@@ -86,6 +86,7 @@ public class PayServiceImpl implements PayService {
 
     }
 
+
     @Override
     @Transactional
     public void cancelForOrder(Order order) {
@@ -95,34 +96,38 @@ public class PayServiceImpl implements PayService {
                         order.getUser().getEmail(), order.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(order.getUser().getEmail()));
 
-        Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getStore().getEmail(),order.getCurrency())
+        Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(
+                        order.getStore().getEmail(), order.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(order.getStore().getEmail()));
 
         // 2. 기존 결제 정보 조회
         PayHistory payHistory = payHistoryRepository.findByOrder(order)
                 .orElseThrow(PayHistoryNotFoundException::new);
 
+        // 3. 유저 계정에 결제했던 금액 다시 추가
         userAccount.addAmount(payHistory.getTotalAmount());
 
+        // 4. 결제 상태를 'CANCELED'로 변경 후 저장
         payHistory.cancel();
         payHistoryRepository.save(payHistory);
 
-        // 3. 거래 내역 조회 및 상태 변경
+        // 5. 관련된 거래내역 조회
         List<TransactionHistory> historyList = transactionHistoryRepository.findAllByPayHistory_Order(order);
 
+        // 6. 유저 가맹점의 거래 상태를 'FAILED'로 변경
         for (TransactionHistory history : historyList) {
             Long accountId = history.getAccount().getId();
+
 
             if (accountId.equals(userAccount.getId()) && history.getType() == TransactionType.PAY) {
                 history.cancelTransactionStatus();
             }
 
-            if (accountId.equals(storeAccount.getId())) {
+            if (accountId.equals(storeAccount.getId()) && history.getType() == TransactionType.PAY) {
                 history.cancelTransactionStatus();
             }
 
             transactionHistoryRepository.save(history);
         }
-
     }
 }

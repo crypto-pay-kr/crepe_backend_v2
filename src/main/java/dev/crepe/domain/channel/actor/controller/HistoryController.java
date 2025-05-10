@@ -34,7 +34,7 @@ public class HistoryController {
             @Parameter(description = "조회할 코인 단위", example = "XRP")
             @RequestParam("currency") String currency
     ) {
-        //TODO 환전및 결제 내역도 추가
+        //TODO 환전 내역도 추후에 추가
         List<GetTransactionHistoryResponse> response = transactionHistoryService.getTransactionHistory(auth.getUserEmail(), currency);
         return ResponseEntity.ok( response);
     }
