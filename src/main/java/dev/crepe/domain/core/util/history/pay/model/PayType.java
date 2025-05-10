@@ -1,7 +1,6 @@
 package dev.crepe.domain.core.util.history.pay.model;
 
 public enum PayType {
-    APPROVED,   // 수락
-    PENDING,    //수락 대기
+    APPROVED,   // 승인
     CANCELED    // 취소
 }

@@ -1,21 +1,13 @@
 package dev.crepe.domain.core.util.history.pay.model.entity;
 
-import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.core.util.history.pay.model.PayType;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 
 //상품 주문후 결제 내역
 @Entity
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Table(name = "pay_history")
 public class PayHistory extends BaseEntity {
 
@@ -33,10 +25,5 @@ public class PayHistory extends BaseEntity {
 
     @Column(name = "total_amount", precision = 20, scale = 8, nullable = false)
     private BigDecimal totalAmount;
-
-    public void approve() {
-        this.status = PayType.APPROVED;
-    }
-
 
 }

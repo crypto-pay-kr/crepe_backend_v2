@@ -57,6 +57,7 @@ public class Account {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
 
+
     public void reduceAmount(BigDecimal amount) {
         this.balance = this.balance.subtract(amount);
     }

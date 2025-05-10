@@ -17,15 +17,12 @@ import dev.crepe.domain.channel.market.order.model.entity.OrderDetail;
 import dev.crepe.domain.channel.market.order.repository.OrderDetailRepository;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
 import dev.crepe.domain.channel.market.order.service.OrderService;
-import dev.crepe.domain.core.pay.service.PayService;
-import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.NotSingleObjectException;
 import dev.crepe.global.error.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,8 +34,6 @@ public class OrderServiceImpl implements OrderService {
     private final OrderDetailRepository orderDetailRepository;
     private final MenuRepository menuRepository;
     private final ActorRepository actorRepository;
-    private final UpbitExchangeService upbitExchangeService;
-    private final PayService payService;
 
 
 
@@ -112,16 +107,11 @@ public class OrderServiceImpl implements OrderService {
         Actor store = actorRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new StoreNotFoundException(request.getStoreId()));
 
-        validateExchangeRate(request.getExchangeRate(),request.getCurrency());
-
-
         Order orders = Order.builder()
                 .totalPrice(calculateTotalPrice(request))
-                .exchangeRate(request.getExchangeRate())
                 .status(OrderStatus.WAITING)
                 .type(OrderType.TAKE_OUT)
                 .currency(request.getCurrency())
-                .exchangeRate(request.getExchangeRate())
                 .user(user)
                 .store(store)
                 .build();
@@ -138,10 +128,8 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
 
         orderDetailRepository.saveAll(orderDetails);
-        payService.payForOrder(orders);
 
         return orders.getId();
-
     }
 
 
@@ -156,15 +144,4 @@ public class OrderServiceImpl implements OrderService {
                         .getPrice() * detail.getMenuCount())
                 .sum();
     }
-
-
-    public void validateExchangeRate(BigDecimal clientRate, String currency) {
-        BigDecimal serverRate = upbitExchangeService.getLatestRate(currency);
-        BigDecimal allowedDiff = new BigDecimal("0.5");
-
-        if (clientRate.subtract(serverRate).abs().compareTo(allowedDiff) > 0) {
-            throw new IllegalArgumentException("시세가 일치하지 않습니다. 다시 시도해주세요.");
-        }
-    }
-
 }

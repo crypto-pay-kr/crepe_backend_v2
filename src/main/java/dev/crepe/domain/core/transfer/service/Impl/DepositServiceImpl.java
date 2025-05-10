@@ -49,9 +49,8 @@ public class DepositServiceImpl implements DepositService {
         Coin coin = coinRepository.findByCurrency(currency);
 
         Actor actor = actorRepository.findByEmail(email)
-        .orElseThrow(() -> new UserNotFoundException(email));
-
-
+        .orElseThrow(() -> 
+                new UserNotFoundException(email));
 
         // 2. 해당 이메일, 코인에 해당하는 계좌 조회 하고 없으면 계좌 생성
         Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
