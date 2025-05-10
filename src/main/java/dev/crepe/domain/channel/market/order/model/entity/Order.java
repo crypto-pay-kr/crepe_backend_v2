@@ -5,6 +5,8 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderResponse;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
+import dev.crepe.domain.channel.market.order.util.OrderIdGenerator;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
@@ -20,12 +22,10 @@ import java.util.UUID;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Order {
+public class Order extends BaseEntity {
 
     @Id
-    @GeneratedValue
-    @UuidGenerator
-    @Column(columnDefinition = "VARCHAR(36)")
+    @Column(length = 12, nullable = false, unique = true)
     private String id;
 
     @Column(nullable = false)
@@ -58,6 +58,11 @@ public class Order {
     @JoinColumn(name = "store_id", nullable = false)
     @JsonIgnore
     private Actor store;
+
+    @PrePersist
+    private void generateId() {
+        this.id = OrderIdGenerator.generate();
+    }
 
     // 주문 접수
     public void accept() {
