@@ -1,6 +1,7 @@
 package dev.crepe.domain.channel.actor.store.service.impl;
 
 
+import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
@@ -19,6 +20,7 @@ import dev.crepe.infra.s3.service.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class StoreMenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
     private final ActorRepository actorRepository;
@@ -60,7 +63,8 @@ public class StoreMenuServiceImpl implements MenuService {
                 .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
         Long storeId = store.getId();
-        if (!"SELLER".equals(store.getRole())) {
+
+        if (store.getRole() != UserRole.SELLER){
             throw new SecurityException("해당 가게의 메뉴를 변경할 권한이 없습니다.");
         }
         Menu menu = menuRepository.findById(menuId)

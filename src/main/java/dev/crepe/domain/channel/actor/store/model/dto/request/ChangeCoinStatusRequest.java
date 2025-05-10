@@ -15,5 +15,5 @@ import java.util.List;
 @Schema(description = "가맹점 지원 코인 수정 요청 DTO")
 public class ChangeCoinStatusRequest {
     @Schema(description = "코인종류(SOL,USDT,XRP)", example = "SOL")
-    private List<Coin> supportedCoins;
+    private List<String> supportedCoins;
 }
