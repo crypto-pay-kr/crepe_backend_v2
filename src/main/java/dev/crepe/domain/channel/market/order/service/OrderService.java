@@ -15,7 +15,7 @@ public interface OrderService {
     CreateOrderResponse getOrderDetails(String orderId, String userEmail);
 
     // 주문 생성
-    void createOrder(CreateOrderRequest request, String userEmail);
+    String createOrder(CreateOrderRequest request, String userEmail);
 
 
 }

@@ -104,7 +104,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public void createOrder(CreateOrderRequest request, String userEmail) {
+    public String createOrder(CreateOrderRequest request, String userEmail) {
 
         Actor user = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UserNotFoundException(userEmail));
@@ -138,8 +138,10 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
 
         orderDetailRepository.saveAll(orderDetails);
-
         payService.payForOrder(orders);
+
+        return orders.getId();
+
     }
 
 
