@@ -67,9 +67,6 @@ public class Account {
     }
     // 금액 차감
     public void reduceAmount(BigDecimal amount) {
-        if (this.balance.compareTo(amount) < 0) {
-            throw new NotEnoughAmountException(this.coin.getCurrency());
-        }
         this.balance = this.balance.subtract(amount);
     }
     // 금액 추가
