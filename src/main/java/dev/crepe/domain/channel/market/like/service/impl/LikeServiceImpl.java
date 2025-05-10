@@ -71,4 +71,18 @@ public class LikeServiceImpl implements LikeService {
         }
     }
 
+    @Override
+    public boolean isLikedByUser(String userEmail, Long storeId) {
+        Actor user = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
+
+        Actor store = actorRepository.findById(storeId)
+                .orElseThrow(() -> new StoreNotFoundException(storeId));
+
+        return likeRepository.findByUserAndStore(user, store)
+                .map(Like::isActive)
+                .orElse(false);
+    }
+
+
 }

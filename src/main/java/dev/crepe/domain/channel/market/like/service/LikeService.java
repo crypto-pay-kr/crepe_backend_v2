@@ -6,4 +6,5 @@ import org.springframework.stereotype.Service;
 public interface LikeService {
     void addLike(String userEmail, Long storeId);
     void removeLike(String userEmail, Long storeId);
+    boolean isLikedByUser(String userEmail, Long storeId);
 }

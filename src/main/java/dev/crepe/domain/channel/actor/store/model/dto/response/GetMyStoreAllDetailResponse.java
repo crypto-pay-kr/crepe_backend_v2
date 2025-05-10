@@ -14,11 +14,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GetMyStoreAllDetailResponse {
+    private Long storeId;
     private Long likeCount;
     private StoreStatus storeStatus;
     private String storeName;
     private String storeAddress;
     private String storeImageUrl;
+    private boolean isLiked;
     private List<Coin> coinList;
     private List<GetMenuDetailResponse> menuList;
 }
