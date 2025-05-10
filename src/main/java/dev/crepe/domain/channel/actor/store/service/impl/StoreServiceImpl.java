@@ -98,6 +98,17 @@ public class StoreServiceImpl implements StoreService {
         }
     }
 
+    // 가맹점 이름 변경
+    @Override
+    public ResponseEntity<Void> changeName(ChangeStoreNameRequest request, String userEmail) {
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+
+        store.changeName(request.getNewStoreName());
+        actorRepository.save(store);
+        return ResponseEntity.ok(null);
+    }
+
 
     // 가맹점 주소 변경
     @Override
