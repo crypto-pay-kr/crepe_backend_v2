@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +28,24 @@ public class AccountServiceImpl implements AccountService {
 
     private final AccountRepository accountRepository;
     private final CoinRepository coinRepository;
-    private final ActorRepository actorRepository;
+
+    @Override
+    @Transactional
+    public void createBasicAccounts(Actor actor) {
+
+        //지원하는 모든 코인에 대해서 기본 계좌 생성
+        List<Coin> coins = coinRepository.findAll();
+
+        for (Coin coin : coins) {
+            Account account = Account.builder()
+                    .actor(actor)
+                    .coin(coin)
+                    .accountAddress(null)
+                    .build();
+            accountRepository.save(account);
+        }
+    }
+
 
     @Override
     public List<GetBalanceResponse> getBalanceList(String email) {
@@ -58,43 +76,28 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     @Override
     public void submitAccountRegistrationRequest(GetAddressRequest request, String email) {
-        Actor actor = actorRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자 이메일입니다: " + email));
+        // 1. 계좌조회
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
+                .orElseThrow(AccountNotFoundException::new);
 
+        // 2. 코인 정보 조회
         Coin coin = coinRepository.findByCurrency(request.getCurrency());
 
+        // 3. 태그 필수 코인일 경우 유효성 검사
         if (coin.isTag() && (request.getTag() == null || request.getTag().isBlank())) {
             throw new TagRequiredException(request.getCurrency());
         }
 
-        Optional<Account> optionalAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency());
-
-        if (optionalAccount.isPresent()) {
-            Account existingAccount = optionalAccount.get();
-            if (existingAccount.getAccountAddress() != null) {
-                throw new DuplicateAccountException(request.getCurrency());
-            }
-            Account updatedAccount = Account.builder()
-                    .id(existingAccount.getId())
-                    .coin(existingAccount.getCoin())
-                    .actor(existingAccount.getActor())
-                    .balance(existingAccount.getBalance())
-                    .accountAddress(request.getAddress())
-                    .tag(request.getTag())
-                    .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
-                    .build();
-            accountRepository.save(updatedAccount);
-        } else {
-            Account account = Account.builder()
-                    .coin(coin)
-                    .accountAddress(request.getAddress())
-                    .tag(request.getTag())
-                    .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
-                    .actor(actor)
-                    .build();
-            accountRepository.save(account);
+        // 4. 이미 등록된 주소가 있는 경우 중복 등록 방지
+        if (account.getAccountAddress() != null) {
+            throw new DuplicateAccountException(request.getCurrency());
         }
+
+        // 5. 주소 및 태그 등록 처리
+        account.registerAddress(request.getAddress(), request.getTag());
     }
+
+
 
     @Transactional(readOnly = true)
     @Override
@@ -119,19 +122,15 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     @Override
     public void reRegisterAddress(String email, GetAddressRequest request) {
+
         Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(request.getCurrency()));
 
-        Account renewAccount = Account.builder()
-                .id(account.getId())
-                .actor(account.getActor())
-                .coin(account.getCoin())
-                .balance(account.getBalance())
-                .accountAddress(request.getAddress())
-                .tag(request.getTag())
-                .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
-                .build();
+        Coin coin = coinRepository.findByCurrency(request.getCurrency());
+        if (coin.isTag() && (request.getTag() == null || request.getTag().isBlank())) {
+            throw new TagRequiredException(request.getCurrency());
+        }
 
-        accountRepository.save(renewAccount);
+        account.registerAddress(request.getAddress(), request.getTag());
     }
 }

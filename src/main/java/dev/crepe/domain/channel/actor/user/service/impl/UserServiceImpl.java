@@ -13,6 +13,7 @@ import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;
 import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
 import dev.crepe.domain.channel.actor.user.repository.UserRepository;
 import dev.crepe.domain.channel.actor.user.service.UserService;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.model.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
-
+    private final AccountService accountService;
 
     // 회원가입
     @Override
@@ -53,6 +54,9 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         actorRepository.save(user);
+
+        // 기본 계좌 생성
+        accountService.createBasicAccounts(user);
         return ApiResponse.success("회원가입 성공", null);
     }
 
