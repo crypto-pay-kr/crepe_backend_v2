@@ -5,6 +5,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.core.transfer.model.dto.response.GetDepositResponse;
 import dev.crepe.global.config.UpbitConfig;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -19,20 +20,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UpbitDepositService {
 
     private final UpbitConfig upbitConfig;
     private final ObjectMapper objectMapper;
     private final WebClient webClient;
 
-    public UpbitDepositService(UpbitConfig upbitConfig, ObjectMapper objectMapper, WebClient.Builder webClientBuilder) {
-        this.upbitConfig = upbitConfig;
-        this.objectMapper = objectMapper;
-        this.webClient = webClientBuilder
-                .baseUrl(upbitConfig.getApiUrl())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
 
     // 입금 내역 조회
     public List<GetDepositResponse> getDepositListById(String currency, String txid) {

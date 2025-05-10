@@ -8,6 +8,7 @@ import dev.crepe.domain.core.transfer.model.dto.requset.GetWithdrawRequest;
 import dev.crepe.domain.core.transfer.model.dto.response.CheckWithdrawResponse;
 import dev.crepe.domain.core.transfer.model.dto.response.GetWithdrawResponse;
 import dev.crepe.global.config.UpbitConfig;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -25,20 +26,13 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UpbitWithdrawService {
 
     private final UpbitConfig upbitConfig;
     private final ObjectMapper objectMapper;
     private final WebClient webClient;
 
-    public UpbitWithdrawService(UpbitConfig upbitConfig, ObjectMapper objectMapper, WebClient.Builder builder) {
-        this.upbitConfig = upbitConfig;
-        this.objectMapper = objectMapper;
-        this.webClient = builder
-                .baseUrl(upbitConfig.getApiUrl())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .build();
-    }
 
     public GetWithdrawResponse requestWithdraw(GetWithdrawRequest request, String address, String tag, String netType) {
         try {
@@ -73,7 +67,7 @@ public class UpbitWithdrawService {
         }
     }
 
-    public CheckWithdrawResponse checkSettlement(String uuid) {
+    public CheckWithdrawResponse checkWithdraw(String uuid) {
         try {
             Map<String, String> params = new TreeMap<>();
             params.put("uuid", uuid);

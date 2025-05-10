@@ -8,6 +8,10 @@ import dev.crepe.domain.channel.market.order.exception.InvalidOrderIdException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
+import dev.crepe.domain.core.pay.exception.PayHistoryNotFoundException;
+import dev.crepe.domain.core.pay.service.PayService;
+import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
+import dev.crepe.domain.core.util.history.pay.repostiory.PayHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,7 +23,8 @@ import java.util.List;
 public class StoreOrderServiceImpl implements StoreOrderService {
 
     private  final OrderRepository orderRepository;
-//    private final StoreDepositService storeDepositService;
+    private final PayHistoryRepository payHistoryRepository;
+    private final PayService payService;
 
 
     //******************************************** 가맹점 주문 조회 start ********************************************/
@@ -64,15 +69,15 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                     .build();
         }
 
-        //유저 결제
-//        storeDepositService.userWithdrawForOrder(order);
-//        // 스토어 입금
-//        storeDepositService.pendingStoreDepositForOrder(order,storeId);
-
-
         // 주문 상태 업데이트
         order.accept();
         orderRepository.save(order);
+
+        //결제 상태 업데이트
+        PayHistory payHistory = payHistoryRepository.findByOrder(order)
+                .orElseThrow(PayHistoryNotFoundException::new);
+        payHistory.approve();
+        payHistoryRepository.save(payHistory);
 
         return StoreOrderManageResponse.builder()
                 .orderId(orderId)
@@ -100,9 +105,13 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                     .message("이미 처리된 주문입니다.")
                     .build();
         }
-
+        //주문 상태 업데이트
         order.refuse();
         orderRepository.save(order);
+
+
+        //결제 상태 업데이트
+        payService.cancelForOrder(order);
 
         return StoreOrderManageResponse.builder()
                 .orderId(orderId)

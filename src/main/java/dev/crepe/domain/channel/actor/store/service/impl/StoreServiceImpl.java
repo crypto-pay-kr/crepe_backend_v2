@@ -18,6 +18,8 @@ import dev.crepe.domain.channel.market.like.repository.LikeRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
+import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.s3.service.S3Service;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -47,7 +49,7 @@ public class StoreServiceImpl implements StoreService {
     private final MenuRepository menuRepository;
     private final PasswordEncoder encoder;
     private final S3Service s3Service;
-
+    private final AccountService accountService;
     private final SmsManageService smsManageService;
 
 
@@ -81,6 +83,9 @@ public class StoreServiceImpl implements StoreService {
                 .build();
 
         actorRepository.save(store);
+
+        // 기본 계좌 생성
+        accountService.createBasicAccounts(store);
 
         return ApiResponse.success("가맹점 회원가입 성공", null);
     }

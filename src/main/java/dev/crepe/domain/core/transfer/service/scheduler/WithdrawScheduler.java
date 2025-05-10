@@ -22,6 +22,7 @@ public class WithdrawScheduler {
 
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final UpbitWithdrawService upbitWithdrawService;
+
     /**
      * 3분마다 실행되며, 출금이 완료되면 입금내역에 입금 되었다고 표시됨
      */
@@ -31,7 +32,7 @@ public class WithdrawScheduler {
                 transactionHistoryRepository.findByStatusAndType(TransactionStatus.PENDING, TransactionType.WITHDRAW);
         for (TransactionHistory payment : pendingWithdrawals) {
             try {
-                CheckWithdrawResponse result = upbitWithdrawService.checkSettlement(payment.getTransactionId());
+                CheckWithdrawResponse result = upbitWithdrawService.checkWithdraw(payment.getTransactionId());
 
                 if (result.isCompleted()) {
                     log.info("[출금 완료] amount={}", result.getAmount());
