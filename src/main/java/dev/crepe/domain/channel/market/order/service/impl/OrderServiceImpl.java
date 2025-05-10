@@ -117,7 +117,6 @@ public class OrderServiceImpl implements OrderService {
 
         Order orders = Order.builder()
                 .totalPrice(calculateTotalPrice(request))
-                .exchangeRate(request.getExchangeRate())
                 .status(OrderStatus.WAITING)
                 .type(OrderType.TAKE_OUT)
                 .currency(request.getCurrency())
