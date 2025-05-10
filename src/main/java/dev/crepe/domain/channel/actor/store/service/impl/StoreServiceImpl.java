@@ -16,6 +16,8 @@ import dev.crepe.domain.channel.actor.store.repository.StoreRepository;
 import dev.crepe.domain.channel.actor.store.service.StoreService;
 import dev.crepe.domain.channel.market.like.repository.LikeRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
+import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
+import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.s3.service.S3Service;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 public class StoreServiceImpl implements StoreService {
     private final ActorRepository actorRepository;
     private final StoreRepository storeRepository;
+    private final CoinRepository coinRepository;
     private final LikeRepository likeRepository;
     private final MenuRepository menuRepository;
     private final PasswordEncoder encoder;
@@ -168,14 +171,23 @@ public class StoreServiceImpl implements StoreService {
     @Transactional
     @Override
     public ChangeCoinStatusResponse registerStoreCoin(ChangeCoinStatusRequest request, String userEmail) {
-
+        // 사용자 이메일로 Actor 조회
         Actor store = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
 
-        store.changeSupportedCoins(request.getSupportedCoins());
+        // 요청된 코인 이름(String)을 Coin 엔티티로 변환
+        List<Coin> coins = request.getSupportedCoins().stream()
+                .map(coinName -> coinRepository.findByCurrency(coinName))
+                .collect(Collectors.toList());
+
+        // Actor 엔티티에 변환된 Coin 리스트 설정
+        store.changeSupportedCoins(coins);
+
+        // 응답 생성
         ChangeCoinStatusResponse res = ChangeCoinStatusResponse.builder()
-                .supportedCoins(request.getSupportedCoins())
+                .supportedCoins(coins)
                 .build();
+
         return res;
     }
 

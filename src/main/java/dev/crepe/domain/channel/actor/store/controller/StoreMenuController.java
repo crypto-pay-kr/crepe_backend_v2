@@ -40,7 +40,7 @@ public class StoreMenuController {
     @SellerAuth
     @SecurityRequirement(name = "bearer-jwt")
     @Operation(summary = "가맹점 메뉴 수정", description = "가맹점 메뉴를 수정합니다.")
-    public ResponseEntity<Void> changeStoreMenu(@Parameter(description = "가맹점 ID", example = "1") @PathVariable Long storeId,
+    public ResponseEntity<Void> changeStoreMenu(
                                                 @Parameter(description = "메뉴 ID", example = "1") @PathVariable Long menuId, @RequestPart("menuData") RegisterOrChangeMenuRequest request,
                                                 @RequestPart("menuImage") MultipartFile menuImage, AppAuthentication auth) {
         menuService.changeStoreMenu(request, menuId, menuImage, auth.getUserEmail());
