@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -40,6 +41,9 @@ public class Order {
 
     @Column(nullable = false)
     private String currency;
+
+    @Column(name = "exchange_rate", precision = 18, scale = 8, nullable = false)
+    private BigDecimal exchangeRate;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

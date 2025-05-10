@@ -7,4 +7,5 @@ public enum TransactionType {
     INTEREST,       // 이자지급
     SETTLEMENT,     // 정산
     REFUND,         // 환불
+    PAY
 }

@@ -2,6 +2,7 @@ package dev.crepe.domain.channel.market.order.model.dto.request;
 
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -11,6 +12,7 @@ public class CreateOrderRequest {
     private String userEmail;
     private List<OrderDetailRequest> orderDetails;
     private String currency;
+    private BigDecimal ExchangeRate;
 
 
     @Getter
