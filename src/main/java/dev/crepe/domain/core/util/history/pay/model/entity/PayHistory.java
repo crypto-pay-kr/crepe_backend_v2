@@ -7,12 +7,14 @@ import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
 //상품 주문후 결제 내역
 @Entity
+@Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -38,5 +40,7 @@ public class PayHistory extends BaseEntity {
         this.status = PayType.APPROVED;
     }
 
-
+    public void cancel() {
+        this.status = PayType.CANCELED;
+    }
 }

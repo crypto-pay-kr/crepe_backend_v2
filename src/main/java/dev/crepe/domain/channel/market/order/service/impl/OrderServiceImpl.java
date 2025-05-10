@@ -138,6 +138,8 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
 
         orderDetailRepository.saveAll(orderDetails);
+
+        // 결제 내역 등록
         payService.payForOrder(orders);
 
         return orders.getId();
@@ -159,12 +161,14 @@ public class OrderServiceImpl implements OrderService {
 
 
     public void validateExchangeRate(BigDecimal clientRate, String currency) {
+        // 서버에서 실시간으로 가져온 시세
         BigDecimal serverRate = upbitExchangeService.getLatestRate(currency);
-        BigDecimal allowedDiff = new BigDecimal("0.5");
+
+        // 허용 가능한 시세 차이 범위 (절댓값 기준): +-100 추후 수정
+        BigDecimal allowedDiff = new BigDecimal("100");
 
         if (clientRate.subtract(serverRate).abs().compareTo(allowedDiff) > 0) {
             throw new IllegalArgumentException("시세가 일치하지 않습니다. 다시 시도해주세요.");
         }
     }
-
 }

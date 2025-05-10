@@ -55,4 +55,8 @@ public class TransactionHistory extends BaseEntity {
     }
 
 
+    public void cancelTransactionStatus() {
+        this.status = TransactionStatus.FAILED;
+    }
+
 }
