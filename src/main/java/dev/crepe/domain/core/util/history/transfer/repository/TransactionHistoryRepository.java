@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.util.history.transfer.repository;
 
+import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
 import dev.crepe.domain.core.util.history.transfer.model.entity.TransactionHistory;
@@ -17,4 +18,7 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     );
     List<TransactionHistory> findByStatusAndType(TransactionStatus status, TransactionType type);
     List<TransactionHistory> findByAccount_IdOrderByCreatedAtDesc(Long accountId);
+
+    List<TransactionHistory> findAllByPayHistory_Order(Order order);
+
 }

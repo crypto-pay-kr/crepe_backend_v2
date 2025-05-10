@@ -8,4 +8,6 @@ public interface PayService {
 
     void payForOrder(Order order );
 
+    void cancelForOrder(Order order);
+
 }
