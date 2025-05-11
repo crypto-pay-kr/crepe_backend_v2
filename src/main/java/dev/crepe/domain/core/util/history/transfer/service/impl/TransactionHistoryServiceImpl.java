@@ -7,9 +7,13 @@ import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHisto
 import dev.crepe.domain.core.util.history.transfer.repository.TransactionHistoryRepository;
 import dev.crepe.domain.core.util.history.transfer.service.TransactionHistoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -19,20 +23,22 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final AccountRepository accountRepository;
 
-    public List<GetTransactionHistoryResponse> getTransactionHistory (String email, String currency) {
+    public Slice<GetTransactionHistoryResponse> getTransactionHistory (String email, String currency, int page, int size) {
 
         Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
                 .orElseThrow(() -> new AccountNotFoundException(email));
 
-        return transactionHistoryRepository.findByAccount_IdOrderByCreatedAtDesc(account.getId())
-                .stream()
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+
+        return transactionHistoryRepository
+                .findByAccount_Id(account.getId(), pageable)
                 .map(history -> GetTransactionHistoryResponse.builder()
                         .status(history.getStatus().name())
                         .type(history.getType().name())
                         .amount(history.getAmount())
+                        .afterBalance(history.getAfterBalance())
                         .transferredAt(history.getUpdatedAt())
-                        .build())
-                .collect(Collectors.toList());
+                        .build());
 
     }
 }

@@ -64,16 +64,18 @@ public class PayServiceImpl implements PayService {
         // 6. 유저 측 거래 내역 생성 - 이미 차감된 상태이므로 ACCEPTED
         TransactionHistory userHistory = TransactionHistory.builder()
                 .account(userAccount)
-                .amount(totalAmount)
+                .amount(totalAmount.negate())
+                .afterBalance(userAccount.getBalance())
                 .status(TransactionStatus.ACCEPTED)
                 .type(TransactionType.PAY)
                 .payHistory(payHistory)
                 .build();
 
-        // 7. 가맹점 측 거래 내역 생성 - 실제 입금은 추후 승인 시 처리되므로 PENDING
+        // 7. 가맹점 측 거래 내역 생성 - 실제 입금은 스케쥴러로 처리되므로 PENDING
         TransactionHistory storeHistory = TransactionHistory.builder()
                 .account(storeAccount)
                 .amount(totalAmount)
+                .afterBalance(storeAccount.getBalance())
                 .status(TransactionStatus.PENDING)
                 .type(TransactionType.PAY)
                 .payHistory(payHistory)

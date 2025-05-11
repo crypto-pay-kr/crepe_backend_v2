@@ -4,6 +4,8 @@ import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
 import dev.crepe.domain.core.util.history.transfer.model.entity.TransactionHistory;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDateTime;
@@ -17,7 +19,7 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
             LocalDateTime createdAtBefore
     );
     List<TransactionHistory> findByStatusAndType(TransactionStatus status, TransactionType type);
-    List<TransactionHistory> findByAccount_IdOrderByCreatedAtDesc(Long accountId);
+    Slice<TransactionHistory> findByAccount_Id(Long accountId, Pageable pageable);
 
     List<TransactionHistory> findAllByPayHistory_Order(Order order);
 

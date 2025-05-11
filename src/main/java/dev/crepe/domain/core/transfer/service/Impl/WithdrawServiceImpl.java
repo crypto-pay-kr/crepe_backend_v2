@@ -63,10 +63,7 @@ public class WithdrawServiceImpl implements WithdrawService {
             throw new WithdrawRequestFailedException();
         }
 
-        // 5. 계좌 금액 차감
-        account.reduceAmount(requestAmount);
-
-        // 6. 거래 내역 저장 (공통)
+        // 5. 거래 내역 저장 (공통)
         TransactionHistory history = TransactionHistory.builder()
                 .account(account)
                 .amount(requestAmount.negate())

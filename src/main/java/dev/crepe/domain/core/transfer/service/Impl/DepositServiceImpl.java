@@ -92,6 +92,7 @@ public class DepositServiceImpl implements DepositService {
                         .account(account)
                         .amount(amount)
                         .transactionId(txid)
+                        .afterBalance(account.getBalance())
                         .status(TransactionStatus.ACCEPTED)
                         .type(TransactionType.DEPOSIT)
                         .build();

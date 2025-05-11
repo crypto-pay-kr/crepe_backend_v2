@@ -5,14 +5,13 @@ import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHistoryResponse;
 import dev.crepe.domain.core.util.history.transfer.service.TransactionHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping
@@ -29,13 +28,15 @@ public class HistoryController {
     )
     @ActorAuth
     @GetMapping("/history")
-    public ResponseEntity<List<GetTransactionHistoryResponse>> getHistory(
+    public ResponseEntity<Slice<GetTransactionHistoryResponse>> getHistory(
             AppAuthentication auth,
-            @Parameter(description = "조회할 코인 단위", example = "XRP")
-            @RequestParam("currency") String currency
+            @RequestParam("currency") String currency,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
-        //TODO 환전 내역도 추후에 추가
-        List<GetTransactionHistoryResponse> response = transactionHistoryService.getTransactionHistory(auth.getUserEmail(), currency);
-        return ResponseEntity.ok( response);
+        //TODO 환전내역 추가
+        Slice<GetTransactionHistoryResponse> response = transactionHistoryService.getTransactionHistory(
+                auth.getUserEmail(), currency, page, size);
+        return ResponseEntity.ok(response);
     }
 }
