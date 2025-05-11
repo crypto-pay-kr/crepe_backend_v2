@@ -1,11 +1,12 @@
 package dev.crepe.domain.core.util.history.transfer.service;
 
 import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHistoryResponse;
-import java.util.List;
+import org.springframework.data.domain.Slice;
+
 
 public interface TransactionHistoryService {
 
-    List<GetTransactionHistoryResponse> getTransactionHistory(String email, String unit);
+    Slice<GetTransactionHistoryResponse> getTransactionHistory(String email, String currency, int page, int size);
 
 
 }

@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.transfer.service.scheduler;
 
+import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.transfer.model.dto.response.CheckWithdrawResponse;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
@@ -37,7 +38,12 @@ public class WithdrawScheduler {
                 if (result.isCompleted()) {
                     log.info("[출금 완료] amount={}", result.getAmount());
 
+                    Account account = payment.getAccount();
+                    // 실제 출금 처리
+                    account.reduceAmount(payment.getAmount().abs());
+                    // 거래 상태 및 잔액 업데이트
                     payment.acceptedTransactionStatus();
+                    payment.updateAfterBalance(account.getBalance());
 
                     transactionHistoryRepository.save(payment);
                 }else {

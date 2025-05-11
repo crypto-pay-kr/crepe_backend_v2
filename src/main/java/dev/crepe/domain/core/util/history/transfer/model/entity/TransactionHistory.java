@@ -41,6 +41,10 @@ public class TransactionHistory extends BaseEntity {
     @Column(name = "transaction_id", length = 100)
     private String transactionId;
 
+    @Column(name="after_balance")
+    private BigDecimal afterBalance;
+
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private TransactionStatus status;
@@ -57,6 +61,10 @@ public class TransactionHistory extends BaseEntity {
 
     public void cancelTransactionStatus() {
         this.status = TransactionStatus.FAILED;
+    }
+
+    public void updateAfterBalance(BigDecimal balance) {
+        this.afterBalance = balance;
     }
 
 }

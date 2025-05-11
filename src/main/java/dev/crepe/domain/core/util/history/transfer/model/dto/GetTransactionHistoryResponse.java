@@ -15,4 +15,5 @@ public class GetTransactionHistoryResponse {
     private BigDecimal amount;
     private String type;
     private LocalDateTime transferredAt;
+    private BigDecimal afterBalance;
 }

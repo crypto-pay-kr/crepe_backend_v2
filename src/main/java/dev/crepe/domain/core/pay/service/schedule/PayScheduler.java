@@ -36,8 +36,16 @@ public class PayScheduler {
 
         for (TransactionHistory history : scheduledPayments) {
             try {
+                // 정산 완료 처리
                 history.acceptedTransactionStatus();
+
+                // 금액 입금 (스토어 계좌에)
                 history.getAccount().addAmount(history.getAmount());
+
+                // afterBalance 저장
+                history.updateAfterBalance(history.getAccount().getBalance());
+
+                // 저장
                 transactionHistoryRepository.save(history);
                 accountRepository.save(history.getAccount());
             } catch (Exception e) {
