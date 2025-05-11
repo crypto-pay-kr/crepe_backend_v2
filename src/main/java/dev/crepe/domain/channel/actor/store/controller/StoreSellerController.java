@@ -39,6 +39,15 @@ public class StoreSellerController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
+    @Operation(summary = "가게 이름 변경", description = "가맹점 주소를 변경합니다.")
+    @PatchMapping("/change/name")
+    @SellerAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<Void> changeStoreName(@Valid @RequestBody ChangeStoreNameRequest request, AppAuthentication auth) {
+        storeService.changeName(request, auth.getUserEmail());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
 
     @Operation(summary = "가게 주소 변경", description = "가맹점 주소를 변경합니다.")
     @PatchMapping("/change/address")

@@ -16,6 +16,7 @@ public interface StoreService {
                                                   MultipartFile storeImage,
                                                   MultipartFile businessImage);
     ResponseEntity<Void> changeAddress(ChangeAddressRequest request, String email);
+    ResponseEntity<Void> changeName(ChangeStoreNameRequest request, String email);
     String changeStoreImage(MultipartFile storeImage, String email);
     ChangeBusinessInfoResponse changeBusinessInfo(String businessNumber, MultipartFile businessImage, String email);
     ChangeCoinStatusResponse registerStoreCoin(ChangeCoinStatusRequest request, String email);

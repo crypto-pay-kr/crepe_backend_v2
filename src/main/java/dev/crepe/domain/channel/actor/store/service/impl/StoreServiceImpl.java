@@ -14,6 +14,7 @@ import dev.crepe.domain.channel.actor.store.model.dto.response.*;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
 import dev.crepe.domain.channel.actor.store.repository.StoreRepository;
 import dev.crepe.domain.channel.actor.store.service.StoreService;
+import dev.crepe.domain.channel.market.like.model.entity.Like;
 import dev.crepe.domain.channel.market.like.repository.LikeRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
@@ -104,6 +105,17 @@ public class StoreServiceImpl implements StoreService {
         if (actorRepository.existsByPhoneNum(request.getPhoneNumber())) {
             throw new AlreadyPhoneNumberException();
         }
+    }
+
+    // 가맹점 이름 변경
+    @Override
+    public ResponseEntity<Void> changeName(ChangeStoreNameRequest request, String userEmail) {
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+
+        store.changeName(request.getNewStoreName());
+        actorRepository.save(store);
+        return ResponseEntity.ok(null);
     }
 
 
@@ -230,9 +242,14 @@ public class StoreServiceImpl implements StoreService {
                         .build())
                 .collect(Collectors.toList());
 
-        GetMyStoreAllDetailResponse res = GetMyStoreAllDetailResponse.builder().likeCount(likeRepository.countByStoreAndActiveTrue(store)).storeName(store.getName())
+        boolean isLiked = likeRepository.findByUserAndStore(store, store)
+                .map(Like::isActive)
+                .orElse(false);
+
+        GetMyStoreAllDetailResponse res =
+                GetMyStoreAllDetailResponse.builder().storeId(store.getId()).likeCount(likeRepository.countByStoreAndActiveTrue(store)).storeName(store.getName())
                 .storeAddress(store.getStoreAddress()).storeStatus(store.getStatus()).storeImageUrl(store.getStoreImage())
-                .coinList(store.getCoinList()).menuList(menuResponse).build();
+                .coinList(store.getCoinList()).menuList(menuResponse).isLiked(isLiked).build();
 
         return res;
     }
@@ -276,6 +293,10 @@ public class StoreServiceImpl implements StoreService {
                         .build())
                 .collect(Collectors.toList());
 
+        boolean isLiked = likeRepository.findByUserAndStore(store, store)
+                .map(Like::isActive)
+                .orElse(false);
+
         return GetOneStoreDetailResponse.builder()
                 .likeCount(likeCount)
                 .storeName(store.getName())
@@ -283,6 +304,7 @@ public class StoreServiceImpl implements StoreService {
                 .storeImageUrl(store.getStoreImage())
                 .coinList(store.getCoinList())
                 .menuList(menuResponse)
+                .isLiked(isLiked)
                 .build();
     }
 
