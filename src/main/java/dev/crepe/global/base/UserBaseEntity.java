@@ -38,11 +38,4 @@ public abstract class UserBaseEntity extends BaseEntity{
     @Column(nullable = false)
     private UserRole role;
 
-    public void changeName(String newName) { this.name = newName; }
-
-    public void changePassword(String newPassword) {this.password = newPassword;}
-
-    public void changePhone(String successNewPhone) {
-        this.phoneNum = successNewPhone;
-    }
 }
