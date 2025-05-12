@@ -11,5 +11,7 @@ public interface BankRepository extends JpaRepository<Bank, Long> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByName(String name);
+
     boolean existsByBankCode(String bankCode);
 }
