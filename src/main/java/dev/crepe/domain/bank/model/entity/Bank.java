@@ -1,8 +1,10 @@
 package dev.crepe.domain.bank.model.entity;
 
+import dev.crepe.domain.auth.UserRole;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
 
@@ -11,7 +13,7 @@ import java.util.UUID;
 @Entity
 @Table(name="bank")
 @Getter
-@Builder
+@SuperBuilder
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Bank extends BaseEntity {
@@ -30,12 +32,16 @@ public class Bank extends BaseEntity {
     private String name;
 
     @Column(nullable = false)
-    private String phoneNum;
+    private String bankPhoneNum;
 
     @Column(nullable = false)
     private String imageUrl;
 
     @Column(nullable = false)
     private String bankCode;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
 
 }

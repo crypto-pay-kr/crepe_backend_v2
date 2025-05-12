@@ -92,10 +92,6 @@ public class Actor extends BaseEntity {
     @OneToMany(mappedBy = "store", fetch = FetchType.LAZY)
     private List<Like> likes;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id")
-    private Bank bank;
-
     public void changePassword(String newPassword) {this.password = newPassword;}
     public void changePhone(String successNewPhone) {
         this.phoneNum = successNewPhone;

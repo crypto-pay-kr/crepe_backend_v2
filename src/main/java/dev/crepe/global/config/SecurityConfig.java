@@ -26,6 +26,7 @@ public class SecurityConfig {
             "/user/signup",
             "/store/signup",
             "/login",
+            "/bank/login",
             "/sms/**",
             "/ocr/**",
             "/swagger-ui/**",
@@ -52,6 +53,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         req -> req
                                 .requestMatchers(PUBLIC_URI).permitAll()
+                                .requestMatchers("/admin/login").permitAll()
                                 .requestMatchers(ADMIN_URI).hasAuthority("ADMIN")
                                 .requestMatchers("/upbit/**").permitAll()
                                 .anyRequest().authenticated()
