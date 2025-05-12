@@ -27,6 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ActorServiceImpl  implements ActorService {
 
+
+
+
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
     private final JwtTokenProvider jwtTokenProvider;

@@ -2,13 +2,14 @@ package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "bank_token")
-public class BankToken {
+public class BankToken extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
