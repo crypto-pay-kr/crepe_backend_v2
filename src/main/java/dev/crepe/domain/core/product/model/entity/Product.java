@@ -1,8 +1,10 @@
 package dev.crepe.domain.core.product.model.entity;
 
+import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;
@@ -12,18 +14,14 @@ import java.util.List;
 
 @Entity
 @Table(name = "bank_product")
-public class Product {
+public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
-    @JoinColumn(name = "bank_id", nullable = false)
-    private List<Product> products = new ArrayList<>();
-
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "token_id", nullable = false)
+    @JoinColumn(name = "bank_token", nullable = false)
     private BankToken bankToken;
 
     @Column(name = "product_name", length = 100, nullable = false)
@@ -65,8 +63,8 @@ public class Product {
     @Column(name = "max_participants")
     private Integer maxParticipants;
 
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id", nullable = false)
+    private Bank bank;
 
 }

@@ -1,11 +1,14 @@
 package dev.crepe.domain.bank.model.entity;
 
+import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.GenericGenerator;
 import org.hibernate.annotations.UuidGenerator;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -35,7 +38,11 @@ public class Bank extends BaseEntity {
     @Column(nullable = false)
     private String imageUrl;
 
-    @Column(nullable = false)
+    @Column(name="bank_code",nullable = false)
     private String bankCode;
+
+    @OneToMany(mappedBy = "bank", cascade = CascadeType.ALL)
+    private List<Product> products = new ArrayList<>();
+
 
 }
