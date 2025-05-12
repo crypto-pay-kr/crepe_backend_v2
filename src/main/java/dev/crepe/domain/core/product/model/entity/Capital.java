@@ -7,10 +7,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
-// 담보금
+// 자본금 -> 은행의 예치금 정보
 @Entity
-@Table(name = "collateral")
-public class Collateral {
+@Table(name = "capital")
+public class Capital {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
