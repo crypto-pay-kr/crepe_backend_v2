@@ -33,15 +33,6 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
-    public void bankIdActivate(BankSignupDataRequest request, MultipartFile bankCiImage) {
-
-        BankDataRequest bankDataRequest = new BankDataRequest(request, bankCiImage);
-        // BankSignupDataRequest랑 bankCiImage를 하나의 DTO로 묶어서 처리
-        bankService.signup(bankDataRequest);
-    }
-
-    @Override
-    @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
 
         Actor actor = actorRepository.findByEmail(request.getEmail())
@@ -64,6 +55,17 @@ public class AdminServiceImpl implements AdminService {
         TokenResponse tokenResponse = new TokenResponse(token, actor);
         return ApiResponse.success(actor.getRole() + " 로그인 성공", tokenResponse);
     }
+
+
+
+    @Override
+    @Transactional
+    public void bankSignup(BankSignupDataRequest request, MultipartFile bankCiImage) {
+
+        BankDataRequest bankDataRequest = new BankDataRequest(request, bankCiImage);
+        bankService.signup(bankDataRequest);
+    }
+
 
 
 

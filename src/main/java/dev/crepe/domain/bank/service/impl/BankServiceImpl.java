@@ -16,6 +16,7 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
 import dev.crepe.global.model.dto.ApiResponse;
+import dev.crepe.infra.s3.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,21 +32,26 @@ public class BankServiceImpl  implements BankService {
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenRepository tokenRepository;
     private final PasswordEncoder encoder;
+    private final S3Service s3Service;
 
 
-    // 회원가입
+    // 은행 회원가입
     @Override
     @Transactional
     public ApiResponse<ResponseEntity<Void>> signup(BankDataRequest request) {
 
         checkAlreadyField.validate(request);
 
+
+        String bankImageUrl = s3Service.uploadFile(request.getBankCiImage(), "bank-images");
+
+
         Bank bank = Bank.builder()
                 .email(request.getBankSignupDataRequest().getEmail())
                 .password(encoder.encode(request.getBankSignupDataRequest().getPassword()))
                 .bankPhoneNum(request.getBankSignupDataRequest().getBankPhoneNum())
                 .name(request.getBankSignupDataRequest().getName())
-                .imageUrl(request.getBankSignupDataRequest().getImageUrl())
+                .imageUrl(bankImageUrl)
                 .bankCode(request.getBankSignupDataRequest().getBankCode())
                 .role(UserRole.BANK)
                 .build();
@@ -56,6 +62,7 @@ public class BankServiceImpl  implements BankService {
     }
 
 
+    // 은행 로그인
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {

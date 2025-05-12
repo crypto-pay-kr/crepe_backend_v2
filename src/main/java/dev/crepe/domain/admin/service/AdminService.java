@@ -9,6 +9,6 @@ import org.springframework.web.multipart.MultipartFile;
 public interface AdminService {
 
     ApiResponse<TokenResponse> login(LoginRequest request);
-    void bankIdActivate(BankSignupDataRequest request, MultipartFile bankCiImage);
+    void bankSignup(BankSignupDataRequest request, MultipartFile bankCiImage);
 
 }

@@ -1,4 +1,4 @@
-package dev.crepe.global.config;
+package dev.crepe.global.util;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.auth.UserRole;
@@ -33,7 +33,7 @@ public class AdminDataInitializer {
                         .email(adminEmail)
                         .password(passwordEncoder.encode(adminPassword))
                         .nickName("크레페관리자")
-                        .phoneNum("03212341234") // 관리자 전화번호 추가 (필요 시)
+                        .phoneNum("03212341234")
                         .name("크레페관리자")
                         .role(UserRole.ADMIN)
                         .build();

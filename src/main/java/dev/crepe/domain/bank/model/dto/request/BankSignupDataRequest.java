@@ -38,10 +38,6 @@ public class BankSignupDataRequest {
     @Schema(description = "전화번호", example = "0212345678")
     private String bankPhoneNum;
 
-    @NotBlank(message = "이미지 URL은 필수 입력값입니다.")
-    @Schema(description = "이미지 URL", example = "https://example.com/image.png")
-    private String imageUrl;
-
     @NotBlank(message = "은행 코드는 필수 입력값입니다.")
     @Schema(description = "은행 코드", example = "BANK123")
     private String bankCode;

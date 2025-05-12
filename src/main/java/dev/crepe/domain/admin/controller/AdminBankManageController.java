@@ -29,11 +29,11 @@ public class AdminBankManageController {
     @Operation(summary = "은행 계정 활성화", description = "관리자가 특정 은행 계정을 활성화합니다")
     @AdminAuth
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Void> bankSignup(
+    public ResponseEntity<String> bankSignup(
             @RequestPart("BankData") @Valid BankSignupDataRequest request,
             @RequestPart("BankCiImage") MultipartFile bankCiImage) {
-        adminService.bankIdActivate(request, bankCiImage);
-        return new ResponseEntity<>(HttpStatus.OK);
+        adminService.bankSignup(request, bankCiImage);
+        return ResponseEntity.ok("은행 계정 활성화 성공");
     }
 
 
