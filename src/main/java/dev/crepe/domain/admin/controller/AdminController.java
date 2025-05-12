@@ -26,9 +26,9 @@ public class AdminController {
 
     @PostMapping("/login")
     @Operation(summary = "관리자 로그인", description = "관리자 로그인")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<?> adminLogin(@Valid @RequestBody LoginRequest request) {
         try {
-            TokenResponse tokenResponse = adminService.login(request).getData();
+            TokenResponse tokenResponse = adminService.adminLogin(request).getData();
             return ResponseEntity.ok(tokenResponse);
         }catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();

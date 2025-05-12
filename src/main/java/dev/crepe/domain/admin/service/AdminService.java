@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 public interface AdminService {
 
-    ApiResponse<TokenResponse> login(LoginRequest request);
+    ApiResponse<TokenResponse> adminLogin(LoginRequest request);
     void bankSignup(BankSignupDataRequest request, MultipartFile bankCiImage);
 
 }

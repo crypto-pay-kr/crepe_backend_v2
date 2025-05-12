@@ -33,7 +33,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     @Transactional
-    public ApiResponse<TokenResponse> login(LoginRequest request) {
+    public ApiResponse<TokenResponse> adminLogin(LoginRequest request) {
 
         Actor actor = actorRepository.findByEmail(request.getEmail())
                 .orElseThrow(LoginFailedException::new);
