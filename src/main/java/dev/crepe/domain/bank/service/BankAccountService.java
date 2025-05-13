@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface BankAccountService {
 
-    void createBankAccountAddress(CreateBankAccountRequest request, String bankEmail);
+    void createBankAccount(CreateBankAccountRequest request, String bankEmail);
 
     void changeBankAccount(CreateBankAccountRequest request, String bankEmail);
 

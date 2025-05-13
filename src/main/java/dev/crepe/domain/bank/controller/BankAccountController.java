@@ -36,7 +36,7 @@ public class BankAccountController {
             AppAuthentication auth,
             @RequestBody CreateBankAccountRequest request
     ) {
-        bankAccountService.createBankAccountAddress(request,auth.getUserEmail());
+        bankAccountService.createBankAccount(request,auth.getUserEmail());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

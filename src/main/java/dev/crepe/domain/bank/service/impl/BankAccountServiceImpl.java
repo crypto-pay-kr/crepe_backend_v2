@@ -28,7 +28,7 @@ public class BankAccountServiceImpl implements BankAccountService {
 
     @Transactional
     @Override
-    public void createBankAccountAddress(CreateBankAccountRequest request, String bankEmail) {
+    public void createBankAccount(CreateBankAccountRequest request, String bankEmail) {
 
         String bankName = request.getBankName();
         if(bankName == null || bankName.isEmpty()) {
