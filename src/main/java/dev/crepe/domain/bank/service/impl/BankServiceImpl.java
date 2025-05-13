@@ -17,6 +17,7 @@ import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
 import dev.crepe.infra.s3.service.S3Service;
@@ -32,6 +33,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class BankServiceImpl  implements BankService {
 
     private final BankRepository bankRepository;
+    private final AccountService accountService;
     private final CheckAlreadyField checkAlreadyField;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenRepository tokenRepository;
@@ -66,6 +68,9 @@ public class BankServiceImpl  implements BankService {
                 .build();
 
         bankRepository.save(bank);
+
+        // 기본 계좌 생성
+        accountService.createBasicBankAccounts(bank);
 
         return ApiResponse.success("회원가입 성공", null);
     }

@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.account.service.impl;
 
+import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
@@ -46,6 +47,23 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    @Override
+    @Transactional
+    public void createBasicBankAccounts(Bank bank) {
+
+        //지원하는 모든 코인에 대해서 기본 계좌 생성
+        List<Coin> coins = coinRepository.findAll();
+
+        for (Coin coin : coins) {
+            Account account = Account.builder()
+                    .bank(bank)
+                    .coin(coin)
+                    .accountAddress(null)
+                    .build();
+            accountRepository.save(account);
+        }
+    }
+
 
     @Override
     public List<GetBalanceResponse> getBalanceList(String email) {
@@ -76,8 +94,9 @@ public class AccountServiceImpl implements AccountService {
     @Transactional
     @Override
     public void submitAccountRegistrationRequest(GetAddressRequest request, String email) {
+
         // 1. 계좌조회
-        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
+        Account account = accountRepository.findByBank_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(AccountNotFoundException::new);
 
         // 2. 코인 정보 조회

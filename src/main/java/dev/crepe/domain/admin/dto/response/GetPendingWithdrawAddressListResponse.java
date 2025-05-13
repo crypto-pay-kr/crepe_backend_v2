@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "관리자 - 요청받은 응답 리스트 DTO ")
 public class GetPendingWithdrawAddressListResponse {
     private Long id;
-    private String storeName;
+    private String depositor;
     private String currency;
     private String address;
     private String tag;
