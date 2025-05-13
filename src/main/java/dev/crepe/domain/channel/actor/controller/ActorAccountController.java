@@ -2,6 +2,7 @@ package dev.crepe.domain.channel.actor.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
@@ -21,10 +22,10 @@ import java.util.List;
 @RequestMapping
 @RequiredArgsConstructor
 @Tag(name = "Account API", description = "계좌 관련 API")
-public class AccountController {
+public class ActorAccountController {
 
-    private final AccountService accountService;
 
+    private final ActorAccountService actorAccountService;
 
     @Operation(
             summary = "출금 계좌 등록 요청",
@@ -37,7 +38,7 @@ public class AccountController {
             AppAuthentication auth,
             @RequestBody GetAddressRequest request
     ) {
-        accountService.submitAccountRegistrationRequest(request, auth.getUserEmail());
+        actorAccountService.createAccountAddress(request,auth.getUserEmail());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -53,7 +54,7 @@ public class AccountController {
             @RequestParam("currency") String currency,
             AppAuthentication auth
     ) {
-        GetAddressResponse response = accountService.getAddressByCurrency(currency, auth.getUserEmail());
+        GetAddressResponse response = actorAccountService.getAddressByCurrency(currency, auth.getUserEmail());
         return ResponseEntity.ok( response);
     }
 
@@ -67,7 +68,7 @@ public class AccountController {
             AppAuthentication auth,
             @RequestBody GetAddressRequest request
     ) {
-        accountService.reRegisterAddress(auth.getUserEmail(), request);
+        actorAccountService.reRegisterAddress(request,auth.getUserEmail());
         return ResponseEntity.ok().build();
     }
 
@@ -80,7 +81,7 @@ public class AccountController {
     @ActorAuth
     @GetMapping("/balance")
     public ResponseEntity<List<GetBalanceResponse>> getBalanceList(AppAuthentication auth) {
-        List<GetBalanceResponse> balanceList = accountService.getBalanceList(auth.getUserEmail());
+        List<GetBalanceResponse> balanceList = actorAccountService.getBalanceList(auth.getUserEmail());
         return ResponseEntity.ok(balanceList);
     }
 
@@ -94,7 +95,7 @@ public class AccountController {
     @GetMapping("/balance/{currency}")
     public ResponseEntity<GetBalanceResponse> getBalanceByCurrency(@PathVariable String currency,
                                                                        AppAuthentication auth) {
-        GetBalanceResponse response = accountService.getBalanceByCurrency(auth.getUserEmail(), currency);
+        GetBalanceResponse response = actorAccountService.getBalanceByCurrency( currency,auth.getUserEmail());
         return ResponseEntity.ok(response);
     }
 

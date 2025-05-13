@@ -3,13 +3,13 @@ package dev.crepe.domain.core.util.history.pay.model.entity;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.core.util.history.pay.model.PayType;
+import dev.crepe.domain.core.util.history.transfer.model.entity.TransactionHistory;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.math.BigDecimal;
 
 //상품 주문후 결제 내역
@@ -36,6 +36,17 @@ public class PayHistory extends BaseEntity {
     @Column(name = "total_amount", precision = 20, scale = 8, nullable = false)
     private BigDecimal totalAmount;
 
+    @Builder.Default
+    @OneToMany(mappedBy = "payHistory", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<TransactionHistory> transactionHistories = new ArrayList<>();
+
+    public void addTransactionHistory(TransactionHistory tx) {
+        if (!this.transactionHistories.contains(tx)) {
+            this.transactionHistories.add(tx);
+            tx.setPayHistory(this);
+        }
+    }
+
     public void approve() {
         this.status = PayType.APPROVED;
     }
@@ -43,4 +54,6 @@ public class PayHistory extends BaseEntity {
     public void cancel() {
         this.status = PayType.CANCELED;
     }
+
+    public void refund() {this.status=PayType.REFUND;}
 }

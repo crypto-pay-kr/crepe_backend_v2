@@ -6,7 +6,9 @@ import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.pay.exception.PayHistoryNotFoundException;
+import dev.crepe.domain.core.pay.exception.AlreadyRefundException;
+import dev.crepe.domain.core.pay.exception.StoreAlreadySettledException;
+import dev.crepe.domain.core.util.history.pay.execption.PayHistoryNotFoundException;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.history.pay.model.PayType;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
@@ -81,6 +83,9 @@ public class PayServiceImpl implements PayService {
                 .payHistory(payHistory)
                 .build();
 
+        payHistory.addTransactionHistory(userHistory);
+        payHistory.addTransactionHistory(storeHistory);
+
         // 8. 결제 및 거래 내역 저장
         payHistoryRepository.save(payHistory);
         transactionHistoryRepository.save(userHistory);
@@ -118,18 +123,60 @@ public class PayServiceImpl implements PayService {
 
         // 6. 유저 가맹점의 거래 상태를 'FAILED'로 변경
         for (TransactionHistory history : historyList) {
-            Long accountId = history.getAccount().getId();
-
-
-            if (accountId.equals(userAccount.getId()) && history.getType() == TransactionType.PAY) {
                 history.cancelTransactionStatus();
-            }
-
-            if (accountId.equals(storeAccount.getId()) && history.getType() == TransactionType.PAY) {
-                history.cancelTransactionStatus();
-            }
-
             transactionHistoryRepository.save(history);
         }
+    }
+
+
+    @Transactional
+    public void refundForOrder(Long payId, String email) {
+        // 1. 결제 내역 조회
+        PayHistory payHistory = payHistoryRepository.findById(payId)
+                .orElseThrow(PayHistoryNotFoundException::new);
+
+        // 2. 이미 환불된 상태인지 확인
+        if (payHistory.getStatus() == PayType.REFUND) {
+            throw new AlreadyRefundException();
+        }
+
+        // 3. PayHistory에 연결된 거래 내역들 가져오기
+        List<TransactionHistory> txList = payHistory.getTransactionHistories();
+
+        TransactionHistory userTx = null;
+        TransactionHistory storeTx = null;
+
+        for (TransactionHistory tx : txList) {
+            if (tx.getType() != TransactionType.PAY) continue;
+
+            String actorEmail = tx.getAccount().getActor().getEmail();
+            if (actorEmail.equals(email)) {
+                userTx = tx;
+            } else {
+                storeTx = tx;
+            }
+        }
+
+        // 4. 가맹점 정산 상태 확인
+        if (storeTx.getStatus() == TransactionStatus.ACCEPTED) {
+            throw new StoreAlreadySettledException();
+        }
+
+        // 5. 상태 변경 처리
+        storeTx.refundTransactionStatus();     // 가맹점 거래 상태 변경
+        payHistory.refund();                   // 결제 상태 환불로 변경
+        userTx.getAccount().addAmount(userTx.getAmount().negate()); // 잔액 복원
+
+        // 6. 유저 환불 기록 생성
+        TransactionHistory refundTx = TransactionHistory.builder()
+                .account(userTx.getAccount())
+                .type(TransactionType.REFUND)
+                .status(TransactionStatus.ACCEPTED)
+                .amount(userTx.getAmount())
+                .afterBalance(userTx.getAccount().getBalance().negate())
+                .payHistory(payHistory)
+                .build();
+
+        transactionHistoryRepository.save(refundTx);
     }
 }
