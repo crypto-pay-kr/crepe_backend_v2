@@ -2,12 +2,21 @@ package dev.crepe.domain.bank.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.role.BankAuth;
+import dev.crepe.domain.auth.role.SellerAuth;
+import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
+import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.channel.actor.model.dto.request.ChangePhoneRequest;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 
+import dev.crepe.domain.channel.actor.store.model.dto.response.GetMyStoreAllDetailResponse;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +63,6 @@ public class BankController {
         }
     }
 
-    //TODO : 은행 로그인 기능
     @PostMapping("/login")
     @Operation(summary = "은행 로그인", description = "은행 로그인")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
@@ -86,12 +94,25 @@ public class BankController {
         }
     }
 
+    @Operation(summary = "은행 정보 조회", description = "은행 정보를 조회합니다..")
+    @GetMapping()
+    @BankAuth
+    @SecurityRequirement(name="bearer-jwt")
+    public ResponseEntity<GetBankInfoDetailResponse> getBankInfoDetail(AppAuthentication auth) {
+        GetBankInfoDetailResponse res = bankService.getBankAllDetails(auth.getUserEmail());
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
 
-    //TODO : Portfolio 구성 기능
 
-    // TODO :  자본금 결정 기능
+    @Operation(summary = "담당자 연결 번호 변경", description = "은행 내 담당자 연결 번호를 변경합니다.")
+    @PatchMapping("/change/phone")
+    @BankAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<String> changePhone(@Valid @RequestBody ChangeBankPhoneRequest request, AppAuthentication auth) {
+        bankService.changePhone(request, auth.getUserEmail());
+        return ResponseEntity.ok("담당자 연결 번호 변경 성공");
+    }
 
-    // TODO : 토큰 생성 요청 기능
 
 
 }
