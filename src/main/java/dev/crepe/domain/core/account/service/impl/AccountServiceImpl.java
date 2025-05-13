@@ -2,11 +2,9 @@ package dev.crepe.domain.core.account.service.impl;
 
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
-import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
 import dev.crepe.domain.core.account.exception.TagRequiredException;
-import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
@@ -15,13 +13,12 @@ import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
+import dev.crepe.global.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +64,10 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public List<GetBalanceResponse> getBalanceList(String email) {
-        List<Account> accounts = accountRepository.findByActor_Email(email);
+
+        List<Account> accounts = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
+                ? accountRepository.findByBank_Email(email)
+                : accountRepository.findByActor_Email(email);
 
         return accounts.stream()
                 .map(account -> GetBalanceResponse.builder()
@@ -80,15 +80,18 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public GetBalanceResponse getBalanceByCurrency(String email, String currency) {
-        return accountRepository.findByActor_Email(email).stream()
-                .filter(account -> account.getCoin().getCurrency().equalsIgnoreCase(currency))
-                .map(account -> GetBalanceResponse.builder()
-                        .coinName(account.getCoin().getName())
-                        .currency(account.getCoin().getCurrency())
-                        .balance(account.getBalance())
-                        .build())
-                .findAny()
-                .orElse(null);
+
+        Account account = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
+                ? accountRepository.findByBank_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException("해당 이메일과 통화로 등록된 계좌가 없습니다."))
+                : accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException("해당 이메일과 통화로 등록된 계좌가 없습니다."));
+
+        return GetBalanceResponse.builder()
+                .coinName(account.getCoin().getName())
+                .currency(account.getCoin().getCurrency())
+                .balance(account.getBalance())
+                .build();
     }
 
     @Transactional
@@ -96,7 +99,10 @@ public class AccountServiceImpl implements AccountService {
     public void submitAccountRegistrationRequest(GetAddressRequest request, String email) {
 
         // 1. 계좌조회
-        Account account = accountRepository.findByBank_EmailAndCoin_Currency(email, request.getCurrency())
+        Account account = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
+                ? accountRepository.findByBank_EmailAndCoin_Currency(email, request.getCurrency())
+                .orElseThrow(AccountNotFoundException::new)
+                : accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(AccountNotFoundException::new);
 
         // 2. 코인 정보 조회
@@ -121,10 +127,15 @@ public class AccountServiceImpl implements AccountService {
     @Transactional(readOnly = true)
     @Override
     public GetAddressResponse getAddressByCurrency(String currency, String email) {
+
+        Account account = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
+                ? accountRepository.findByBank_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException(email))
+                : accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException(email));
+
         Coin coin = coinRepository.findByCurrency(currency);
 
-        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
-                .orElseThrow(() -> new AccountNotFoundException(email));
 
         GetAddressResponse.GetAddressResponseBuilder builder = GetAddressResponse.builder()
                 .currency(coin.getCurrency())
@@ -142,7 +153,10 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void reRegisterAddress(String email, GetAddressRequest request) {
 
-        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
+        Account account = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
+                ? accountRepository.findByBank_EmailAndCoin_Currency(email, request.getCurrency())
+                .orElseThrow(() -> new AccountNotFoundException(request.getCurrency()))
+                : accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(request.getCurrency()));
 
         Coin coin = coinRepository.findByCurrency(request.getCurrency());
@@ -152,4 +166,5 @@ public class AccountServiceImpl implements AccountService {
 
         account.registerAddress(request.getAddress(), request.getTag());
     }
+
 }
