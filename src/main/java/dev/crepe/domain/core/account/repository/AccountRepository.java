@@ -21,5 +21,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     List<Account> findByActor_Email(String email);
 
+    List<Account> findByBank_Email(String email);
+
     Page<Account> findByAddressRegistryStatus(AddressRegistryStatus status, Pageable pageable);
 }
