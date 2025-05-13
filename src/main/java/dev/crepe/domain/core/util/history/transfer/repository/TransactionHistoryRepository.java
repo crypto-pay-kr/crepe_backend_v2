@@ -23,4 +23,16 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
 
     List<TransactionHistory> findAllByPayHistory_Order(Order order);
 
+    TransactionHistory findByPayHistory_IdAndAccount_Actor_EmailAndType(
+            Long payHistoryId,
+            String email,
+            TransactionType type
+    );
+    TransactionHistory findByPayHistory_IdAndAccount_Actor_EmailNotAndType(
+            Long payHistoryId,
+            String email,
+            TransactionType type
+    );
+
+
 }

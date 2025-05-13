@@ -2,6 +2,7 @@ package dev.crepe.domain.channel.actor.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.channel.actor.service.ActorWithdrawService;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetWithdrawRequest;
 import dev.crepe.domain.core.transfer.service.WithdrawService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,9 +16,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping
 @AllArgsConstructor
 @Tag(name = "Withdraw API", description = "출금 관련 API")
-public class WithdrawController {
+public class ActorWithdrawController {
 
-    private final WithdrawService withdrawService;
+    private final ActorWithdrawService actorWithdrawService;
 
     @Operation(
             summary = "정산 요청",
@@ -30,7 +31,7 @@ public class WithdrawController {
             AppAuthentication auth,
             @RequestBody GetWithdrawRequest request
     ) {
-        withdrawService.requestWithdraw(request, auth.getUserEmail());
+        actorWithdrawService.requestWithdraw(request, auth.getUserEmail());
         return ResponseEntity.ok("정산요청 완료");
     }
 

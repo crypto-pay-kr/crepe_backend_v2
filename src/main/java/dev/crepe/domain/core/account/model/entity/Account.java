@@ -28,7 +28,7 @@ public class Account {
     private Actor actor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coin_id", nullable = false)
+    @JoinColumn(name = "coin_id")
     private Coin coin;
 
     @ManyToOne(fetch = FetchType.LAZY)
