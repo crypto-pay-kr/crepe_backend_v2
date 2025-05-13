@@ -44,4 +44,8 @@ public class Bank extends BaseEntity {
     @Column(nullable = false)
     private UserRole role;
 
+    public void changePhoneNum(String newPhone) {
+        this.bankPhoneNum=newPhone;
+    }
+
 }
