@@ -31,7 +31,6 @@ public class CoinInitService {
                     .isTag(isTag)
                     .minDeposit(minDeposit)
                     .coinImage(coinImage)
-                    .createdAt(LocalDateTime.now())
                     .build();
             coinRepository.save(coin);
         }

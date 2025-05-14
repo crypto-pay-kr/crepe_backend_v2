@@ -1,9 +1,9 @@
-package dev.crepe.domain.core.util.history.transfer.repository;
+package dev.crepe.domain.core.util.history.business.repository;
 
 import dev.crepe.domain.channel.market.order.model.entity.Order;
-import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
-import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
-import dev.crepe.domain.core.util.history.transfer.model.entity.TransactionHistory;
+import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
+import dev.crepe.domain.core.util.history.business.model.TransactionType;
+import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;

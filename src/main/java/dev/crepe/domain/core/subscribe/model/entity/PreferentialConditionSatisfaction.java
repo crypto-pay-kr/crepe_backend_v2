@@ -1,8 +1,9 @@
-package dev.crepe.domain.core.product.model.entity;
+package dev.crepe.domain.core.subscribe.model.entity;
 
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
-import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 //우대 조건 충족
 @Entity
 @Table(name = "preferential_condition_satisfaction")
-public class PreferentialConditionSatisfaction {
+public class PreferentialConditionSatisfaction extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -5,12 +5,14 @@ import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 // 포토폴리오 -> 자본금 내  코인 구성정보
 @Entity
+@Getter
 @Table(name = "coin-portfolio")
 public class Portfolio extends BaseEntity {
 
@@ -28,8 +30,5 @@ public class Portfolio extends BaseEntity {
 
     @Column(name = "amount", precision = 20, scale = 8, nullable = false)
     private BigDecimal amount;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
 
 }

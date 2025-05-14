@@ -1,4 +1,4 @@
-package dev.crepe.domain.core.util.history.transfer.model.dto;
+package dev.crepe.domain.core.util.history.business.model.dto;
 
 import lombok.Builder;
 import lombok.Getter;
