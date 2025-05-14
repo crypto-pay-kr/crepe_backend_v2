@@ -56,8 +56,8 @@ public class Account extends BaseEntity {
     private AddressRegistryStatus addressRegistryStatus= AddressRegistryStatus.NOT_REGISTERED;
 
     @Builder.Default
-    @Column(name = "available_balance", precision = 20, scale = 8, nullable = false)
-    private BigDecimal availableBalance = BigDecimal.ZERO;
+    @Column(name = "non_available_balance", precision = 20, scale = 8, nullable = false)
+    private BigDecimal nonAvailableBalance = BigDecimal.ZERO;
 
     @Column(name="tag")
     private String tag;
@@ -74,29 +74,16 @@ public class Account extends BaseEntity {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
 
-
-    public void allocateBudget(BigDecimal amount) {
-        if (availableBalance.compareTo(amount) < 0) {
-            throw new InsufficientBalanceException();
-        }
-        this.availableBalance = this.availableBalance.subtract(amount);
+    public void addNonAvailableBalance(BigDecimal amount) {
+        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
     }
 
-    public void releaseBudget(BigDecimal amount) {
-        this.availableBalance = this.availableBalance.add(amount);
-    }
 
-    // 기존 메서드 수정
-    public void reduceAmount(BigDecimal amount) {
-        if (availableBalance.compareTo(amount) < 0) {
+    public void deductBalance(BigDecimal amount) {
+        if (this.balance.compareTo(amount) < 0) {
             throw new InsufficientBalanceException();
         }
         this.balance = this.balance.subtract(amount);
-        this.availableBalance = this.availableBalance.subtract(amount);
     }
 
-    public void addAmount(BigDecimal amount) {
-        this.balance = this.balance.add(amount);
-        this.availableBalance = this.availableBalance.add(amount);
-    }
 }

@@ -83,6 +83,10 @@ public class Product extends BaseEntity {
     @Column(name="product_image")
     private String imageUrl;
 
+    // 반려사유
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
     // 우대 금리, 조건
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -116,12 +120,13 @@ public class Product extends BaseEntity {
         this.preferentialConditions.add(condition);
     }
 
-    // 여러 우대 금리 조건 추가 메서드
-    public void addPreferentialConditions(List<PreferentialInterestCondition> conditions) {
-        if (conditions != null) {
-            for (PreferentialInterestCondition condition : conditions) {
-                addPreferentialCondition(condition);
-            }
+    public void updateStatus(BankProductStatus status, String reason) {
+        this.status = status;
+
+        if (status == BankProductStatus.APPROVED) {
+            this.rejectionReason = null;
+        } else if (status == BankProductStatus.REJECTED) {
+            this.rejectionReason = reason;
         }
     }
 }

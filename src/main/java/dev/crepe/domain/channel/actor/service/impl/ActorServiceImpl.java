@@ -108,6 +108,7 @@ public class ActorServiceImpl  implements ActorService {
         return ResponseEntity.ok(null);
     }
 
+    // 소득 랜덤 부여 함수
     public GetFinancialSummaryResponse getActorAsset(Long userId){
         int incomeGroup = random.nextInt(3);
 

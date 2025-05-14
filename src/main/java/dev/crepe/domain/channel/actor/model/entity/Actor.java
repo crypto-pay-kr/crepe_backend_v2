@@ -53,6 +53,9 @@ public class Actor extends BaseEntity {
     @Column
     private String birth;
 
+    @Column
+    private String gender;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role;
