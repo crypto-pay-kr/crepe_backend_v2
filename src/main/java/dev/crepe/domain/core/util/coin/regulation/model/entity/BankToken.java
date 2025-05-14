@@ -1,7 +1,8 @@
 package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.core.util.history.token.model.BankTokenStatus;
+import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenPortfolioHistory;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Getter
@@ -41,5 +43,15 @@ public class BankToken extends BaseEntity {
     @Column(name = "status", nullable = false)
     private BankTokenStatus status;
 
+    @OneToMany(mappedBy = "bankToken", fetch = FetchType.LAZY)
+    private List<TokenPortfolioHistory> tokenHistories;
+
+    @OneToMany(mappedBy = "bankToken", fetch = FetchType.LAZY)
+    private List<Portfolio> portfolios;
+
+
+    public void updateStatus(BankTokenStatus status) {
+        this.status = status;
+    }
 
 }

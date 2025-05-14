@@ -3,7 +3,7 @@ package dev.crepe.domain.core.util.history.token.model.entity;
 // 토큰 변경 및 상태 내역
 
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.history.token.model.BankTokenStatus;
+import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -18,8 +18,8 @@ import java.math.BigDecimal;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "token_history")
-public class TokenHistory extends BaseEntity {
+@Table(name = "token_portfolio_history")
+public class TokenPortfolioHistory extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

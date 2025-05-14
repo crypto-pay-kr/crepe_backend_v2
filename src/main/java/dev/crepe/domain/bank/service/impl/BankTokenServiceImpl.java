@@ -1,19 +1,25 @@
 package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
+import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankTokenService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
+import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenSetupService;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioConstituteService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -21,10 +27,13 @@ public class BankTokenServiceImpl implements BankTokenService {
 
     private final PortfolioConstituteService portfolioConstituteService;
     private final BankTokenSetupService bankTokenSetupService;
+    private final AccountService accountService;
     private final UpbitExchangeService upbitExchangeService;
     private final BankRepository bankRepository;
     private final AccountRepository accountRepository;
+    private final BankTokenRepository bankTokenRepository;
 
+    // 은행 토큰 생성
     @Override
     public void createBankToken(CreateBankTokenRequest request, String bankEmail) {
 
@@ -36,30 +45,44 @@ public class BankTokenServiceImpl implements BankTokenService {
             throw new IllegalArgumentException("은행 이름이 일치하지 않습니다.");
         }
 
+        // 포토폴리오 구성 정보 유효성 검증
         portfolioConstituteService.validatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
 
-        // 현재 시세 조회 -> upbitExchangeService 호출해서 코인별 시세 받아오고 오차 검증
-        // 오차 허용 범위 내 확인 되면 다음 단계 진행
+        // 시세 오차 허용 범위 충족 여부 검증
         request.getPortfolioCoins().forEach(coin -> {
-            BigDecimal latestRate = upbitExchangeService.getLatestRate(coin.getCurrency());
-            BigDecimal difference = coin.getCurrentPrice().subtract(latestRate).abs();
-            System.out.println("코인: " + coin.getCoinName() + ", 현재 시세: " + latestRate + ", 요청 시세: " + coin.getCurrentPrice() + ", 오차: " + difference);
-            if (difference.compareTo(BigDecimal.valueOf(25)) > 0) {
-                throw new IllegalArgumentException("코인 시세 오차 허용 범위를 초과했습니다. (허용 범위: ±25)");
-            }
+            upbitExchangeService.validateRateWithinThreshold(
+                    coin.getCurrentPrice(),
+                    coin.getCurrency(),
+                    BigDecimal.valueOf(1)
+            );
         });
         // bankToken 발행 요청 service 호출
-        bankTokenSetupService.requestTokenGenerate(request, bankEmail);
+        BankToken bankToken = bankTokenSetupService.requestTokenGenerate(request, bankEmail);
 
-
-    }
-
-    private void validateAccountExistence(List<CreateBankTokenRequest.CoinInfo> portfolioCoins, String bankEmail) {
-        portfolioCoins.forEach(coin -> {
-            accountRepository.findByBank_EmailAndCoin_Currency(bankEmail, coin.getCoinName())
-                    .orElseThrow(() -> new AccountNotFoundException("코인 " + coin.getCoinName() + "에 대한 계좌가 존재하지 않습니다."));
-        });
+        // PENDING 상태 계좌 생성
+        accountService.createBankTokenAccount(bankToken);
 
     }
 
+    // 생성된 토큰 계좌 조회
+    @Override
+    @Transactional(readOnly = true)
+    public GetTokenAccountInfoResponse getAccountByBankToken(String bankEmail) {
+        Bank bank = bankRepository.findByEmail(bankEmail)
+                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 은행을 찾을 수 없습니다."));
+        BankToken bankToken = bankTokenRepository.findByBank(bank)
+                .orElseThrow(() -> new IllegalArgumentException("은행이 보유한 토큰이 없습니다."));
+        return accountRepository.findByBankAndBankTokenAndAddressRegistryStatus(
+                bank,
+                bankToken,
+                AddressRegistryStatus.ACTIVE
+        ).map(account -> GetTokenAccountInfoResponse.builder()
+                .bankName(bank.getName())
+                .tokenName(bankToken.getName())
+                .tokenCurrency(bankToken.getCurrency())
+                .balance(account.getBalance())
+                .accountAddress(account.getAccountAddress())
+                .build()
+        ).orElseGet(() -> GetTokenAccountInfoResponse.builder().build());
+    }
 }

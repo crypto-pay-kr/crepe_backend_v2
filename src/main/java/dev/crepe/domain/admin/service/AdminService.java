@@ -13,8 +13,7 @@ import java.util.List;
 public interface AdminService {
 
     ApiResponse<TokenResponse> adminLogin(LoginRequest request);
-    void bankSignup(BankSignupDataRequest request, MultipartFile bankCiImage);
 
-//    List<GetPendingBankTokenResponse> getPendingBankTokenResponseList(int page, int size);
+
 
 }

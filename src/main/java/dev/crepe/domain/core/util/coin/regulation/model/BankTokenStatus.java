@@ -1,4 +1,4 @@
-package dev.crepe.domain.core.util.history.token.model;
+package dev.crepe.domain.core.util.coin.regulation.model;
 
 public enum BankTokenStatus {
     PENDING,     // 요청중

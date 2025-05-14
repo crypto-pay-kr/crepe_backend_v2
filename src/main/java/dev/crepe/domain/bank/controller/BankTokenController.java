@@ -3,14 +3,15 @@ package dev.crepe.domain.bank.controller;
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.BankAuth;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
+import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
 import dev.crepe.domain.bank.service.BankTokenService;
+import dev.crepe.domain.core.account.model.entity.Account;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/bank/token")
@@ -26,6 +27,13 @@ public class BankTokenController {
         return ResponseEntity.ok("토큰 발행 요청이 접수되었습니다.");
     }
 
+    // BankToken 연관 계좌 조회 API
+    @GetMapping("/account")
+    @BankAuth
+    public ResponseEntity<GetTokenAccountInfoResponse> getAccountByBankToken(AppAuthentication auth) {
+        GetTokenAccountInfoResponse response = bankTokenService.getAccountByBankToken(auth.getUserEmail());
+        return ResponseEntity.ok(response);
+    }
 
 
 
