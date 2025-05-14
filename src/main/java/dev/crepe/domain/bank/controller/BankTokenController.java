@@ -3,10 +3,16 @@ package dev.crepe.domain.bank.controller;
 public class BankTokenController {
 
 
-    //TODO : Portfolio 구성 기능
+    // TODO : 토큰 변경 이력 목록 조회 API
 
-    // TODO :  자본금 결정 기능
 
-    // TODO : 토큰 생성 요청 기능
+    // TODO : 토큰 포토폴리오 조회 API
+
+
+    // TODO : 토큰 포토폴리오 초기 생성 및 발행 요청 API
+
+
+    // TODO : 토큰 포토폴리오 변경 및 재발행 요청 API
+
 
 }

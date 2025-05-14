@@ -1,4 +1,4 @@
-package dev.crepe.domain.core.util.coin.global.model.entity;
+package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
