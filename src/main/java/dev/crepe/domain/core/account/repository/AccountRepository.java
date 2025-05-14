@@ -18,7 +18,11 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     Optional<Account> findByActor_EmailAndCoin_Currency(String email, String currency);
 
+    Optional<Account> findByBank_EmailAndCoin_Currency(String email, String currency);
+
     List<Account> findByActor_Email(String email);
+
+    List<Account> findByBank_Email(String email);
 
     Page<Account> findByAddressRegistryStatus(AddressRegistryStatus status, Pageable pageable);
 

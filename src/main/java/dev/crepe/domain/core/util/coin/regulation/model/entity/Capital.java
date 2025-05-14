@@ -8,7 +8,8 @@ import lombok.Getter;
 import java.math.BigDecimal;
 
 
-// 자본금 -> 은행의 예치금 정보
+
+// 자본금 -> 은행의 토큰 정보
 @Entity
 @Getter
 @Table(name = "capital")
@@ -30,9 +31,5 @@ public class Capital extends BaseEntity {
 
     @Column(name = "collateral_ratio", nullable = false)
     private Float capitalRatio;
-
-
-
-
 
 }

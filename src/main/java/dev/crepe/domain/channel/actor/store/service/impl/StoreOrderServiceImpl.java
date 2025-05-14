@@ -8,7 +8,7 @@ import dev.crepe.domain.channel.market.order.exception.InvalidOrderIdException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
-import dev.crepe.domain.core.pay.exception.PayHistoryNotFoundException;
+import dev.crepe.domain.core.util.history.pay.execption.PayHistoryNotFoundException;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.pay.repostiory.PayHistoryRepository;

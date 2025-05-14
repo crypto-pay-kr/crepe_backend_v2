@@ -6,10 +6,7 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -31,6 +28,7 @@ public class TransactionHistory extends BaseEntity {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id", nullable = true)
     private PayHistory payHistory;
@@ -41,7 +39,7 @@ public class TransactionHistory extends BaseEntity {
     @Column(name = "transaction_id", length = 100)
     private String transactionId;
 
-    @Column(name="after_balance")
+    @Column(name="after_balance", precision=20,scale=8)
     private BigDecimal afterBalance;
 
 
@@ -65,6 +63,9 @@ public class TransactionHistory extends BaseEntity {
 
     public void updateAfterBalance(BigDecimal balance) {
         this.afterBalance = balance;
+    }
+    public void refundTransactionStatus() {
+        this.status=TransactionStatus.REFUNDED;
     }
 
 }

@@ -1,20 +1,19 @@
 package dev.crepe.domain.bank.model.entity;
 
 import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.auth.UserRole;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.GenericGenerator;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name="bank")
 @Getter
-@Builder
+@SuperBuilder
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Bank extends BaseEntity {
@@ -33,7 +32,7 @@ public class Bank extends BaseEntity {
     private String name;
 
     @Column(nullable = false)
-    private String phoneNum;
+    private String bankPhoneNum;
 
     @Column(nullable = false)
     private String imageUrl;
@@ -44,5 +43,12 @@ public class Bank extends BaseEntity {
     @OneToMany(mappedBy = "bank", cascade = CascadeType.ALL)
     private List<Product> products = new ArrayList<>();
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
+
+    public void changePhoneNum(String newPhone) {
+        this.bankPhoneNum=newPhone;
+    }
 
 }

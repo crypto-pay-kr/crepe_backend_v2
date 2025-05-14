@@ -10,4 +10,6 @@ public interface PayService {
 
     void cancelForOrder(Order order);
 
+    void refundForOrder(Long payId, String email);
+
 }

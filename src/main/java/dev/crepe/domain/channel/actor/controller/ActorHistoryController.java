@@ -2,8 +2,8 @@ package dev.crepe.domain.channel.actor.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.channel.actor.service.ActorHistoryService;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
-import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping
 @AllArgsConstructor
 @Tag(name = "history API", description = "거래 내역 API")
-public class HistoryController {
+public class ActorHistoryController {
 
-    private final TransactionHistoryService transactionHistoryService;
+    private final ActorHistoryService actorHistoryService;
 
     @Operation(
             summary = " 내역 조회",
@@ -34,8 +34,7 @@ public class HistoryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        //TODO 환전내역 추가
-        Slice<GetTransactionHistoryResponse> response = transactionHistoryService.getTransactionHistory(
+        Slice<GetTransactionHistoryResponse> response = actorHistoryService.getTransactionHistory(
                 auth.getUserEmail(), currency, page, size);
         return ResponseEntity.ok(response);
     }

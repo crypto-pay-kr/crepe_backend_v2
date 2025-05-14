@@ -4,7 +4,6 @@ import dev.crepe.domain.admin.dto.response.GetPendingWithdrawAddressListResponse
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import org.springframework.data.domain.Page;
 
-import java.util.List;
 
 public interface AdminAddressService {
 
