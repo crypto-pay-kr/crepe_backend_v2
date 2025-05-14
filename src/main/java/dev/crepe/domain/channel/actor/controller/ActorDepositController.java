@@ -3,6 +3,7 @@ package dev.crepe.domain.channel.actor.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.channel.actor.service.ActorDepositService;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetDepositRequest;
 import dev.crepe.domain.core.transfer.service.DepositService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,9 +19,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @Slf4j
 @Tag(name = "Deposit API", description = "입금 API")
-public class DepositController {
+public class ActorDepositController {
 
-    private final DepositService depositService;
+    private final ActorDepositService actorDepositService;
 
     @Operation(
             summary = "계좌 입금 요청",
@@ -31,7 +32,7 @@ public class DepositController {
     @PostMapping("/deposit")
     public ResponseEntity<String> requestDeposit(@RequestBody GetDepositRequest request,
                                                  AppAuthentication auth) {
-        depositService.requestDeposit(request, auth.getUserEmail());
+        actorDepositService.requestDeposit(request, auth.getUserEmail());
         return ResponseEntity.ok("입금 처리가 완료되었습니다.");
     }
 

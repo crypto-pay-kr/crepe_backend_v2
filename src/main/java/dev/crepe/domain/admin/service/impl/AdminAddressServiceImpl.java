@@ -33,12 +33,17 @@ public class AdminAddressServiceImpl implements AdminAddressService {
 
         return accounts.map(account -> GetPendingWithdrawAddressListResponse.builder()
                 .id(account.getId())
-                .storeName(account.getActor().getName())
+                .depositor(
+                        account.getActor() == null
+                                ? account.getBank().getName()
+                                : account.getActor().getName()
+                )
                 .currency(account.getCoin().getCurrency())
                 .address(account.getAccountAddress())
                 .tag(account.getTag())
                 .addressRegistryStatus(account.getAddressRegistryStatus().name())
-                .build());
+                .build()
+        );
     }
     @Override
     @Transactional

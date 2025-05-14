@@ -1,7 +1,6 @@
-package dev.crepe.domain.core.pay.exception;
+package dev.crepe.domain.core.util.history.pay.execption;
 
 import dev.crepe.global.error.exception.LocalizedMessageException;
-import org.hibernate.sql.results.spi.LoadContexts;
 import org.springframework.http.HttpStatus;
 
 public class PayHistoryNotFoundException extends LocalizedMessageException {
