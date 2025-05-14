@@ -1,13 +1,11 @@
-package dev.crepe.domain.core.product.model.entity;
+package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 
 // 자본금 -> 은행의 예치금 정보
