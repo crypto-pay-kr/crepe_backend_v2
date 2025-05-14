@@ -41,10 +41,8 @@ import dev.crepe.domain.core.product.model.dto.request.EligibilityCriteriaDto;
 import dev.crepe.domain.core.product.model.dto.request.PreferentialRateConditionDto;
 import dev.crepe.domain.core.product.model.dto.request.RegisterProductRequest;
 import dev.crepe.domain.core.product.model.dto.response.RegisterProductResponse;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.Capital;
 import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.product.model.entity.Product;
-import dev.crepe.domain.core.product.repository.CapitalRepository;
 import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.global.repository.PortfolioRepository;
@@ -66,7 +64,6 @@ public class BankServiceImpl implements BankService {
 
     private final BankRepository bankRepository;
     private final BankTokenRepository bankTokenRepository;
-    private final CapitalRepository capitalRepository;
     private final PortfolioRepository portfolioRepository;
     private final AccountRepository accountRepository;
     private final S3Service s3Service;
@@ -179,9 +176,6 @@ public class BankServiceImpl implements BankService {
     public RegisterProductResponse registerProduct(String email, MultipartFile productImage, RegisterProductRequest request) {
         Bank bank = bankRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("은행 계정을 찾을 수 없습니다: " + email));
-
-        Capital capital = capitalRepository.findByBank(bank)
-                .orElseThrow(() -> new EntityNotFoundException("은행의 자본금 정보를 찾을 수 없습니다"));
 
         BankToken bankToken = bankTokenRepository.findByBank(bank)
                 .orElseThrow(() -> new EntityNotFoundException("은행의 토큰을 찾을 수 없습니다"));

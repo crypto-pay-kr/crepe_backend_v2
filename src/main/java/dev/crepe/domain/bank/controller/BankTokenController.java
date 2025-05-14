@@ -19,7 +19,6 @@ public class BankTokenController {
 
     private final BankTokenService bankTokenService;
 
-    // TODO : 은행 토큰 발행 요청 API
     @PostMapping("/create")
     @BankAuth
     public ResponseEntity<String> createBankToken(@RequestBody @Valid CreateBankTokenRequest request, AppAuthentication auth) {

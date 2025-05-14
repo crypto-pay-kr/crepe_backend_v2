@@ -1,6 +1,7 @@
 package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
+import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankTokenService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
@@ -28,15 +29,13 @@ public class BankTokenServiceImpl implements BankTokenService {
     public void createBankToken(CreateBankTokenRequest request, String bankEmail) {
 
         // email로 bankName을 받아 request.bankName과 일치하는지 검증
-        String bankName = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new IllegalArgumentException("은행을 찾을 수 없습니다."))
-                        .getName();
+        Bank bank = bankRepository.findByEmail(bankEmail)
+                .orElseThrow(() -> new IllegalArgumentException("은행을 찾을 수 없습니다."));
 
-        if(!bankName.equals(request.getBankName())) {
+        if(!bank.getName().equals(request.getBankName())) {
             throw new IllegalArgumentException("은행 이름이 일치하지 않습니다.");
         }
 
-        // 포토폴리오 구성 정보 유효성 검증
         portfolioConstituteService.validatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
 
         // 현재 시세 조회 -> upbitExchangeService 호출해서 코인별 시세 받아오고 오차 검증

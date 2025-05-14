@@ -6,13 +6,15 @@ import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.core.util.coin.global.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
-import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
+import dev.crepe.domain.core.util.history.token.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.TokenPrice;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.repository.TokenPriceRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenSetupService;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
+import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -31,6 +33,7 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
     private final PortfolioRepository portfolioRepository;
     private final CoinRepository coinRepository;
     private final BankRepository bankRepository;
+    private final TokenHistoryRepository tokenHistoryRepository;
 
     @Override
     @Transactional
@@ -39,6 +42,11 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
         Bank bank = bankRepository.findByEmail(bankEmail)
                 .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 등록된 은행이 존재하지 않습니다."));
 
+
+        if(bankTokenRepository.existsByBank_Id(bank.getId())) {
+            throw new IllegalStateException("이미 발행 요청된 토큰이 존재합니다.");
+        }
+
         // 토큰 시가총액 계산
         BigDecimal total = calculateTotalPrice(request);
 
@@ -46,7 +54,7 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
                 .bank(bank)
                 .name(request.getBankName())
                 .currency(request.getTokenCurrency())
-                .totalSupply(request.getTotalSupply())
+                .totalSupply(total)
                 .status(BankTokenStatus.PENDING)
                 .build();
         bankTokenRepository.save(bankToken);
@@ -69,6 +77,15 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
                     .build();
             portfolioRepository.save(portfolio);
         });
+
+        // TokenHistory 생성 및 저장
+        TokenHistory tokenHistory = TokenHistory.builder()
+                .bankToken(bankToken)
+                .status(BankTokenStatus.PENDING)
+                .amount(total)
+                .description(request.getDescription())
+                .build();
+        tokenHistoryRepository.save(tokenHistory);
 
 
         // 로그 출력

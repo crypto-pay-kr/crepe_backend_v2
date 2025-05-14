@@ -1,7 +1,7 @@
 package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
+import dev.crepe.domain.core.util.history.token.model.BankTokenStatus;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -34,7 +33,7 @@ public class BankToken extends BaseEntity {
     @Column(name = "currency", length = 5, nullable = false)
     private String currency;
 
-    //총 발행량 -> ex. 100만원
+    //총 발행량 -> ex. 100만원(고정값)
     @Column(name = "total_supply", precision = 20, scale = 8, nullable = false)
     private BigDecimal totalSupply;
 
