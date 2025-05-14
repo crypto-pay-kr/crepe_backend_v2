@@ -4,12 +4,14 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 
 @Entity
+@Getter
 @Table(name = "subscribe")
 public class Subscribe {
 
@@ -52,5 +54,16 @@ public class Subscribe {
     private LocalDateTime lastInterestPaidDate;
 
 
+    public void deposit(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("예치 금액은 0보다 커야 합니다.");
+        }
+
+        this.balance = this.balance.add(amount);
+
+        if (this.status == SubscribeStatus.PENDING) {
+            this.status = SubscribeStatus.ACTIVE;
+        }
+    }
 
 }
