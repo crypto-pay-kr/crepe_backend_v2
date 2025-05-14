@@ -1,13 +1,21 @@
 package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 //토큰시세
 @Entity
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Table(name = "token_price")
-public class TokenPrice {
+public class TokenPrice extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,12 +25,9 @@ public class TokenPrice {
     @JoinColumn(name = "bank_token_id")
     private BankToken bankToken;
 
-    // 기준 가격
+    // 토큰 시가총액
     @Column(name = "price", precision = 20, scale = 8, nullable = false)
     private BigDecimal price;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
 
 
 }
