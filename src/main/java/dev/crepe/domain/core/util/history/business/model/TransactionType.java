@@ -1,4 +1,4 @@
-package dev.crepe.domain.core.util.history.transfer.model;
+package dev.crepe.domain.core.util.history.business.model;
 
 public enum TransactionType {
     DEPOSIT,        // 입금

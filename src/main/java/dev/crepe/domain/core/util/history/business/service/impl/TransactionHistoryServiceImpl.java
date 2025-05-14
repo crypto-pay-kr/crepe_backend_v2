@@ -1,20 +1,17 @@
-package dev.crepe.domain.core.util.history.transfer.service.impl;
+package dev.crepe.domain.core.util.history.business.service.impl;
 
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHistoryResponse;
-import dev.crepe.domain.core.util.history.transfer.repository.TransactionHistoryRepository;
-import dev.crepe.domain.core.util.history.transfer.service.TransactionHistoryService;
+import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
+import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-
-
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

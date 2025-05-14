@@ -3,13 +3,15 @@ package dev.crepe.domain.core.util.coin.regulation.model.entity;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 
 
 // 자본금 -> 은행의 토큰 정보
 @Entity
+@Getter
 @Table(name = "capital")
 public class Capital extends BaseEntity {
 
@@ -24,11 +26,10 @@ public class Capital extends BaseEntity {
     @Column(name = "total_deposit_amount", precision = 20, scale = 8, nullable = false)
     private BigDecimal totalDepositAmount;
 
-    @Column(name = "capital_amount", precision = 20, scale = 8, nullable = false)
+    @Column(name = "collateral_amount", precision = 20, scale = 8, nullable = false)
     private BigDecimal capitalAmount;
 
-    @Column(name = "capital_ratio", nullable = false)
+    @Column(name = "collateral_ratio", nullable = false)
     private Float capitalRatio;
-
 
 }

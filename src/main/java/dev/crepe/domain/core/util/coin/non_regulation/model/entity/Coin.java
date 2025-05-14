@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.util.coin.non_regulation.model.entity;
 
 
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.*;
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "coin")
-public class Coin  {
+public class Coin  extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,17 +38,10 @@ public class Coin  {
     @Column(name = "is_tag", nullable = false)
     private boolean isTag;
 
-    @Column(name ="min_deposit", nullable= false)
+    @Column(name = "min_deposit", nullable = false)
     private String minDeposit;
 
-    @Column(name="coin_image", nullable = false)
+    @Column(name = "coin_image", nullable = false)
     private String coinImage;
 
-    @CreatedDate
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-
-    @Column(name="data_status")
-    private boolean dataStatus = true;
 }

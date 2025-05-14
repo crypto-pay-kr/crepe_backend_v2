@@ -1,9 +1,9 @@
-package dev.crepe.domain.core.util.history.transfer.model.entity;
+package dev.crepe.domain.core.util.history.business.model.entity;
 
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
-import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
-import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
+import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
+import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
