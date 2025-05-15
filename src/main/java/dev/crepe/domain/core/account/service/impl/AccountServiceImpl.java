@@ -5,14 +5,17 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
 import dev.crepe.domain.core.account.exception.TagRequiredException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.account.util.GenerateAccountAddress;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.global.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AccountServiceImpl implements AccountService {
 
+    private final GenerateAccountAddress generateAccountAddress;
     private final AccountRepository accountRepository;
     private final CoinRepository coinRepository;
 
@@ -61,6 +65,25 @@ public class AccountServiceImpl implements AccountService {
         }
     }
 
+    @Override
+    @Transactional
+    public void createBankTokenAccount(BankToken bankToken) {
+        String accountAddress;
+        do {
+            accountAddress = generateAccountAddress.generate(bankToken.getBank());
+        } while (accountRepository.existsByAccountAddress(accountAddress));
+
+        Account account = Account.builder()
+                .bank(bankToken.getBank())
+                .bankToken(bankToken)
+                .availableBalance(bankToken.getTotalSupply())
+                .balance(bankToken.getTotalSupply())
+                .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
+                .accountAddress(accountAddress)
+                .build();
+
+        accountRepository.save(account);
+    }
 
     @Override
     public List<GetBalanceResponse> getBalanceList(String email) {

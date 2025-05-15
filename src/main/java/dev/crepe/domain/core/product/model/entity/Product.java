@@ -7,12 +7,21 @@ import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
 @Entity
 @Getter
 @Table(name = "bank_product")
@@ -21,6 +30,10 @@ public class Product extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id", nullable = false)
+    private Bank bank;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_token_id", nullable = false)
@@ -56,7 +69,7 @@ public class Product extends BaseEntity {
     @Column(name = "end_date")
     private LocalDateTime endDate;
 
-    // 가입조건
+    // 가입대상
     @Column(name = "join_condition", columnDefinition = "TEXT")
     private String joinCondition;
 
@@ -76,4 +89,49 @@ public class Product extends BaseEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
+    @Column(name="product_image")
+    private String imageUrl;
+
+    // 우대 금리, 조건
+    @Builder.Default
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
+
+    @Builder.Default
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Tag> tags = new ArrayList<>();
+
+    public void addTag(Tag tag) {
+        if (this.tags == null) {
+            this.tags = new ArrayList<>();
+        }
+        tag.setProduct(this);
+        this.tags.add(tag);
+    }
+
+    public void addTags(List<Tag> tagsToAdd) {
+        if (tagsToAdd != null) {
+            for (Tag tag : tagsToAdd) {
+                addTag(tag);
+            }
+        }
+    }
+
+    public void addPreferentialCondition(PreferentialInterestCondition condition) {
+        if (this.preferentialConditions == null) {
+            this.preferentialConditions = new ArrayList<>();
+        }
+        condition.setProduct(this); // 양방향 관계 설정
+        this.preferentialConditions.add(condition);
+    }
+
+    // 여러 우대 금리 조건 추가 메서드
+    public void addPreferentialConditions(List<PreferentialInterestCondition> conditions) {
+        if (conditions != null) {
+            for (PreferentialInterestCondition condition : conditions) {
+                addPreferentialCondition(condition);
+            }
+        }
+    }
 }
+

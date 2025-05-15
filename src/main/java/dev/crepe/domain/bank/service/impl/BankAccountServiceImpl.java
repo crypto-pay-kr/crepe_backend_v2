@@ -2,7 +2,7 @@ package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
-import dev.crepe.domain.bank.model.dto.response.GetAllAccountInfoResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.service.BankAccountService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +26,6 @@ public class BankAccountServiceImpl implements BankAccountService {
     private final AccountRepository accountRepository;
 
     // 은행 출금 계좌 등록
-
     @Transactional
     @Override
     public void createBankAccount(CreateBankAccountRequest request, String bankEmail) {
@@ -48,7 +48,6 @@ public class BankAccountServiceImpl implements BankAccountService {
 
 
     // 은행 출금 계좌 재등록
-
     @Transactional
     @Override
     public void changeBankAccount(CreateBankAccountRequest request, String bankEmail) {
@@ -93,17 +92,14 @@ public class BankAccountServiceImpl implements BankAccountService {
     // 은행 계좌 정보 조회
     @Transactional(readOnly = true)
     @Override
-    public List<GetAllAccountInfoResponse> getAccountInfoList(String email) {
+    public List<GetCoinAccountInfoResponse> getAccountInfoList(String email) {
 
         // email 유효성 검사
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("이메일은 null이거나 빈 값일 수 없습니다.");
         }
 
-        // email을 통해 Account 리스트 조회
         List<Account> accounts = accountRepository.findByBank_Email(email);
-
-        // 조회된 계좌가 없는 경우 예외 처리
         if (accounts.isEmpty()) {
             throw new AccountNotFoundException("해당 이메일로 등록된 계좌가 없습니다: " + email);
         }
@@ -111,17 +107,17 @@ public class BankAccountServiceImpl implements BankAccountService {
         // 각 Account 정보를 매핑하여 GetAllAccountInfoResponse 생성
         // ACTIVE 상태의 계좌만 필터링하고 매핑
         return accounts.stream()
-                .filter(account -> account.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE)
-                .map(account -> GetAllAccountInfoResponse.builder()
-                        .bankname(account.getBank() != null ? account.getBank().getName() : null)
-                        .coinName(account.getCoin().getName())
-                        .currency(account.getCoin().getCurrency())
-                        .accountAddres(account.getAccountAddress())
-                        .tag(account.getTag())
-                        .balance(account.getBalance().toPlainString())
+                .filter(a -> a.getCoin() != null) // 코인 정보가 없는 계좌는 제외
+                .filter(a -> a.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE)
+                .map(a -> GetCoinAccountInfoResponse.builder()
+                        .bankname(a.getBank() != null ? a.getBank().getName() : null)
+                        .coinName(a.getCoin().getName())
+                        .currency(a.getCoin().getCurrency())
+                        .accountAddress(a.getAccountAddress())
+                        .tag(a.getTag())
+                        .balance(a.getBalance().toPlainString())
                         .build())
-                .toList();
+                .collect(Collectors.toList());
     }
-
 
 }

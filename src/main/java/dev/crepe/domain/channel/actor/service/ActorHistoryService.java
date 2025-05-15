@@ -1,6 +1,6 @@
 package dev.crepe.domain.channel.actor.service;
 
-import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHistoryResponse;
+import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
 import org.springframework.data.domain.Slice;
 
 public interface ActorHistoryService {

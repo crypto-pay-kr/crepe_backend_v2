@@ -1,10 +1,10 @@
 package dev.crepe.domain.core.pay.service.schedule;
 
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.util.history.transfer.model.TransactionStatus;
-import dev.crepe.domain.core.util.history.transfer.model.TransactionType;
-import dev.crepe.domain.core.util.history.transfer.model.entity.TransactionHistory;
-import dev.crepe.domain.core.util.history.transfer.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
+import dev.crepe.domain.core.util.history.business.model.TransactionType;
+import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
+import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

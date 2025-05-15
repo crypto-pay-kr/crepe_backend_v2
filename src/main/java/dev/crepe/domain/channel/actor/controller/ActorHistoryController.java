@@ -3,7 +3,7 @@ package dev.crepe.domain.channel.actor.controller;
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorHistoryService;
-import dev.crepe.domain.core.util.history.transfer.model.dto.GetTransactionHistoryResponse;
+import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

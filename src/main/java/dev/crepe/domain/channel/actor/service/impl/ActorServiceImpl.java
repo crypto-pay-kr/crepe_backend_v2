@@ -6,6 +6,7 @@ import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.channel.actor.exception.*;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
+import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
@@ -22,20 +23,20 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.Random;
+
 
 @Service
 @RequiredArgsConstructor
 public class ActorServiceImpl  implements ActorService {
-
-
-
 
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenRepository tokenRepository;
     private final SmsManageService smsManageService;
-
+    private final Random random = new Random();
 
     @Override
     @Transactional
@@ -105,6 +106,34 @@ public class ActorServiceImpl  implements ActorService {
 
         actor.changeName(request.getNewName());
         return ResponseEntity.ok(null);
+    }
+
+    public GetFinancialSummaryResponse getActorAsset(Long userId){
+        int incomeGroup = random.nextInt(3);
+
+        BigDecimal annualIncome;
+        BigDecimal totalAsset;
+
+        switch (incomeGroup) {
+            case 0: // 저소득
+                annualIncome = new BigDecimal(random.nextInt(24000000) + 12000000); // 1200만원 ~ 3600만원
+                totalAsset = new BigDecimal(random.nextInt(50000000) + 5000000); // 500만원 ~ 5500만원
+                break;
+            case 1: // 중소득
+                annualIncome = new BigDecimal(random.nextInt(36000000) + 36000000); // 3600만원 ~ 7200만원
+                totalAsset = new BigDecimal(random.nextInt(300000000) + 50000000); // 5000만원 ~ 3.5억
+                break;
+            default: // 고소득
+                annualIncome = new BigDecimal(random.nextInt(120000000) + 72000000); // 7200만원 ~ 1.92억
+                totalAsset = new BigDecimal(random.nextInt(700000000) + 300000000); // 3억 ~ 10억
+                break;
+        }
+
+        return GetFinancialSummaryResponse.builder()
+                .userId(userId)
+                .annualIncome(annualIncome)
+                .totalAsset(totalAsset)
+                .build();
     }
 
 
