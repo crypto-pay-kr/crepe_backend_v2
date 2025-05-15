@@ -1,9 +1,15 @@
 package dev.crepe.domain.core.product.model.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 //우대 금리 조건
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 @Table(name = "preferential_interest_condition")
 public class PreferentialInterestCondition {
@@ -20,10 +26,20 @@ public class PreferentialInterestCondition {
     @Column(name = "title", length = 100, nullable = false)
     private String title;
 
-    @Column(name = "percent", nullable = false)
-    private Float percent;
+    @Column(name = "rate", nullable = false)
+    private Float rate;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public static PreferentialInterestCondition create(String description, Float rate) {
+        return PreferentialInterestCondition.builder()
+                .description(description)
+                .rate(rate)
+                .build();
+    }
 }

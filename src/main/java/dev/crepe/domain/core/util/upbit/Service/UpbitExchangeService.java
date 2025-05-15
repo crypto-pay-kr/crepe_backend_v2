@@ -2,7 +2,6 @@ package dev.crepe.domain.core.util.upbit.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.channel.market.order.exception.ExchangePriceNotMatchException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -45,19 +44,14 @@ public class UpbitExchangeService {
         }
     }
 
+    public void validateRateWithinThreshold(BigDecimal requestedRate, String currency, BigDecimal thresholdPercent) {
+        BigDecimal latestRate = getLatestRate(currency);
+        BigDecimal diff = requestedRate.subtract(latestRate).abs();
+        BigDecimal percentDiff = diff.divide(latestRate, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
 
-    public void validateExchangeRate(BigDecimal clientRate, String currency) {
-        // 서버에서 실시간으로 가져온 시세
-        BigDecimal serverRate = getLatestRate(currency);
-        // 허용 오차 비율 (1% = 0.01)
-        BigDecimal allowedPercentage = new BigDecimal("0.01");
-        // 실제 오차율 계산: (클라이언트 - 서버) / 서버
-        BigDecimal differenceRate = clientRate.subtract(serverRate)
-                .abs()
-                .divide(serverRate, 8, RoundingMode.HALF_UP);
-
-        if (differenceRate.compareTo(allowedPercentage) > 0) {
-            throw new ExchangePriceNotMatchException(currency);
+        if (percentDiff.compareTo(thresholdPercent) > 0) {
+            throw new IllegalArgumentException(
+                    "시세 오차가 설정된 허용 범위를 초과했습니다. (" + thresholdPercent + "% 이내)");
         }
     }
 }

@@ -1,29 +1,41 @@
 package dev.crepe.domain.core.product.model.entity;
 
+import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
 @Entity
 @Table(name = "bank_product")
-public class Product {
+public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
-    @JoinColumn(name = "bank_id", nullable = false)
-    private List<Product> products = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "token_id", nullable = false)
+    @JoinColumn(name = "bank_id", nullable = false)
+    private Bank bank;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_token_id", nullable = false)
     private BankToken bankToken;
 
     @Column(name = "product_name", length = 100, nullable = false)
@@ -39,34 +51,77 @@ public class Product {
     @Column(name = "status", nullable = false)
     private BankProductStatus status;
 
-
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
     @Column(name = "budget", precision = 20, scale = 8)
     private BigDecimal budget;
 
-    @Column(name = "duration")
-    private Integer duration;
+    // duration 필드 제거하고 시작일/종료일 추가
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
+    // 가입대상
+    @Column(name = "join_condition", columnDefinition = "TEXT")
+    private String joinCondition;
 
     //기본금리
     @Column(name = "base_interest_rate")
     private Float baseInterestRate;
 
-    //우대금리
-    @Column(name = "preferred_interest_rate")
-    private Float preferredInterestRate;
-
     //월 최대 입금액
-    @Column(name = "min_monthly_payment", precision = 20, scale = 8)
+    @Column(name = "max_monthly_payment", precision = 20, scale = 8)
     private BigDecimal maxMonthlyPayment;
 
     //최대 가입 인원
     @Column(name = "max_participants")
     private Integer maxParticipants;
 
+    @Column(name="product_image")
+    private String imageUrl;
 
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    // 우대 금리, 조건
+    @Builder.Default
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
+    @Builder.Default
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Tag> tags = new ArrayList<>();
+
+    public void addTag(Tag tag) {
+        if (this.tags == null) {
+            this.tags = new ArrayList<>();
+        }
+        tag.setProduct(this);
+        this.tags.add(tag);
+    }
+
+    public void addTags(List<Tag> tagsToAdd) {
+        if (tagsToAdd != null) {
+            for (Tag tag : tagsToAdd) {
+                addTag(tag);
+            }
+        }
+    }
+
+    public void addPreferentialCondition(PreferentialInterestCondition condition) {
+        if (this.preferentialConditions == null) {
+            this.preferentialConditions = new ArrayList<>();
+        }
+        condition.setProduct(this); // 양방향 관계 설정
+        this.preferentialConditions.add(condition);
+    }
+
+    // 여러 우대 금리 조건 추가 메서드
+    public void addPreferentialConditions(List<PreferentialInterestCondition> conditions) {
+        if (conditions != null) {
+            for (PreferentialInterestCondition condition : conditions) {
+                addPreferentialCondition(condition);
+            }
+        }
+    }
 }

@@ -7,6 +7,7 @@ import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "account")
-public class Account {
+public class Account extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,11 +31,11 @@ public class Account {
     private Actor actor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id")
+    @JoinColumn(name = "bank_id", nullable = false)
     private Bank bank;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coin_id", nullable = false)
+    @JoinColumn(name = "coin_id")
     private Coin coin;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -99,4 +100,3 @@ public class Account {
         this.availableBalance = this.availableBalance.add(amount);
     }
 }
-
