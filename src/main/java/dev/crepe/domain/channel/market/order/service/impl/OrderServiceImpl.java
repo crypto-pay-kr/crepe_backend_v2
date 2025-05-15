@@ -113,7 +113,7 @@ public class OrderServiceImpl implements OrderService {
         Actor store = actorRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new StoreNotFoundException(request.getStoreId()));
 
-        validateExchangeRate(request.getExchangeRate(),request.getCurrency());
+        upbitExchangeService.validateExchangeRate(request.getExchangeRate(),request.getCurrency());
 
         Order orders = Order.builder()
                 .totalPrice(calculateTotalPrice(request))
@@ -158,16 +158,4 @@ public class OrderServiceImpl implements OrderService {
                 .sum();
     }
 
-
-    public void validateExchangeRate(BigDecimal clientRate, String currency) {
-        // 서버에서 실시간으로 가져온 시세
-        BigDecimal serverRate = upbitExchangeService.getLatestRate(currency);
-
-        // 허용 가능한 시세 차이 범위 (절댓값 기준): +-10
-        BigDecimal allowedDiff = new BigDecimal("10");
-
-        if (clientRate.subtract(serverRate).abs().compareTo(allowedDiff) > 0) {
-            throw new ExchangePriceNotMatchException(currency);
-        }
-    }
 }

@@ -1,6 +1,7 @@
-package dev.crepe.domain.core.product.model.entity;
+package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.core.product.model.entity.Product;
 import jakarta.persistence.*;
 
 import java.math.BigDecimal;

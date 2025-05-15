@@ -57,8 +57,8 @@ public class TransactionHistory extends BaseEntity {
     }
 
 
-    public void cancelTransactionStatus() {
-        this.status = TransactionStatus.FAILED;
+    public void cancelTransactionType() {
+        this.type = TransactionType.CANCEL;
     }
 
     public void updateAfterBalance(BigDecimal balance) {

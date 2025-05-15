@@ -121,9 +121,9 @@ public class PayServiceImpl implements PayService {
         // 5. 관련된 거래내역 조회
         List<TransactionHistory> historyList = transactionHistoryRepository.findAllByPayHistory_Order(order);
 
-        // 6. 유저 가맹점의 거래 상태를 'FAILED'로 변경
+        // 6. 유저, 가맹점의 거래 타입을 'FAILED'로 변경
         for (TransactionHistory history : historyList) {
-                history.cancelTransactionStatus();
+                history.cancelTransactionType();
             transactionHistoryRepository.save(history);
         }
     }

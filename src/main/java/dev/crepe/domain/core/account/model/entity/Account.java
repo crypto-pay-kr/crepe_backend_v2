@@ -1,5 +1,7 @@
 package dev.crepe.domain.core.account.model.entity;
 
+import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.core.account.exception.InsufficientBalanceException;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
@@ -28,7 +30,11 @@ public class Account {
     private Actor actor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "coin_id")
+    @JoinColumn(name = "bank_id")
+    private Bank bank;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coin_id", nullable = false)
     private Coin coin;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -39,6 +45,7 @@ public class Account {
     @Column(name = "balance", precision = 20, scale = 8, nullable = false)
     private BigDecimal balance=BigDecimal.ZERO;
 
+
     @Column(name = "account_address", length = 255)
     private String accountAddress;
 
@@ -47,12 +54,12 @@ public class Account {
     @Column(name="address_status")
     private AddressRegistryStatus addressRegistryStatus= AddressRegistryStatus.NOT_REGISTERED;
 
+    @Builder.Default
+    @Column(name = "available_balance", precision = 20, scale = 8, nullable = false)
+    private BigDecimal availableBalance = BigDecimal.ZERO;
 
     @Column(name="tag")
     private String tag;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
 
     // 계좌 등록
     public void registerAddress(String address, String tag) {
@@ -65,14 +72,31 @@ public class Account {
     public void approveAddress() {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
-    // 금액 차감
-    public void reduceAmount(BigDecimal amount) {
-        this.balance = this.balance.subtract(amount);
+
+
+    public void allocateBudget(BigDecimal amount) {
+        if (availableBalance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.availableBalance = this.availableBalance.subtract(amount);
     }
-    // 금액 추가
+
+    public void releaseBudget(BigDecimal amount) {
+        this.availableBalance = this.availableBalance.add(amount);
+    }
+
+    // 기존 메서드 수정
+    public void reduceAmount(BigDecimal amount) {
+        if (availableBalance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.balance = this.balance.subtract(amount);
+        this.availableBalance = this.availableBalance.subtract(amount);
+    }
+
     public void addAmount(BigDecimal amount) {
         this.balance = this.balance.add(amount);
+        this.availableBalance = this.availableBalance.add(amount);
     }
-
-
 }
+
