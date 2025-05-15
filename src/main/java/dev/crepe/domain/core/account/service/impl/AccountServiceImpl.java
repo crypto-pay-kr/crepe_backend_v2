@@ -86,6 +86,16 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional
+    public void updateBankTokenAccount(BankToken bankToken) {
+        Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
+                .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
+
+        // 계좌 상태를 PENDING으로 업데이트
+        account.pendingAddress();
+    }
+
+    @Override
     public List<GetBalanceResponse> getBalanceList(String email) {
 
         List<Account> accounts = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))

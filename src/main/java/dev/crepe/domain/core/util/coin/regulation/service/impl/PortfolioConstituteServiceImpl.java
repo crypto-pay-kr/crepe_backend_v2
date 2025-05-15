@@ -2,6 +2,7 @@ package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
 
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
+import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioConstituteService;
@@ -33,6 +34,27 @@ public class PortfolioConstituteServiceImpl implements PortfolioConstituteServic
                 throw new IllegalArgumentException("포트폴리오의 각 코인의 수량(amount)은 0보다 커야 합니다.");
             }
 
+            accountRepository.findByBank_EmailAndCoin_Currency(bankEmail, coin.getCurrency())
+                    .orElseThrow(() -> new AccountNotFoundException("코인 " + coin.getCoinName() + "에 대한 계좌가 존재하지 않습니다."));
+        }
+
+    }
+
+
+    // 포토폴리오 재구성 유효성 검증
+    @Override
+    public void reValidatePortfolioConstitute(List<ReCreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail) {
+
+        if (coinInfoList == null || coinInfoList.size() < 2) {
+            throw new IllegalArgumentException("포트폴리오 구성은 최소 2개 이상의 코인으로 이루어져야 합니다.");
+        }
+
+        for (ReCreateBankTokenRequest.CoinInfo coin : coinInfoList) {
+            if (coin.getAmount() == null || coin.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("포트폴리오의 각 코인의 수량(amount)은 0보다 커야 합니다.");
+            }
+
+            // 새로운 계좌 추가 시 계좌가 있는지 확인
             accountRepository.findByBank_EmailAndCoin_Currency(bankEmail, coin.getCurrency())
                     .orElseThrow(() -> new AccountNotFoundException("코인 " + coin.getCoinName() + "에 대한 계좌가 존재하지 않습니다."));
         }

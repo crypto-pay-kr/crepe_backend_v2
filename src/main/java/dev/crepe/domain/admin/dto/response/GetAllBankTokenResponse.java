@@ -15,7 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GetPendingBankTokenResponse {
+public class GetAllBankTokenResponse {
 
 
     private String bankName;

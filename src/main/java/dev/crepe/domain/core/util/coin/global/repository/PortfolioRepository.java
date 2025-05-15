@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface PortfolioRepository extends JpaRepository<Portfolio, Long> {
     List<Portfolio> findByBankToken(BankToken bankToken);
+
+    void deleteAllByBankToken(BankToken bankToken);
 }

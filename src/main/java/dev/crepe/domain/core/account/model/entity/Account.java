@@ -31,7 +31,7 @@ public class Account extends BaseEntity {
     private Actor actor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id", nullable = false)
+    @JoinColumn(name = "bank_id")
     private Bank bank;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -73,6 +73,14 @@ public class Account extends BaseEntity {
     public void approveAddress() {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
+
+    // 계좌 승인 반려
+    public void rejectAddress() {
+        this.addressRegistryStatus = AddressRegistryStatus.REJECTED;
+    }
+
+    // 계좌 등록 대기중
+    public void pendingAddress() { this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;}
 
 
     public void allocateBudget(BigDecimal amount) {

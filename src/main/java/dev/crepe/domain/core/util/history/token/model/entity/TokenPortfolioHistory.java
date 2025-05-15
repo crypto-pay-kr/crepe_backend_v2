@@ -1,12 +1,10 @@
 package dev.crepe.domain.core.util.history.token.model.entity;
 
-// 토큰 변경 및 상태 내역
-
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.global.base.BaseEntity;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,36 +13,20 @@ import java.math.BigDecimal;
 
 @Entity
 @Getter
-@Builder
-@AllArgsConstructor
 @NoArgsConstructor
-@Table(name = "token_portfolio_history")
-public class TokenPortfolioHistory extends BaseEntity {
+@Inheritance(strategy = InheritanceType.JOINED) // 상속 구조를 위한 설정
+public class TokenPortfolioHistory extends PortfolioHistory {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_token_id", nullable = false)
-    private BankToken bankToken;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private BankTokenStatus status;
-
-    @Column(name = "amount", precision = 20, scale = 8, nullable = false)
     private BigDecimal amount;
-
-
-    @Column(name = "decription", length = 100)
+    private String changeReason;
     private String description;
 
-
-    public void approve() {
-        this.status = BankTokenStatus.APPROVED;
+    @Builder
+    public TokenPortfolioHistory(BankToken bankToken, BigDecimal amount, String description, String changeReason) {
+        super(bankToken); // 부모 클래스의 필드 초기화
+        this.amount = amount;
+        this.description = description;
+        this.changeReason = changeReason;
     }
-
-    public void reject() {this.status=BankTokenStatus.REJECTED;}
 
 }
