@@ -8,4 +8,7 @@ import java.util.Optional;
 
 public interface BankTokenRepository extends JpaRepository<BankToken, Long> {
     Optional<BankToken> findByBank(Bank bank);
+
+    boolean existsByBank_Id(Long bankId);
+
 }

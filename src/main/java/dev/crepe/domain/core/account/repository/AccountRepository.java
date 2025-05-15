@@ -26,7 +26,15 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     Page<Account> findByAddressRegistryStatus(AddressRegistryStatus status, Pageable pageable);
 
+    Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(
+            Bank bank,
+            BankToken bankToken,
+            AddressRegistryStatus status
+    );
+
     Optional<Account> findByBankAndCoin(Bank bank, Coin coin);
 
     Optional<Account> findByBankAndBankToken(Bank bank, BankToken bankToken);
+
+    boolean existsByAccountAddress(String accountAddress);
 }

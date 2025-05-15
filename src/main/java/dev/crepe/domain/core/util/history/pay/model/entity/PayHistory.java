@@ -2,8 +2,9 @@ package dev.crepe.domain.core.util.history.pay.model.entity;
 
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
+import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.pay.model.PayType;
-import dev.crepe.domain.core.util.history.transfer.model.entity.TransactionHistory;
+
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;

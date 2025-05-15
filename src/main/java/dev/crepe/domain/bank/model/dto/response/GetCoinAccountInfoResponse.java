@@ -6,20 +6,18 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "은행 계좌 정보 응답 DTO")
-public class GetAllAccountInfoResponse {
+public class GetCoinAccountInfoResponse {
 
 
     private String bankname;
     private String coinName;
     private String currency;
-    private String accountAddres;
+    private String accountAddress;
     private String tag;
     private String balance;
 

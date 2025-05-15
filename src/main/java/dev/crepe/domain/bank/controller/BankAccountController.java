@@ -1,13 +1,11 @@
 package dev.crepe.domain.bank.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
-import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.auth.role.BankAuth;
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
-import dev.crepe.domain.bank.model.dto.response.GetAllAccountInfoResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.service.BankAccountService;
-import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -48,8 +46,8 @@ public class BankAccountController {
     )
     @BankAuth
     @GetMapping("/account/all")
-    public ResponseEntity<List<GetAllAccountInfoResponse>> getAccountInfoList(AppAuthentication auth) {
-        List<GetAllAccountInfoResponse> accountInfoList = bankAccountService.getAccountInfoList(auth.getUserEmail());
+    public ResponseEntity<List<GetCoinAccountInfoResponse>> getAccountInfoList(AppAuthentication auth) {
+        List<GetCoinAccountInfoResponse> accountInfoList = bankAccountService.getAccountInfoList(auth.getUserEmail());
         return ResponseEntity.ok(accountInfoList);
     }
 
