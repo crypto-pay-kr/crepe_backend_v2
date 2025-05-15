@@ -3,6 +3,7 @@ package dev.crepe.domain.core.subscribe.model.entity;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @Table(name = "subscribe")
-public class Subscribe {
+public class Subscribe extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,7 +47,7 @@ public class Subscribe {
     private BigDecimal balance;
 
     // 이자율
-    @Column(name = "interestRate", nullable = false)
+    @Column(name = "interestRate")
     private float interestRate;
 
     // 마지막 이자 지급일
@@ -55,15 +56,7 @@ public class Subscribe {
 
 
     public void deposit(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("예치 금액은 0보다 커야 합니다.");
-        }
-
         this.balance = this.balance.add(amount);
-
-        if (this.status == SubscribeStatus.PENDING) {
-            this.status = SubscribeStatus.ACTIVE;
-        }
     }
 
 }

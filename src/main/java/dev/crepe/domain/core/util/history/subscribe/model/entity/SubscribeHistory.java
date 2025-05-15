@@ -1,14 +1,19 @@
 package dev.crepe.domain.core.util.history.subscribe.model.entity;
 
-import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 
 @Entity
+@Builder
+@RequiredArgsConstructor
+@AllArgsConstructor
 @Table(name = "subscribe_history")
 public class SubscribeHistory extends BaseEntity {
     @Id

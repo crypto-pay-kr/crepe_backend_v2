@@ -4,10 +4,13 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
 @Table(name = "bank_token")
 public class BankToken extends BaseEntity {
 
