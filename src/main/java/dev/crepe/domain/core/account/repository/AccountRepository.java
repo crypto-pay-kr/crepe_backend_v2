@@ -4,6 +4,7 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
+
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +26,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     List<Account> findByBank_Email(String email);
 
     Page<Account> findByAddressRegistryStatus(AddressRegistryStatus status, Pageable pageable);
+  
+    Optional<Account> findByActor_EmailAndBankTokenId(String email, Long bankTokenId);
 
     Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(
             Bank bank,

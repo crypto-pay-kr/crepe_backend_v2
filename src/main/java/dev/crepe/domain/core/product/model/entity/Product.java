@@ -6,6 +6,7 @@ import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,13 +23,13 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Entity
+@Getter
 @Table(name = "bank_product")
 public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_id", nullable = false)
@@ -37,6 +38,10 @@ public class Product extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_token_id", nullable = false)
     private BankToken bankToken;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bank_id", nullable = false)
+    private Bank bank;
 
     @Column(name = "product_name", length = 100, nullable = false)
     private String productName;
@@ -59,10 +64,10 @@ public class Product extends BaseEntity {
 
     // duration 필드 제거하고 시작일/종료일 추가
     @Column(name = "start_date")
-    private LocalDate startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private LocalDate endDate;
+    private LocalDateTime endDate;
 
     // 가입대상
     @Column(name = "join_condition", columnDefinition = "TEXT")
@@ -79,6 +84,10 @@ public class Product extends BaseEntity {
     //최대 가입 인원
     @Column(name = "max_participants")
     private Integer maxParticipants;
+
+    // 우대 금리, 조건
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
     @Column(name="product_image")
     private String imageUrl;
@@ -125,3 +134,4 @@ public class Product extends BaseEntity {
         }
     }
 }
+
