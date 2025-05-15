@@ -113,7 +113,7 @@ public class BankAccountServiceImpl implements BankAccountService {
                         .bankname(a.getBank() != null ? a.getBank().getName() : null)
                         .coinName(a.getCoin().getName())
                         .currency(a.getCoin().getCurrency())
-                        .accountAddres(a.getAccountAddress())
+                        .accountAddress(a.getAccountAddress())
                         .tag(a.getTag())
                         .balance(a.getBalance().toPlainString())
                         .build())
