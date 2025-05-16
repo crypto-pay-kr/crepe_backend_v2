@@ -18,6 +18,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @Table(name = "bank_token")
+@NoArgsConstructor
 public class BankToken extends BaseEntity {
 
     @Id

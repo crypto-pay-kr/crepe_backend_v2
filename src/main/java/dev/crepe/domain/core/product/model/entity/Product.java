@@ -23,17 +23,12 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Entity
-@Getter
 @Table(name = "bank_product")
 public class Product extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id", nullable = false)
-    private Bank bank;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bank_token_id", nullable = false)
@@ -91,11 +86,6 @@ public class Product extends BaseEntity {
 
     @Column(name="product_image")
     private String imageUrl;
-
-    // 우대 금리, 조건
-    @Builder.Default
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
