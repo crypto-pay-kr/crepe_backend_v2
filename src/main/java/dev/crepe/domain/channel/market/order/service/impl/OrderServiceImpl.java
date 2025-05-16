@@ -113,7 +113,7 @@ public class OrderServiceImpl implements OrderService {
         Actor store = actorRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new StoreNotFoundException(request.getStoreId()));
 
-        upbitExchangeService.validateExchangeRate(request.getExchangeRate(),request.getCurrency());
+        upbitExchangeService.validateRateWithinThreshold(request.getExchangeRate(),request.getCurrency(),BigDecimal.valueOf(1));
 
         Order orders = Order.builder()
                 .totalPrice(calculateTotalPrice(request))

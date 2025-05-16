@@ -4,23 +4,21 @@ import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.exchange.model.dto.GetExchangeRequest;
+import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
+import dev.crepe.domain.core.exchange.model.dto.response.ExchangeAccountsResponse;
 import dev.crepe.domain.core.exchange.service.ExchangeService;
-import dev.crepe.domain.core.exchange.util.ExchangeCalculator;
-import dev.crepe.domain.core.exchange.util.ExchangeValidator;
+import dev.crepe.domain.core.exchange.util.ExchangeAmountValidator;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.history.exchange.model.entity.ExchangeHistory;
 import dev.crepe.domain.core.util.history.exchange.repositroy.ExchangeHistoryRepository;
-import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
+
 
 @Service
 @RequiredArgsConstructor
@@ -28,63 +26,54 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     private final AccountRepository accountRepository;
     private final ExchangeHistoryRepository exchangeHistoryRepository;
-    private final UpbitExchangeService upbitExchangeService;
     private final PortfolioRepository portfolioRepository;
-    private final ExchangeValidator exchangeValidator;
-    private final ExchangeCalculator exchangeCalculator;
+    private final ExchangeValidateServiceImpl validator;
+    private final AccountService accountService;
 
     @Override
     @Transactional
     public void exchangeToToken(String email, GetExchangeRequest request) {
 
         // 1. 계좌 조회
-        Account fromCoinAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getFromCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        Account fromTokenAccount = accountRepository.findByActor_EmailAndBankToken_Currency(email, request.getToCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        Account toTokenAccount = accountRepository.findByBankToken_Currency(request.getToCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        Account toCoinAccount = accountRepository.findByBankToken_BankAndCoin_Currency(toTokenAccount.getBankToken().getBank(), request.getToCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        // 2. 잔액 확인
-        if (fromCoinAccount.getBalance().compareTo(request.getCoinAmount()) < 0) {
-            throw new NotEnoughAmountException(request.getFromCurrency());
+        ExchangeAccountsResponse accounts = getExchangeAccounts(email, request, true);
+
+        // 2. 사용자 코인 계좌의 잔액이 요청 수량보다 부족한지 검증
+        if (accounts.getActorCoinAccount().getBalance().compareTo(request.getCoinAmount()) < 0) {
+            throw new NotEnoughAmountException("사용자 코인계좌에 코인이 부족하여 환전할 수 없습니다");
         }
-        // 3.프론트에서 보내온 실시간 시세 검증
-        exchangeValidator.validateRates(request.getCoinRates(), upbitExchangeService);
 
-        // 4. 포트폴리오 조회 및 자본금 계산
-        List<Portfolio> portfolios = portfolioRepository.findAllByBankToken_Currency(request.getToCurrency())
-        Map<String, BigDecimal> coinRates = request.getCoinRates();
-        BigDecimal coinToKRW = exchangeCalculator.calculateTotalCapitalKRW(portfolios, coinRates);
-        BigDecimal tokenPrice = exchangeCalculator.calculateTokenPrice(coinToKRW, toTokenAccount.getBankToken().getTotalSupply());
+        // 3. 은행이 지급할 수 있는 토큰 충분한지 검증
+        if (accounts.getBankTokenAccount().getBalance().compareTo(request.getTokenAmount()) < 0) {
+            throw new NotEnoughAmountException("은행 계좌의 토큰이 부족하여 환전할 수 없습니다.");
+        }
 
-        // 5. 교환할 토큰 수량 계산
-        BigDecimal toAmount = exchangeCalculator.calculateTokenAmount(
-                request.getCoinAmount(),
-                request.getCoinRates().get(request.getFromCurrency()),
-                tokenPrice
+        // 4. 환전 수량 계산 (전체 자산 기준 환산 비율로 HTK 수량 계산)
+        BigDecimal result = validator.validateRequestedTokenAmount(
+                request,
+                accounts.getPortfolios(),
+                accounts.getBankTokenAccount().getBalance(),
+                accounts.getBankCoinAccounts()
         );
 
-        // 6. 요청한 자본금과 일치 확인
-        exchangeValidator.assertEquals(toAmount, request.getTokenAmount());
+        // 5. 자금 이동 (코인 → 토큰 환전)
+        // 은행 입장 : 코인 수량 증가, 토큰 보유량 감소
+        accounts.getBankCoinAccount().addAmount(request.getCoinAmount());
+        accounts.getBankTokenAccount().reduceAmount(request.getTokenAmount());
 
-        // 7. 자금 이동
-        fromCoinAccount.reduceAmount(request.getCoinAmount());
-        fromTokenAccount.addAmount(toAmount);
-        toCoinAccount.addAmount(request.getCoinAmount());
-        toTokenAccount.reduceAmount(toAmount);
+        // 사용자 입장 : 코인 수량 감소, HTK 수량 증가
+        accounts.getActorCoinAccount().reduceAmount(request.getCoinAmount());
+        accounts.getActorTokenAccount().addAmount(request.getTokenAmount());
 
-        // 8. 환전 기록 저장
+        // 6. 환전 내역 저장
         ExchangeHistory exchangeHistory = ExchangeHistory.builder()
-                .fromAccount(fromCoinAccount)
-                .toAccount(toTokenAccount)
+                .fromAccount(accounts.getActorCoinAccount())
+                .toAccount(accounts.getBankTokenAccount())
                 .fromAmount(request.getCoinAmount())
-                .toAmount(toAmount)
+                .toAmount(request.getTokenAmount())
                 .fromExchangeRate(request.getCoinRates().get(request.getFromCurrency()))
-                .toExchangeRate(tokenPrice)
-                .afterBalanceFrom(fromCoinAccount.getBalance())
-                .afterBalanceTo(fromTokenAccount.getBalance())
+                .toExchangeRate(result)
+                .afterBalanceFrom(accounts.getActorCoinAccount().getBalance())
+                .afterBalanceTo(accounts.getBankTokenAccount().getBalance())
                 .build();
 
         exchangeHistoryRepository.save(exchangeHistory);
@@ -94,71 +83,78 @@ public class ExchangeServiceImpl implements ExchangeService {
     @Override
     @Transactional
     public void exchangeToCoin(String email, GetExchangeRequest request) {
-        // 1. 계좌 조회
-        Account fromTokenAccount = accountRepository.findByActor_EmailAndBankToken_Currency(email, request.getFromCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        Account toCoinAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, request.getToCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        Account bankTokenAccount = accountRepository.findByBankToken_Currency(request.getFromCurrency())
-                .orElseThrow(AccountNotFoundException::new);
-        Account bankCoinAccount = accountRepository.findByBankToken_BankAndCoin_Currency(
-                        bankTokenAccount.getBankToken().getBank(), request.getToCurrency())
-                .orElseThrow(AccountNotFoundException::new);
 
-        // 2. 잔액 확인
-        if (fromTokenAccount.getBalance().compareTo(request.getTokenAmount()) < 0) {
-            throw new NotEnoughAmountException(request.getFromCurrency());
+        // 1. 계좌 조회
+        ExchangeAccountsResponse accounts= getExchangeAccounts(email, request,false);
+
+        // 2. 사용자 코인 계좌의 잔액이 요청 수량보다 부족한지 검증
+        if (accounts.getBankTokenAccount().getBalance().compareTo(request.getTokenAmount()) < 0) {
+            throw new NotEnoughAmountException("사용자의 토큰양이 부족하여 환전 할 수 없습니다");
         }
 
-        // 3. 시세 검증
-        exchangeValidator.validateRates(request.getCoinRates(), upbitExchangeService);
+        // 3. 은행이 지급할 수 있는 토큰 충분한지 검증
+        if (accounts.getBankCoinAccount().getBalance().compareTo(request.getCoinAmount()) < 0) {
+            throw new NotEnoughAmountException("은행의 코인이 부족하여 환전할 수 없습니다.");
+        }
 
-        // 4. 포트폴리오 조회 및 자본금 계산
-        List<Portfolio> portfolios = portfolioRepository.findAllByBankToken_Currency(request.getFromCurrency());
-        Map<String, BigDecimal> coinRates = request.getCoinRates();
-        BigDecimal totalCapital = exchangeCalculator.calculateTotalCapitalKRW(portfolios, request.getCoinRates());
-        BigDecimal tokenPrice = exchangeCalculator.calculateTokenPrice(totalCapital, fromTokenAccount.getBankToken().getTotalSupply());
-
-        // 5. 환전 대상 코인 환산
-        BigDecimal tokenKRW = request.getTokenAmount().multiply(tokenPrice);
-        BigDecimal coinRate = coinRates.get(request.getToCurrency());
-
-        //6. 해당 코인의 자본금 내 원화 가치 계산
-        BigDecimal coinValueInCapital = portfolios.stream()
-                .filter(p -> p.getCoin().getCurrency().equalsIgnoreCase(request.getToCurrency()))
-                .findFirst()
-                .map(p -> p.getAmount().multiply(coinRates.get(p.getCoin().getCurrency())))
-                .orElseThrow(() -> new IllegalArgumentException("해당 코인은 포트폴리오에 없습니다."));
-
-        // 7. 교환 할 코인 수량 계산
-        BigDecimal coinAmount = exchangeCalculator.calculateCoinAmount(
-                tokenKRW,
-                coinValueInCapital,
-                totalCapital,
-                coinRate
+        // 3. 시세 검증 및 교환량 계산
+        BigDecimal result = validator.validateRequestedCoinAmount(
+                request,
+                accounts.getPortfolios(),
+                accounts.getBankTokenAccount().getBalance(),
+                accounts.getBankCoinAccounts()
         );
 
-        // 7. 요청 값과 검증
-        exchangeValidator.assertEquals(coinAmount, request.getCoinAmount());
+        // 4. 자금 이동 (토큰 -> 코인)
+        // 은행 입장 : 토큰 보유량 증가, 코인 수량감소
+        accounts.getBankTokenAccount().addAmount(request.getTokenAmount());
+        accounts.getBankCoinAccount().reduceAmount(request.getCoinAmount());
+        // 유저입장 : 토큰 보유량 감소, 코인 수량 증가
+        accounts.getActorTokenAccount().reduceAmount(request.getTokenAmount());
+        accounts.getActorCoinAccount().addAmount(request.getCoinAmount());
 
-        // 8. 자금 이동
-        fromTokenAccount.reduceAmount(request.getTokenAmount());
-        toCoinAccount.addAmount(coinAmount);
-        bankTokenAccount.addAmount(request.getTokenAmount());
-        bankCoinAccount.reduceAmount(coinAmount);
-
-        // 9. 기록 저장
+        // 5. 환전 기록 저장
         ExchangeHistory exchangeHistory = ExchangeHistory.builder()
-                .fromAccount(fromTokenAccount)
-                .toAccount(toCoinAccount)
+                .fromAccount(accounts.getBankTokenAccount())
+                .toAccount(accounts.getActorCoinAccount())
                 .fromAmount(request.getTokenAmount())
-                .toAmount(coinAmount)
-                .fromExchangeRate(tokenPrice)
-                .toExchangeRate(coinRate)
-                .afterBalanceFrom(fromTokenAccount.getBalance())
-                .afterBalanceTo(toCoinAccount.getBalance())
+                .toAmount(request.getCoinAmount())
+                .fromExchangeRate(result)
+                .toExchangeRate(request.getCoinRates().getOrDefault(request.getToCurrency(), BigDecimal.ZERO))
+                .afterBalanceFrom(accounts.getBankTokenAccount().getBalance())
+                .afterBalanceTo(accounts.getActorCoinAccount().getBalance())
                 .build();
 
         exchangeHistoryRepository.save(exchangeHistory);
+
+    }
+    private ExchangeAccountsResponse getExchangeAccounts(String email, GetExchangeRequest request, boolean isCoinToToken) {
+        String fromCurrency = request.getFromCurrency();
+        String toCurrency = request.getToCurrency();
+
+        Account actorCoinAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, isCoinToToken ? fromCurrency: toCurrency)
+                .orElseThrow(AccountNotFoundException::new);
+
+        Account actorTokenAccount = accountRepository.findByActor_EmailAndBankToken_Currency(email, isCoinToToken ? toCurrency: fromCurrency)
+                .orElseGet(() -> accountService.getOrCreateTokenAccount(email, toCurrency));
+
+        Account bankTokenAccount = accountRepository.findByBankToken_CurrencyAndActorIsNull(
+                        isCoinToToken ? toCurrency : fromCurrency)
+                .orElseThrow(AccountNotFoundException::new);
+
+        List<Portfolio> portfolios = portfolioRepository.findAllByBankToken_Currency(
+                isCoinToToken ? toCurrency : fromCurrency);
+
+        List<Long> coinIds = portfolios.stream()
+                .map(p -> p.getCoin().getId())
+                .toList();
+
+        List<Account> bankCoinAccounts = accountRepository.findByBank_IdAndCoin_IdIn(bankTokenAccount.getBank().getId(), coinIds);
+        Account bankCoinAccount = bankCoinAccounts.stream()
+                .filter(acc -> acc.getCoin().getCurrency().equalsIgnoreCase(isCoinToToken? fromCurrency: toCurrency))
+                .findFirst()
+                .orElseThrow(AccountNotFoundException::new);
+
+        return new ExchangeAccountsResponse(actorCoinAccount, actorTokenAccount, bankTokenAccount, bankCoinAccount, portfolios, bankCoinAccounts);
     }
 }

@@ -31,7 +31,7 @@ public class Account extends BaseEntity {
     private Actor actor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id", nullable = false)
+    @JoinColumn(name = "bank_id")
     private Bank bank;
 
     @ManyToOne(fetch = FetchType.LAZY)
