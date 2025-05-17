@@ -18,6 +18,7 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
 import dev.crepe.infra.s3.service.S3Service;
@@ -45,7 +46,6 @@ import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
-import dev.crepe.domain.core.util.coin.global.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
@@ -208,10 +208,10 @@ public class BankServiceImpl implements BankService {
                             "은행의 " + coin.getCurrency() + " 계좌를 찾을 수 없습니다"));
 
             // 자본금 충분성 검증 (가용 잔액으로 확인)
-            if (coinAccount.getAvailableBalance().compareTo(requiredCoinAmount) < 0) {
+            if (coinAccount.getNonAvailableBalance().compareTo(requiredCoinAmount) < 0) {
                 throw new InsufficientCapitalException(
                         "상품 출시에 필요한 " + coin.getCurrency() + " 자본금이 부족합니다. " +
-                                "필요: " + requiredCoinAmount + ", 가용: " + coinAccount.getAvailableBalance());
+                                "필요: " + requiredCoinAmount + ", 가용: " + coinAccount.getNonAvailableBalance());
             }
 
         }
