@@ -16,7 +16,7 @@ import dev.crepe.domain.core.util.coin.regulation.model.entity.TokenPrice;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.repository.TokenPriceRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenSetupService;
-import dev.crepe.domain.core.util.history.token.model.entity.TokenPortfolioHistory;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import dev.crepe.domain.core.util.history.token.service.PortfolioHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +37,9 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
     private final PortfolioRepository portfolioRepository;
     private final CoinRepository coinRepository;
     private final BankRepository bankRepository;
-    private final TokenHistoryRepository tokenHistoryRepository;
     private final TokenCalculationUtil tokenCalculationUtil;
 
+    // 토큰 발행 프로세스
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BankToken requestTokenGenerate(CreateBankTokenRequest request, String bankEmail) {
@@ -51,20 +51,20 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
                 throw new TokenAlreadyRequestedException("이미 발행 요청된 토큰이 존재합니다."); // RuntimeException 상속
             }
 
-            BigDecimal total = tokenCalculationUtil.calculateTotalPrice(request);
+            BigDecimal totalSupplyAmount = tokenCalculationUtil.calculateTotalPrice(request);
 
             BankToken bankToken = BankToken.builder()
                     .bank(bank)
                     .name(request.getTokenName())
                     .currency(request.getTokenCurrency())
-                    .totalSupply(total)
+                    .totalSupply(totalSupplyAmount)
                     .status(BankTokenStatus.PENDING)
                     .build();
             bankTokenRepository.save(bankToken);
 
             TokenPrice tokenPrice = TokenPrice.builder()
                     .bankToken(bankToken)
-                    .price(total)
+                    .price(totalSupplyAmount)
                     .build();
             tokenPriceRepository.save(tokenPrice);
 
@@ -79,14 +79,10 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
                 portfolioRepository.save(portfolio);
             });
 
-            TokenPortfolioHistory tokenPortfolioHistory = TokenPortfolioHistory.builder()
-                    .bankToken(bankToken)
-                    .amount(total)
-                    .description(request.getDescription())
-                    .build();
-            tokenHistoryRepository.save(tokenPortfolioHistory);
+            log.info("예상 총 발행량: {}", totalSupplyAmount);
 
-            log.info("Calculated total price: {}", total);
+            // 토큰 및 포토폴리오 내역 추가
+            portfolioHistoryService.addTokenPortfolioHistory(request, bankToken, totalSupplyAmount);
             return bankToken;
 
         } catch (Exception e) {
@@ -95,6 +91,7 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
         }
     }
 
+    // 토큰 재발행 프로세스
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BankToken requestTokenReGenerate(ReCreateBankTokenRequest request, String bankEmail) {
@@ -117,26 +114,12 @@ public class BankTokenSetupServiceImpl implements BankTokenSetupService {
             throw new IllegalArgumentException("예상 발행량이 유통 중인 토큰량보다 충분하지 않습니다. 포트폴리오를 재구성해야 합니다.");
         }
 
-        portfolioHistoryService.addTokenPortfolioHistory(bankToken, expectedTotal, request.getChangeReason());
-
-        // 기존 포토폴리오 삭제
-        bankToken.getPortfolios().clear();
-        portfolioRepository.deleteAllByBankToken(bankToken);
-
-        request.getPortfolioCoins().forEach(coinInfo -> {
-            Coin coin = coinRepository.findByCurrency(coinInfo.getCurrency());
-            Portfolio portfolio = Portfolio.builder()
-                    .bankToken(bankToken)
-                    .coin(coin)
-                    .amount(coinInfo.getAmount())
-                    .initialPrice(coinInfo.getCurrentPrice())
-                    .build();
-            portfolioRepository.save(portfolio);
-        });
-
-        bankToken.updateStatus(BankTokenStatus.PENDING);
-        bankTokenRepository.save(bankToken);
+        // 토큰 변경 내역 업데이트
+        portfolioHistoryService.updateTokenHistory(request, bankToken, expectedTotal);
 
         return bankToken;
     }
+
+
+
 }

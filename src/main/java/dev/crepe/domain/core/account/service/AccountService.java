@@ -18,6 +18,8 @@ public interface AccountService {
 
     void updateBankTokenAccount(BankToken bankToken);
 
+    void activeBankTokenAccount(BankToken bankToken);
+
     List<GetBalanceResponse> getBalanceList(String userEmail);
     GetBalanceResponse getBalanceByCurrency(String userEmail, String currency);
 

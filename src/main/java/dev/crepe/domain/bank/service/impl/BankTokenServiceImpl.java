@@ -3,22 +3,29 @@ package dev.crepe.domain.bank.service.impl;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
+import dev.crepe.domain.bank.model.dto.response.GetTokenHistoryResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankTokenService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenSetupService;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioConstituteService;
+import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
+import dev.crepe.global.model.dto.GetPaginationRequest;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +38,7 @@ public class BankTokenServiceImpl implements BankTokenService {
     private final BankRepository bankRepository;
     private final AccountRepository accountRepository;
     private final BankTokenRepository bankTokenRepository;
+    private final TokenHistoryRepository tokenHistoryRepository;
 
     // 은행 토큰 생성
     @Override
@@ -65,14 +73,19 @@ public class BankTokenServiceImpl implements BankTokenService {
 
     // 은행 토큰 재발행
     @Override
-    public void reCreateBankToken(ReCreateBankTokenRequest request, String bankEmail) {
+    public void recreateBankToken(ReCreateBankTokenRequest request, String bankEmail) {
 
         // email로 bankName을 받아 request.bankName과 일치하는지 검증
         Bank bank = bankRepository.findByEmail(bankEmail)
                 .orElseThrow(() -> new IllegalArgumentException("은행을 찾을 수 없습니다."));
 
-        if(!bank.getName().equals(request.getBankName())) {
-            throw new IllegalArgumentException("은행 이름이 일치하지 않습니다.");
+        // bankToken 조회
+        BankToken bankToken = bankTokenRepository.findByBank(bank)
+                .orElseThrow(() -> new IllegalArgumentException("은행이 보유한 토큰이 없습니다."));
+
+        // 이미 pending 중인 상태의 토큰이 있다면, 예외 처리
+        if (tokenHistoryRepository.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
+            throw new IllegalArgumentException("이미 발행 대기 중인 상태의 토큰이 존재합니다.");
         }
 
         // 포토폴리오 재구성 정보 유효성 검증
@@ -89,9 +102,8 @@ public class BankTokenServiceImpl implements BankTokenService {
         });
 
         // bankToken 발행 요청 service 호출
-        BankToken bankToken = bankTokenSetupService.requestTokenReGenerate(request, bankEmail);
+        bankToken = bankTokenSetupService.requestTokenReGenerate(request, bankEmail);
 
-        // 계좌 PENDING 상태로 변경
         accountService.updateBankTokenAccount(bankToken);
 
     }
@@ -114,8 +126,54 @@ public class BankTokenServiceImpl implements BankTokenService {
                 .tokenName(bankToken.getName())
                 .tokenCurrency(bankToken.getCurrency())
                 .balance(account.getBalance())
+                .availableBalance(account.getAvailableBalance())
                 .accountAddress(account.getAccountAddress())
                 .build()
         ).orElseGet(() -> GetTokenAccountInfoResponse.builder().build());
+    }
+
+
+    // 토큰 정보 및 발행 내역 조회
+    @Override
+    @Transactional(readOnly = true)
+    public List<GetTokenHistoryResponse> getTokenHistory(GetPaginationRequest request) {
+        PageRequest pageRequest = PageRequest.of(request.getPage(), request.getSize());
+
+        // request.getEmail로 bankId 조회
+        Bank bank = bankRepository.findByEmail(request.getAuthEmail())
+                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 은행을 찾을 수 없습니다."));
+
+        // 특정 은행의 TokenHistory 조회
+        return bankTokenRepository.findByBank_Id(bank.getId(), pageRequest)
+                .stream()
+                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+                .map(tokenHistory -> {
+                    // PortfolioHistoryDetail 매핑
+                    List<GetTokenHistoryResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
+                            .stream()
+                            .map(detail -> GetTokenHistoryResponse.PortfolioDetail.builder()
+                                    .coinName(detail.getCoinName())
+                                    .coinCurrency(detail.getCoinCurrency())
+                                    .prevAmount(detail.getPrevAmount())
+                                    .prevPrice(detail.getPrevPrice())
+                                    .updateAmount(detail.getUpdateAmount())
+                                    .updatePrice(detail.getUpdatePrice())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    // TokenHistoryResponse 생성
+                    return GetTokenHistoryResponse.builder()
+                            .tokenHistoryId(tokenHistory.getId())
+                            .bankTokenId(tokenHistory.getBankToken().getId())
+                            .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
+                            .changeReason(tokenHistory.getChangeReason())
+                            .rejectReason(tokenHistory.getRejectReason())
+                            .requestType(tokenHistory.getRequestType())
+                            .status(tokenHistory.getStatus())
+                            .createdAt(tokenHistory.getCreatedAt())
+                            .portfolioDetails(portfolioDetails)
+                            .build();
+                })
+                .collect(Collectors.toList());
     }
 }

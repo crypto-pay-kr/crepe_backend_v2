@@ -1,5 +1,6 @@
 package dev.crepe.domain.admin.service;
 
+import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
 import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,7 +13,7 @@ public interface AdminBankManageService {
 
     List<GetAllBankTokenResponse> getAllBankTokenResponseList(int page, int size);
 
-    void approveBankTokenRequest(Long tokenId);
+    void approveBankTokenRequest(Long tokenHistoryId);
 
-    void rejectBankTokenRequest(Long tokenId);
+    void rejectBankTokenRequest(RejectBankTokenRequest request, Long tokenHistoryId);
 }

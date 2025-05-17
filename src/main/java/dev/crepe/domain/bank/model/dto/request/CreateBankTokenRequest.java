@@ -21,8 +21,6 @@ public class CreateBankTokenRequest {
     private String tokenName;
     @Schema(description = "토큰 심볼", example = "WTK")
     private String tokenCurrency;
-    @Schema(description = "비고", example = "토큰 생성 요청")
-    private String description;
     @ArraySchema(schema = @Schema(description = "포트폴리오 코인 정보 리스트"))
     private List<CoinInfo> portfolioCoins;
 

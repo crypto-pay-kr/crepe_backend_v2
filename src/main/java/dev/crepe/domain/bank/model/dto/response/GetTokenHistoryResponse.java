@@ -1,5 +1,4 @@
-package dev.crepe.domain.admin.dto.response;
-
+package dev.crepe.domain.bank.model.dto.response;
 
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.history.token.model.TokenRequestType;
@@ -16,22 +15,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class GetAllBankTokenResponse {
+public class GetTokenHistoryResponse {
 
-
-    private Long bankId;
-    private String bankName;
-
-    private Long bankTokenId;
     private Long tokenHistoryId;
-
+    private Long bankTokenId;
     private String changeReason;
     private String rejectReason;
-
     private TokenRequestType requestType;
     private BankTokenStatus status;
     private LocalDateTime createdAt;
-
     private BigDecimal totalSupplyAmount;
     private List<PortfolioDetail> portfolioDetails;
 

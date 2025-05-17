@@ -1,6 +1,7 @@
 package dev.crepe.domain.admin.controller;
 
 
+import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
 import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.auth.role.AdminAuth;
@@ -37,8 +38,7 @@ public class AdminBankManageController {
     }
 
 
-    // 토큰 생성 요청 목록 조회
-    @Operation(summary = "토큰 생성 요청 목록 조회", description = "관리자가 토큰 생성 요청 목록을 조회합니다")
+    @Operation(summary = "토큰 발행 요청 목록 조회", description = "관리자가 토큰 발행 요청 목록을 조회합니다")
     @AdminAuth
     @GetMapping("/token")
     public ResponseEntity<List<GetAllBankTokenResponse>> getBankTokenRequestList(
@@ -50,24 +50,24 @@ public class AdminBankManageController {
 
 
 
+
     // 은행 토큰 발행 요청 승인
     @Operation(summary = "은행 토큰 발행 요청 승인", description = "관리자가 특정 은행 토큰 발행 요청을 승인합니다")
     @AdminAuth
-    @PatchMapping("/token/approve/{tokenId}")
-    public ResponseEntity<String> approveBankTokenRequest(@PathVariable Long tokenId) {
-        adminBankManageService.approveBankTokenRequest(tokenId);
+    @PatchMapping("/token/approve/{tokenHistoryId}")
+    public ResponseEntity<String> approveBankTokenRequest(@PathVariable Long tokenHistoryId) {
+        adminBankManageService.approveBankTokenRequest(tokenHistoryId);
         return ResponseEntity.ok("토큰 발행 요청이 승인되었습니다.");
     }
-
-
 
 
     // 은행 토큰 발행 요청 반려
     @Operation(summary = "은행 토큰 발행 요청 반려", description = "관리자가 특정 은행 토큰 발행 요청을 반려합니다")
     @AdminAuth
-    @PatchMapping("/token/reject/{tokenId}")
-    public ResponseEntity<String> refuseBankTokenRequest(@PathVariable Long tokenId) {
-        adminBankManageService.rejectBankTokenRequest(tokenId);
+    @PatchMapping("/token/reject/{tokenHistoryId}")
+    public ResponseEntity<String> rejectBankTokenRequest(@PathVariable Long tokenHistoryId,
+                                                         @RequestBody @Valid RejectBankTokenRequest request) {
+        adminBankManageService.rejectBankTokenRequest(request, tokenHistoryId);
         return ResponseEntity.ok("토큰 발행 요청이 반려되었습니다.");
     }
 

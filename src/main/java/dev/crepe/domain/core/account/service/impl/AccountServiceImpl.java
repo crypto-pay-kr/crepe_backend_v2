@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -76,8 +77,8 @@ public class AccountServiceImpl implements AccountService {
         Account account = Account.builder()
                 .bank(bankToken.getBank())
                 .bankToken(bankToken)
-                .availableBalance(bankToken.getTotalSupply())
-                .balance(bankToken.getTotalSupply())
+                .availableBalance(BigDecimal.ZERO)
+                .balance(BigDecimal.ZERO)
                 .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
                 .accountAddress(accountAddress)
                 .build();
@@ -88,11 +89,39 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void updateBankTokenAccount(BankToken bankToken) {
-        Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
+        Account existingAccount = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
                 .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
 
-        // 계좌 상태를 PENDING으로 업데이트
-        account.pendingAddress();
+        Account updatedAccount = Account.builder()
+                .id(existingAccount.getId()) // 기존 ID 유지
+                .bank(existingAccount.getBank())
+                .bankToken(existingAccount.getBankToken())
+                .availableBalance(existingAccount.getAvailableBalance())
+                .balance(existingAccount.getBalance())
+                .addressRegistryStatus(existingAccount.getAddressRegistryStatus())
+                .accountAddress(existingAccount.getAccountAddress())
+                .build();
+
+        accountRepository.save(updatedAccount);
+    }
+
+    @Override
+    @Transactional
+    public void activeBankTokenAccount(BankToken bankToken) {
+        Account existingAccount = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
+                .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
+
+        Account updatedAccount = Account.builder()
+                .id(existingAccount.getId()) // 기존 ID 유지
+                .bank(existingAccount.getBank())
+                .bankToken(bankToken)
+                .availableBalance(bankToken.getTotalSupply())
+                .balance(bankToken.getTotalSupply())
+                .addressRegistryStatus(existingAccount.getAddressRegistryStatus())
+                .accountAddress(existingAccount.getAccountAddress())
+                .build();
+
+        accountRepository.save(updatedAccount);
     }
 
     @Override

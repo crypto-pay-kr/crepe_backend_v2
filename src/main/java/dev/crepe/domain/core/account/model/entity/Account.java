@@ -74,10 +74,6 @@ public class Account extends BaseEntity {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
 
-    // 계좌 승인 반려
-    public void rejectAddress() {
-        this.addressRegistryStatus = AddressRegistryStatus.REJECTED;
-    }
 
     // 계좌 등록 대기중
     public void pendingAddress() { this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;}

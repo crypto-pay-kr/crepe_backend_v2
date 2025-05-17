@@ -5,6 +5,4 @@ public enum AddressRegistryStatus {
     ACTIVE,
     NOT_REGISTERED,
 
-    REJECTED,
-
 }
