@@ -1,6 +1,9 @@
 package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
 import dev.crepe.domain.bank.exception.BankNotFoundException;
+import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.exception.InvalidTokenGenerateException;
 import dev.crepe.domain.core.util.coin.regulation.exception.TokenAlreadyRequestedException;
@@ -37,6 +40,7 @@ public class TokenSetupServiceImpl implements TokenSetupService {
     private final TokenPriceRepository tokenPriceRepository;
     private final BankTokenRepository bankTokenRepository;
     private final PortfolioRepository portfolioRepository;
+    private final AccountRepository accountRepository;
     private final CoinRepository coinRepository;
     private final BankRepository bankRepository;
     private final TokenCalculationUtil tokenCalculationUtil;
@@ -105,16 +109,20 @@ public class TokenSetupServiceImpl implements TokenSetupService {
            BankToken bankToken = bankTokenRepository.findByBank(bank)
                    .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
 
+           Account bankTokenAccount = accountRepository.findByBankIdAndBankTokenAndActorIsNull(bank.getId(), bankToken)
+                   .orElseThrow(() -> new AccountNotFoundException("은행의 BankToken 계좌를 찾을 수 없습니다."));
+
            // 유통 중인 토큰량 계산
-           BigDecimal circulatingSupply = tokenCalculationUtil.getCirculatingSupply(bankToken);
+           BigDecimal circulatingSupply = tokenCalculationUtil.getCirculatingSupply(bankTokenAccount);
 
            // 요청된 예상 토큰량 계산
            BigDecimal expectedTotal = tokenCalculationUtil.calculateTotalPrice(request);
 
-           // 예상 토큰량 검증
-           if (expectedTotal.compareTo(circulatingSupply.multiply(BigDecimal.valueOf(1.1))) < 0) {
-               throw new InvalidTokenGenerateException("예상 발행량이 유통 중인 토큰량보다 충분하지 않습니다. 포트폴리오를 재구성해야 합니다.");
-           }
+           // 포트폴리오 변경 조건 충족 여부 검증
+           tokenCalculationUtil.validatePortfolioChange(request, bankToken, circulatingSupply);
+
+           // 포트폴리오 안전성 검증
+           tokenCalculationUtil.validatePortfolioSafety(request, circulatingSupply,  BigDecimal.valueOf(1.1));
 
            // 토큰 변경 내역 업데이트
            portfolioHistoryService.updateTokenHistory(request, bankToken, expectedTotal);

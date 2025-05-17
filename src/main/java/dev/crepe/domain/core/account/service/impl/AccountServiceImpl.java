@@ -16,6 +16,7 @@ import dev.crepe.domain.core.account.util.GenerateAccountAddress;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.global.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -107,16 +108,20 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional
-    public void activeBankTokenAccount(BankToken bankToken) {
+    public void activeBankTokenAccount(BankToken bankToken, TokenHistory tokenHistory) {
         Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
                 .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
+
+        BigDecimal availableBalance = account.getAvailableBalance().compareTo(BigDecimal.ZERO) != 0
+                ? account.getAvailableBalance()
+                : tokenHistory.getTotalSupplyAmount();
 
         Account updatedAccount = Account.builder()
                 .id(account.getId())
                 .bank(account.getBank())
                 .bankToken(bankToken)
-                .availableBalance(bankToken.getTotalSupply())
-                .balance(bankToken.getTotalSupply())
+                .availableBalance(availableBalance)
+                .balance(tokenHistory.getTotalSupplyAmount())
                 .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
                 .accountAddress(account.getAccountAddress())
                 .build();

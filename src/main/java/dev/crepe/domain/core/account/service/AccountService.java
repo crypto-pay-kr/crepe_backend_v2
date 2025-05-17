@@ -5,6 +5,7 @@ import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public interface AccountService {
 
     void updateBankTokenAccount(BankToken bankToken);
 
-    void activeBankTokenAccount(BankToken bankToken);
+    void activeBankTokenAccount(BankToken bankToken, TokenHistory tokenHistory);
 
     List<GetBalanceResponse> getBalanceList(String userEmail);
     GetBalanceResponse getBalanceByCurrency(String userEmail, String currency);

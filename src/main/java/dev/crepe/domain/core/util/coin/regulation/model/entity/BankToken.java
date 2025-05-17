@@ -51,6 +51,10 @@ public class BankToken extends BaseEntity {
 
     public void approve() { this.status = BankTokenStatus.APPROVED; }
 
+    public void changeTotalSupply(BigDecimal totalSupply) {
+        this.totalSupply = totalSupply;
+    }
+
 
 
 }

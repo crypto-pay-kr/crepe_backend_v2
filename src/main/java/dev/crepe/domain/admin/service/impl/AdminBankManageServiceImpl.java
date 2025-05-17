@@ -101,7 +101,7 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
         BankToken bankToken = tokenHistory.getBankToken();
 
         // 계좌 활성화
-        accountService.activeBankTokenAccount(bankToken);
+        accountService.activeBankTokenAccount(bankToken, tokenHistory);
         // 포토폴리오 변경 내역 추가
         portfolioHistoryService.updatePortfolio(bankToken);
         // 토큰 발행 내역 추가
@@ -109,7 +109,9 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
         // 토큰 발행 승인
         bankToken.approve();
+        bankToken.changeTotalSupply(tokenHistory.getTotalSupplyAmount());
         bankTokenRepository.save(bankToken);
+
 
     }
 

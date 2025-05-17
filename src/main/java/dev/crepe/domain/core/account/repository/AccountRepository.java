@@ -38,6 +38,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             AddressRegistryStatus status
     );
 
+    Optional<Account> findByBankIdAndBankTokenAndActorIsNull(Long bankId, BankToken bankToken);
 
     Optional<Account> findByBankAndCoin(Bank bank, Coin coin);
 
