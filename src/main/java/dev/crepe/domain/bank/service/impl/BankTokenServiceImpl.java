@@ -129,7 +129,7 @@ public class BankTokenServiceImpl implements BankTokenService {
                 .tokenName(bankToken.getName())
                 .tokenCurrency(bankToken.getCurrency())
                 .balance(account.getBalance())
-                .availableBalance(account.getNonAvailableBalance())
+                .nonAvailableBalance(account.getNonAvailableBalance())
                 .accountAddress(account.getAccountAddress())
                 .build()
         ).orElseGet(() -> GetTokenAccountInfoResponse.builder().build());
