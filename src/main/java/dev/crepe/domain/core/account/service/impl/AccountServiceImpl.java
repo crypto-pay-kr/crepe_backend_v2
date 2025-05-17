@@ -82,7 +82,7 @@ public class AccountServiceImpl implements AccountService {
         Account account = Account.builder()
                 .bank(bankToken.getBank())
                 .bankToken(bankToken)
-                .nonAvailableBalance(bankToken.getTotalSupply())
+                .nonAvailableBalance(BigDecimal.ZERO)
                 .balance(bankToken.getTotalSupply())
                 .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
                 .accountAddress(accountAddress)
@@ -116,15 +116,11 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
                 .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
 
-        BigDecimal availableBalance = account.getNonAvailableBalance().compareTo(BigDecimal.ZERO) != 0
-                ? account.getNonAvailableBalance()
-                : tokenHistory.getTotalSupplyAmount();
-
         Account updatedAccount = Account.builder()
                 .id(account.getId())
                 .bank(account.getBank())
                 .bankToken(bankToken)
-                .nonAvailableBalance(availableBalance)
+                .nonAvailableBalance(account.getNonAvailableBalance())
                 .balance(tokenHistory.getTotalSupplyAmount())
                 .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
                 .accountAddress(account.getAccountAddress())

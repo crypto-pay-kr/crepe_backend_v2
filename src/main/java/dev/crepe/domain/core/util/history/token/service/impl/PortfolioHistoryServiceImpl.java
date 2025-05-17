@@ -11,6 +11,7 @@ import dev.crepe.domain.core.util.coin.regulation.exception.TokenHistoryNotFound
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
+import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.history.token.model.TokenRequestType;
 import dev.crepe.domain.core.util.history.token.model.entity.PortfolioHistoryDetail;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
