@@ -1,7 +1,6 @@
 package dev.crepe.domain.core.exchange.service;
 
 import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
-import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
 
 public interface ExchangeService {
 

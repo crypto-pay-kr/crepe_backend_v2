@@ -4,7 +4,6 @@ import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.exchange.exception.AmountNotAllowedException;
 import dev.crepe.domain.core.exchange.exception.ExchangeValidationException;
 import dev.crepe.domain.core.exchange.exception.TotalSupplyNotAllowedException;
-import dev.crepe.domain.core.exchange.exception.TotalTokenAmountNotAllowedException;
 import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;

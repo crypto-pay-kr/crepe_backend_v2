@@ -2,7 +2,6 @@ package dev.crepe.domain.channel.actor.service.impl;
 
 import dev.crepe.domain.channel.actor.service.ActorExchangeService;
 import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
-import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
 import dev.crepe.domain.core.exchange.service.ExchangeService;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
