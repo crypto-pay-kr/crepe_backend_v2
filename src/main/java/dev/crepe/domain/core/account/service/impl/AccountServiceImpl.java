@@ -98,12 +98,13 @@ public class AccountServiceImpl implements AccountService {
                 ? accountRepository.findByBank_Email(email)
                 : accountRepository.findByActor_Email(email);
 
-        if (accounts.stream()
-                .anyMatch(account -> account.getCoin() == null || account.getCoin().getId() == null)) {
+        boolean hasValidCoinId = accounts.stream().anyMatch(account -> account.getCoin() != null);
+        if (!hasValidCoinId) {
             throw new AccountNotFoundException();
         }
 
         return accounts.stream()
+                .filter(account -> account.getCoin() != null)
                 .map(account -> GetBalanceResponse.builder()
                         .coinName(account.getCoin().getName())
                         .currency(account.getCoin().getCurrency())
@@ -220,4 +221,3 @@ public class AccountServiceImpl implements AccountService {
 
 
 }
-
