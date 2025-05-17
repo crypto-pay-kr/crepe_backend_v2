@@ -75,16 +75,16 @@ public class Account extends BaseEntity {
     }
 
 
-    /*public void allocateBudget(BigDecimal amount) {
-        if (availableBalance.compareTo(amount) < 0) {
+    public void allocateBudget(BigDecimal amount) {
+        if (nonAvailableBalance.compareTo(amount) < 0) {
             throw new InsufficientBalanceException();
         }
-        this.availableBalance = this.availableBalance.subtract(amount);
-    }*/
+        this.nonAvailableBalance = this.nonAvailableBalance.subtract(amount);
+    }
 
-   /* public void releaseBudget(BigDecimal amount) {
-        this.availableBalance = this.availableBalance.add(amount);
-    }*/
+   public void releaseBudget(BigDecimal amount) {
+        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
+    }
 
     public void reduceAmount(BigDecimal amount) {
         if (balance.compareTo(amount) < 0) {

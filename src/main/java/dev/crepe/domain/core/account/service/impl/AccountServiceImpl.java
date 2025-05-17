@@ -82,7 +82,7 @@ public class AccountServiceImpl implements AccountService {
         Account account = Account.builder()
                 .bank(bankToken.getBank())
                 .bankToken(bankToken)
-                .availableBalance(bankToken.getTotalSupply())
+                .nonAvailableBalance(bankToken.getTotalSupply())
                 .balance(bankToken.getTotalSupply())
                 .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
                 .accountAddress(accountAddress)

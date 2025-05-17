@@ -208,10 +208,10 @@ public class BankServiceImpl implements BankService {
                             "은행의 " + coin.getCurrency() + " 계좌를 찾을 수 없습니다"));
 
             // 자본금 충분성 검증 (가용 잔액으로 확인)
-            if (coinAccount.getAvailableBalance().compareTo(requiredCoinAmount) < 0) {
+            if (coinAccount.getNonAvailableBalance().compareTo(requiredCoinAmount) < 0) {
                 throw new InsufficientCapitalException(
                         "상품 출시에 필요한 " + coin.getCurrency() + " 자본금이 부족합니다. " +
-                                "필요: " + requiredCoinAmount + ", 가용: " + coinAccount.getAvailableBalance());
+                                "필요: " + requiredCoinAmount + ", 가용: " + coinAccount.getNonAvailableBalance());
             }
 
         }

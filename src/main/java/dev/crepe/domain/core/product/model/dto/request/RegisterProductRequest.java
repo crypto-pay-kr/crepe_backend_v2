@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Getter
@@ -20,8 +21,8 @@ public class RegisterProductRequest {
    private BigDecimal maxMonthlyPayment;
    private Integer maxParticipants;
    private PreferentialRateConditionDto preferentialRateCondition;
-   private LocalDate startDate;
-   private LocalDate endDate;
+   private LocalDateTime startDate;
+   private LocalDateTime endDate;
    private List<Tag> tags;
    private String job;
    private String birth;
