@@ -9,7 +9,7 @@ import java.util.Map;
 
 @Getter
 @Setter
-public class GetExchangeRequest {
+public class CreateExchangeRequest {
 
     private String fromCurrency;
     private String toCurrency;

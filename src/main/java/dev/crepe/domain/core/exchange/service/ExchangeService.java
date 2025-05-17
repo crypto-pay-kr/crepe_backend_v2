@@ -1,11 +1,12 @@
 package dev.crepe.domain.core.exchange.service;
 
+import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
 
 public interface ExchangeService {
 
-    void exchangeToToken(String email, GetExchangeRequest request);
-    void exchangeToCoin(String email, GetExchangeRequest request);
+    void exchangeToToken(String email, CreateExchangeRequest request);
+    void exchangeToCoin(String email, CreateExchangeRequest request);
 
 
 

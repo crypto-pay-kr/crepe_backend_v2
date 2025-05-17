@@ -1,8 +1,11 @@
 package dev.crepe.domain.core.exchange.service.impl;
 
 import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.exchange.exception.AmountNotAllowedException;
 import dev.crepe.domain.core.exchange.exception.ExchangeValidationException;
-import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
+import dev.crepe.domain.core.exchange.exception.TotalSupplyNotAllowedException;
+import dev.crepe.domain.core.exchange.exception.TotalTokenAmountNotAllowedException;
+import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +28,7 @@ public class ExchangeValidateServiceImpl {
      * 요청한 토큰양 검증
      */
     public BigDecimal validateRequestedTokenAmount(
-            GetExchangeRequest request,
+            CreateExchangeRequest request,
             List<Portfolio> portfolios,
             BigDecimal totalSupply,
             List<Account> bankCoinAccounts
@@ -55,7 +58,7 @@ public class ExchangeValidateServiceImpl {
      * 요청한 코인 양 검증
      */
     public BigDecimal validateRequestedCoinAmount(
-            GetExchangeRequest request,
+            CreateExchangeRequest request,
             List<Portfolio> portfolios,
             BigDecimal totalSupply,
             List<Account> bankCoinAccounts
@@ -95,7 +98,7 @@ public class ExchangeValidateServiceImpl {
         for (Portfolio p : portfolios) {
             String coin = p.getCoin().getCurrency();
             BigDecimal rate = coinRates.get(coin);
-            BigDecimal bankBalance = bankCoinMap.getOrDefault(coin, BigDecimal.ZERO).max(BigDecimal.ZERO); ;
+            BigDecimal bankBalance = bankCoinMap.getOrDefault(coin, BigDecimal.ZERO).max(BigDecimal.ZERO);
             BigDecimal value = p.getAmount().subtract(bankBalance).multiply(rate);
             totalKRW = totalKRW.add(value);
         }
@@ -106,6 +109,9 @@ public class ExchangeValidateServiceImpl {
      * 토큰 단가 = 총 자본금 / 현재 토큰양
      */
     public BigDecimal calculateTokenPrice(BigDecimal totalCapital, BigDecimal totalSupply) {
+        if (totalSupply.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new TotalSupplyNotAllowedException();
+        }
         return totalCapital.divide(totalSupply, 8, RoundingMode.HALF_UP);
     }
 
@@ -113,6 +119,9 @@ public class ExchangeValidateServiceImpl {
      *환전 수량 계산
      */
     public BigDecimal calculateAmount(BigDecimal fromAmount, BigDecimal fromRate, BigDecimal coinRate) {
+        if (fromAmount.compareTo(BigDecimal.ZERO) < 0 || fromRate.compareTo(BigDecimal.ZERO) < 0) {
+            throw new AmountNotAllowedException();
+        }
         BigDecimal coinValue = fromAmount.multiply(fromRate);
         return coinValue.divide(coinRate, 8, RoundingMode.HALF_UP);
     }

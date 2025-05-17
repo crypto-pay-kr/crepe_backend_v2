@@ -5,10 +5,9 @@ import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
-import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
+import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.exchange.model.dto.response.ExchangeAccountsResponse;
 import dev.crepe.domain.core.exchange.service.ExchangeService;
-import dev.crepe.domain.core.exchange.util.ExchangeAmountValidator;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.history.exchange.model.entity.ExchangeHistory;
@@ -32,7 +31,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     @Override
     @Transactional
-    public void exchangeToToken(String email, GetExchangeRequest request) {
+    public void exchangeToToken(String email, CreateExchangeRequest request) {
 
         // 1. 계좌 조회
         ExchangeAccountsResponse accounts = getExchangeAccounts(email, request, true);
@@ -82,7 +81,7 @@ public class ExchangeServiceImpl implements ExchangeService {
 
     @Override
     @Transactional
-    public void exchangeToCoin(String email, GetExchangeRequest request) {
+    public void exchangeToCoin(String email, CreateExchangeRequest request) {
 
         // 1. 계좌 조회
         ExchangeAccountsResponse accounts= getExchangeAccounts(email, request,false);
@@ -128,7 +127,7 @@ public class ExchangeServiceImpl implements ExchangeService {
         exchangeHistoryRepository.save(exchangeHistory);
 
     }
-    private ExchangeAccountsResponse getExchangeAccounts(String email, GetExchangeRequest request, boolean isCoinToToken) {
+    private ExchangeAccountsResponse getExchangeAccounts(String email, CreateExchangeRequest request, boolean isCoinToToken) {
         String fromCurrency = request.getFromCurrency();
         String toCurrency = request.getToCurrency();
 

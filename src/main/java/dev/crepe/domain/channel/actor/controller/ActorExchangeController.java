@@ -4,7 +4,7 @@ package dev.crepe.domain.channel.actor.controller;
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorExchangeService;
-import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
+import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,10 +31,10 @@ public class ActorExchangeController {
     )
     @ActorAuth
     @PostMapping("/token")
-    public ResponseEntity<String> requestExchangeToToken(@RequestBody GetExchangeRequest request,
+    public ResponseEntity<String> requestExchangeToToken(@RequestBody CreateExchangeRequest request,
                                                  AppAuthentication auth) {
-        actorExchangeService.RequestExchangeToToken(auth.getUserEmail(), request );
-        return ResponseEntity.ok("코인에서 토큰으로 환전요청이 완료되었습니다");
+        actorExchangeService.requestExchangeToToken(auth.getUserEmail(), request );
+        return ResponseEntity.ok("코인에서 토큰으로 환전 요청이 완료되었습니다");
     }
 
     @Operation(
@@ -44,12 +44,12 @@ public class ActorExchangeController {
     )
     @ActorAuth
     @PostMapping("/coin")
-    public ResponseEntity<String> requestExchangeToCoin(@RequestBody GetExchangeRequest request,
+    public ResponseEntity<String> requestExchangeToCoin(@RequestBody CreateExchangeRequest request,
                                                  AppAuthentication auth) {
-        System.out.println("💥 exchangeToCoin 컨트롤러 진입");
-        actorExchangeService.RequestExchangeToCoin(auth.getUserEmail(), request );
-        return ResponseEntity.ok("토큰에서 코인으로환전 요청이 완료 되었습니다");
+        actorExchangeService.requestExchangeToCoin(auth.getUserEmail(), request );
+        return ResponseEntity.ok("토큰에서 코인으로 환전 요청이 완료되었습니다");
     }
+
 
     @Operation(
             summary = "토큰 정보를 조회 ",
@@ -59,7 +59,7 @@ public class ActorExchangeController {
     @ActorAuth
     @GetMapping("/info")
     public ResponseEntity<TokenInfoResponse> getTokenInfo(@RequestParam String currency) {
-        return ResponseEntity.ok(actorExchangeService.GetBankTokenInfo(currency));
+        return ResponseEntity.ok(actorExchangeService.getBankTokenInfo(currency));
     }
 }
 

@@ -1,6 +1,7 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
 import dev.crepe.domain.channel.actor.service.ActorExchangeService;
+import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.exchange.model.dto.request.GetExchangeRequest;
 import dev.crepe.domain.core.exchange.service.ExchangeService;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
@@ -17,17 +18,17 @@ public class ActorExchangeServiceImpl implements ActorExchangeService {
     private final BankTokenInfoService bankTokenInfoService;
 
     @Override
-    public void RequestExchangeToCoin(String email, GetExchangeRequest getExchangeRequest) {
-        exchangeService.exchangeToCoin(email, getExchangeRequest);
+    public void requestExchangeToCoin(String email, CreateExchangeRequest createExchangeRequest) {
+        exchangeService.exchangeToCoin(email, createExchangeRequest);
     }
 
     @Override
-    public void RequestExchangeToToken(String email, GetExchangeRequest getExchangeRequest) {
-        exchangeService.exchangeToToken(email, getExchangeRequest);
+    public void requestExchangeToToken(String email, CreateExchangeRequest createExchangeRequest) {
+        exchangeService.exchangeToToken(email, createExchangeRequest);
     }
 
     @Override
-    public TokenInfoResponse GetBankTokenInfo(String currency) {
+    public TokenInfoResponse getBankTokenInfo(String currency) {
         return bankTokenInfoService.getTokenInfo(currency);
     }
 }
