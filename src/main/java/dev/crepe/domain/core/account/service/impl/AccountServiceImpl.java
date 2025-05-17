@@ -108,17 +108,17 @@ public class AccountServiceImpl implements AccountService {
     @Override
     @Transactional
     public void activeBankTokenAccount(BankToken bankToken) {
-        Account existingAccount = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
+        Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
                 .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
 
         Account updatedAccount = Account.builder()
-                .id(existingAccount.getId()) // 기존 ID 유지
-                .bank(existingAccount.getBank())
+                .id(account.getId())
+                .bank(account.getBank())
                 .bankToken(bankToken)
                 .availableBalance(bankToken.getTotalSupply())
                 .balance(bankToken.getTotalSupply())
-                .addressRegistryStatus(existingAccount.getAddressRegistryStatus())
-                .accountAddress(existingAccount.getAccountAddress())
+                .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
+                .accountAddress(account.getAccountAddress())
                 .build();
 
         accountRepository.save(updatedAccount);
@@ -229,4 +229,12 @@ public class AccountServiceImpl implements AccountService {
         account.registerAddress(request.getAddress(), request.getTag());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public String getAccountOwnerName(String email, String currency) {
+        Account account = accountRepository.findByBank_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException(email));
+
+        return account.getBank() != null ? account.getBank().getName() : null;
+    }
 }

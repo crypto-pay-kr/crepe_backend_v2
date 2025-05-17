@@ -32,6 +32,13 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             AddressRegistryStatus status
     );
 
+    Optional<Account> findByBank_EmailAndCoin_CurrencyAndAddressRegistryStatus(
+            String bankEmail,
+            String currency,
+            AddressRegistryStatus status
+    );
+
+
     Optional<Account> findByBankAndCoin(Bank bank, Coin coin);
 
     Optional<Account> findByBankAndBankToken(Bank bank, BankToken bankToken);

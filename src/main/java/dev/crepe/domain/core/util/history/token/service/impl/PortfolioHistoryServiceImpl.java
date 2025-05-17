@@ -6,6 +6,10 @@ import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.core.util.coin.global.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
+import dev.crepe.domain.core.util.coin.regulation.exception.InvalidTokenGenerateException;
+import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
+import dev.crepe.domain.core.util.coin.regulation.exception.PortfolioUpdateFailedException;
+import dev.crepe.domain.core.util.coin.regulation.exception.TokenHistoryNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
@@ -37,28 +41,30 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     @Override
     @Transactional
     public void addTokenPortfolioHistory(CreateBankTokenRequest request, BankToken bankToken, BigDecimal totalSupplyAmount) {
-        // TokenHistory 생성
-        TokenHistory tokenHistory = TokenHistory.builder()
-                .bankToken(bankToken)
-                .totalSupplyAmount(totalSupplyAmount)
-                .status(BankTokenStatus.PENDING)
-                .requestType(TokenRequestType.NEW)
-                .build();
-        tokenHistoryRepository.save(tokenHistory);
-
-        // PortfolioHistoryDetail 추가
-        request.getPortfolioCoins().forEach(portfolio -> {
-            PortfolioHistoryDetail detail = PortfolioHistoryDetail.builder()
-                    .tokenHistory(tokenHistory)
-                    .coinName(portfolio.getCoinName())
-                    .coinCurrency(portfolio.getCurrency())
-                    .updateAmount(portfolio.getAmount())
-                    .updatePrice(portfolio.getCurrentPrice())
+        try {
+            TokenHistory tokenHistory = TokenHistory.builder()
+                    .bankToken(bankToken)
+                    .totalSupplyAmount(totalSupplyAmount)
+                    .status(BankTokenStatus.PENDING)
+                    .requestType(TokenRequestType.NEW)
                     .build();
-            portfolioHistoryDetailRepository.save(detail);
-        });
-    }
+            tokenHistoryRepository.save(tokenHistory);
 
+            request.getPortfolioCoins().forEach(portfolio -> {
+                PortfolioHistoryDetail detail = PortfolioHistoryDetail.builder()
+                        .tokenHistory(tokenHistory)
+                        .coinName(portfolio.getCoinName())
+                        .coinCurrency(portfolio.getCurrency())
+                        .updateAmount(portfolio.getAmount())
+                        .updatePrice(portfolio.getCurrentPrice())
+                        .build();
+                portfolioHistoryDetailRepository.save(detail);
+            });
+        } catch (Exception e) {
+            log.error("포트폴리오 히스토리 추가 중 오류 발생: {}", e.getMessage(), e);
+            throw new PortfolioUpdateFailedException("포트폴리오 히스토리 추가 중 오류 발생: " + e.getMessage());
+        }
+    }
 
     // 토큰 재발행 요청 이력 업데이트
     @Override
@@ -102,28 +108,30 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     @Override
     @Transactional
     public void updatePortfolio(BankToken bankToken) {
+        try {
+            // BankToken의 id 를 통해 PENDING 상태인 tokenhistory 내역 가져오기
+            TokenHistory pendingTokenHistory = tokenHistoryRepository.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING)
+                    .orElseThrow(() -> new PendingBankTokenExistsException(bankToken.getName()));
 
-        // BankToken의 id 를 통해 PENDING 상태인 tokenhistory 내역 가져오기
-        TokenHistory pendingTokenHistory = tokenHistoryRepository.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING)
-                .orElseThrow(() -> new IllegalArgumentException("PENDING 상태의 TokenHistory를 찾을 수 없습니다."));
+            // 기존 포토폴리오 삭제
+            bankToken.getPortfolios().clear();
+            portfolioRepository.deleteAllByBankToken(bankToken);
 
-        // 기존 포토폴리오 삭제
-        bankToken.getPortfolios().clear();
-        portfolioRepository.deleteAllByBankToken(bankToken);
+            pendingTokenHistory.getPortfolioDetails().forEach(portfolio -> {
+                Coin coin = coinRepository.findByCurrency(portfolio.getCoinCurrency());
+                Portfolio newPortfolio = Portfolio.builder()
+                        .bankToken(bankToken)
+                        .coin(coin)
+                        .amount(portfolio.getUpdateAmount())
+                        .initialPrice(portfolio.getUpdatePrice())
+                        .build();
+                portfolioRepository.save(newPortfolio);
+            });
+        } catch (Exception e) {
+            log.error("포트폴리오 업데이트 중 오류 발생: {}", e.getMessage(), e);
+            throw new PortfolioUpdateFailedException("포트폴리오 업데이트 중 오류가 발생했습니다.");
+        }
 
-        pendingTokenHistory.getPortfolioDetails().forEach(portfolio -> {
-            Coin coin = coinRepository.findByCurrency(portfolio.getCoinCurrency());
-            if (coin == null) {
-                throw new IllegalArgumentException("해당 통화에 대한 Coin 정보를 찾을 수 없습니다: " + portfolio.getCoinCurrency());
-            }
-            Portfolio newPortfolio = Portfolio.builder()
-                    .bankToken(bankToken)
-                    .coin(coin)
-                    .amount(portfolio.getUpdateAmount())
-                    .initialPrice(portfolio.getUpdatePrice())
-                    .build();
-            portfolioRepository.save(newPortfolio);
-        });
     }
 
 
@@ -132,30 +140,38 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     @Transactional
     @Override
     public void updateTokenHistoryStatus(RejectBankTokenRequest request, Long tokenHistoryId, BankTokenStatus status) {
+        try {
+            // 토큰 발행 내역 조회
+            TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
+                    .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
 
-        // 토큰 발행 내역 조회
-        TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 TokenHistory를 찾을 수 없습니다: " + tokenHistoryId));
+            // 거절 사유 추가
+            tokenHistory.addRejectReason(request.getRejectReason());
 
-        tokenHistory.addRejectReason(request.getRejectReason());
+            // 상태 업데이트
+            tokenHistory.updateStatus(status);
+            tokenHistoryRepository.save(tokenHistory);
 
-        System.out.println("거절 사유: " + request.getRejectReason());
-        // 상태 업데이트
-        tokenHistory.updateStatus(status);
-        tokenHistoryRepository.save(tokenHistory);
+        } catch (Exception e) {
+            log.error("토큰 히스토리 상태 업데이트 중 오류 발생: {}", e.getMessage(), e);
+            throw new PortfolioUpdateFailedException("토큰 히스토리 상태 업데이트 중 오류가 발생했습니다.");
+        }
     }
+
 
     // 토큰 발행 상태 업데이트(승인)
     @Transactional
     @Override
     public void updateTokenHistoryStatus(Long tokenHistoryId, BankTokenStatus status) {
+        try {
+            TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
+                    .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
 
-        // 토큰 발행 내역 조회
-        TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 ID의 TokenHistory를 찾을 수 없습니다: " + tokenHistoryId));
-
-        // 상태 업데이트
-        tokenHistory.updateStatus(status);
-        tokenHistoryRepository.save(tokenHistory);
+            tokenHistory.updateStatus(status);
+            tokenHistoryRepository.save(tokenHistory);
+        } catch (Exception e) {
+            log.error("토큰 히스토리 상태 업데이트 중 오류 발생: {}", e.getMessage(), e);
+            throw new PortfolioUpdateFailedException("토큰 히스토리 상태 업데이트 중 오류가 발생했습니다.");
+        }
     }
 }

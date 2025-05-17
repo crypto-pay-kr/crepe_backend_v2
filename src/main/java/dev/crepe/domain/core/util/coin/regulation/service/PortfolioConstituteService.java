@@ -9,5 +9,5 @@ public interface PortfolioConstituteService {
 
     void validatePortfolioConstitute(List<CreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail);
 
-    void reValidatePortfolioConstitute(List<ReCreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail);
+    void revalidatePortfolioConstitute(List<ReCreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail);
 }

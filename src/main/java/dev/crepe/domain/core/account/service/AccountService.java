@@ -26,4 +26,6 @@ public interface AccountService {
     void submitAccountRegistrationRequest(GetAddressRequest request, String email);
     GetAddressResponse getAddressByCurrency(String currency, String email);
     void reRegisterAddress(String email, GetAddressRequest request);
+
+    String getAccountOwnerName(String email, String currency);
 }

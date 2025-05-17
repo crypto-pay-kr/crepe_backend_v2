@@ -9,6 +9,7 @@ import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.exception.TokenHistoryNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
@@ -35,7 +36,6 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     private final AccountService accountService;
     private final PortfolioHistoryServiceImpl portfolioHistoryService;
     private final BankTokenRepository bankTokenRepository;
-    private final AccountRepository accountRepository;
     private final TokenHistoryRepository tokenHistoryRepository;
 
 
@@ -92,26 +92,22 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
     // 은행 토큰 발행 요청 승인
     @Override
-    @Transactional
-    public void approveBankTokenRequest( Long tokenHistoryId) {
+    @Transactional(rollbackFor = Exception.class)
+    public void approveBankTokenRequest(Long tokenHistoryId) {
 
         // TokenHistory 조회
         TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 토큰 발행 요청을 찾을 수 없습니다."));
+                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
         BankToken bankToken = tokenHistory.getBankToken();
 
-        // 계좌 상태 업데이트
-        Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
-                .orElseThrow(() -> new IllegalArgumentException("해당 토큰에 대한 계좌를 찾을 수 없습니다."));
-        account.approveAddress();
-
+        // 계좌 활성화
         accountService.activeBankTokenAccount(bankToken);
-
-        // 포토폴리오 구성 변경
+        // 포토폴리오 변경 내역 추가
         portfolioHistoryService.updatePortfolio(bankToken);
-        // 토큰 발행 상태 변경
+        // 토큰 발행 내역 추가
         portfolioHistoryService.updateTokenHistoryStatus( tokenHistoryId, BankTokenStatus.APPROVED);
 
+        // 토큰 발행 승인
         bankToken.approve();
         bankTokenRepository.save(bankToken);
 
@@ -125,15 +121,10 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
         // TokenHistory 조회
         TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 토큰 발행 요청을 찾을 수 없습니다."));
-        BankToken bankToken = tokenHistory.getBankToken();
-
-        // 계좌 상태 업데이트
-        accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
-                .orElseThrow(() -> new IllegalArgumentException("해당 토큰에 대한 계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
 
         // 토큰 발행 상태 변경
-        portfolioHistoryService.updateTokenHistoryStatus(request, tokenHistoryId, BankTokenStatus.REJECTED);
+        portfolioHistoryService.updateTokenHistoryStatus(request, tokenHistory.getId(),  BankTokenStatus.REJECTED);
 
     }
 }

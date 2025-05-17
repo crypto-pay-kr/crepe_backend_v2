@@ -1,5 +1,7 @@
 package dev.crepe.domain.bank.service.impl;
 
+import dev.crepe.domain.bank.exception.BankNameMismatchException;
+import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
@@ -10,10 +12,12 @@ import dev.crepe.domain.bank.service.BankTokenService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
+import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
-import dev.crepe.domain.core.util.coin.regulation.service.BankTokenSetupService;
+import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioConstituteService;
 import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
@@ -32,7 +36,7 @@ import java.util.stream.Collectors;
 public class BankTokenServiceImpl implements BankTokenService {
 
     private final PortfolioConstituteService portfolioConstituteService;
-    private final BankTokenSetupService bankTokenSetupService;
+    private final TokenSetupService tokenSetupService;
     private final AccountService accountService;
     private final UpbitExchangeService upbitExchangeService;
     private final BankRepository bankRepository;
@@ -44,12 +48,11 @@ public class BankTokenServiceImpl implements BankTokenService {
     @Override
     public void createBankToken(CreateBankTokenRequest request, String bankEmail) {
 
-        // email로 bankName을 받아 request.bankName과 일치하는지 검증
         Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new IllegalArgumentException("은행을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BankNotFoundException(bankEmail));
 
-        if(!bank.getName().equals(request.getBankName())) {
-            throw new IllegalArgumentException("은행 이름이 일치하지 않습니다.");
+        if (!bank.getName().equals(request.getBankName())) {
+            throw new BankNameMismatchException(request.getBankName(), bank.getName());
         }
 
         // 포토폴리오 구성 정보 유효성 검증
@@ -64,7 +67,7 @@ public class BankTokenServiceImpl implements BankTokenService {
             );
         });
         // bankToken 발행 요청 service 호출
-        BankToken bankToken = bankTokenSetupService.requestTokenGenerate(request, bankEmail);
+        BankToken bankToken = tokenSetupService.requestTokenGenerate(request, bankEmail);
 
         // PENDING 상태 계좌 생성
         accountService.createBankTokenAccount(bankToken);
@@ -75,21 +78,18 @@ public class BankTokenServiceImpl implements BankTokenService {
     @Override
     public void recreateBankToken(ReCreateBankTokenRequest request, String bankEmail) {
 
-        // email로 bankName을 받아 request.bankName과 일치하는지 검증
         Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new IllegalArgumentException("은행을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BankNotFoundException(bankEmail));
 
-        // bankToken 조회
         BankToken bankToken = bankTokenRepository.findByBank(bank)
-                .orElseThrow(() -> new IllegalArgumentException("은행이 보유한 토큰이 없습니다."));
+                .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
 
-        // 이미 pending 중인 상태의 토큰이 있다면, 예외 처리
         if (tokenHistoryRepository.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
-            throw new IllegalArgumentException("이미 발행 대기 중인 상태의 토큰이 존재합니다.");
+            throw new PendingBankTokenExistsException(bankToken.getName());
         }
 
         // 포토폴리오 재구성 정보 유효성 검증
-        portfolioConstituteService.reValidatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
+        portfolioConstituteService.revalidatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
 
 
         // 시세 오차 허용 범위 충족 여부 검증
@@ -102,7 +102,7 @@ public class BankTokenServiceImpl implements BankTokenService {
         });
 
         // bankToken 발행 요청 service 호출
-        bankToken = bankTokenSetupService.requestTokenReGenerate(request, bankEmail);
+        bankToken = tokenSetupService.requestTokenReGenerate(request, bankEmail);
 
         accountService.updateBankTokenAccount(bankToken);
 
@@ -113,10 +113,13 @@ public class BankTokenServiceImpl implements BankTokenService {
     @Override
     @Transactional(readOnly = true)
     public GetTokenAccountInfoResponse getAccountByBankToken(String bankEmail) {
+
         Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 은행을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BankNotFoundException(bankEmail));
+
         BankToken bankToken = bankTokenRepository.findByBank(bank)
-                .orElseThrow(() -> new IllegalArgumentException("은행이 보유한 토큰이 없습니다."));
+                .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
+
         return accountRepository.findByBankAndBankTokenAndAddressRegistryStatus(
                 bank,
                 bankToken,
@@ -139,9 +142,8 @@ public class BankTokenServiceImpl implements BankTokenService {
     public List<GetTokenHistoryResponse> getTokenHistory(GetPaginationRequest request) {
         PageRequest pageRequest = PageRequest.of(request.getPage(), request.getSize());
 
-        // request.getEmail로 bankId 조회
         Bank bank = bankRepository.findByEmail(request.getAuthEmail())
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 은행을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BankNotFoundException(request.getAuthEmail()));
 
         // 특정 은행의 TokenHistory 조회
         return bankTokenRepository.findByBank_Id(bank.getId(), pageRequest)
