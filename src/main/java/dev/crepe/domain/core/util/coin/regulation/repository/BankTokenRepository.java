@@ -11,9 +11,13 @@ import java.util.Optional;
 
 public interface BankTokenRepository extends JpaRepository<BankToken, Long> {
     Optional<BankToken> findByBank(Bank bank);
+<<<<<<< HEAD
 
     Page<BankToken> findByBank_Id(Long bankId, Pageable pageable);
 
+=======
+    Optional<BankToken> findByCurrency(String currency);
+>>>>>>> origin/dev
     boolean existsByBank_Id(Long bankId);
 
 

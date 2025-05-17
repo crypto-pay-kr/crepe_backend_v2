@@ -2,6 +2,7 @@ package dev.crepe.domain.core.account.service.impl;
 
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
 import dev.crepe.domain.core.account.exception.TagRequiredException;
@@ -17,6 +18,7 @@ import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,8 @@ public class AccountServiceImpl implements AccountService {
     private final GenerateAccountAddress generateAccountAddress;
     private final AccountRepository accountRepository;
     private final CoinRepository coinRepository;
+    private final BankTokenRepository bankTokenRepository;
+    private final ActorRepository actorRepository;
 
     @Override
     @Transactional
@@ -78,8 +82,8 @@ public class AccountServiceImpl implements AccountService {
         Account account = Account.builder()
                 .bank(bankToken.getBank())
                 .bankToken(bankToken)
-                .availableBalance(BigDecimal.ZERO)
-                .balance(BigDecimal.ZERO)
+                .nonAvailableBalance(bankToken.getTotalSupply())
+                .balance(bankToken.getTotalSupply())
                 .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
                 .accountAddress(accountAddress)
                 .build();
@@ -97,7 +101,7 @@ public class AccountServiceImpl implements AccountService {
                 .id(existingAccount.getId()) // 기존 ID 유지
                 .bank(existingAccount.getBank())
                 .bankToken(existingAccount.getBankToken())
-                .availableBalance(existingAccount.getAvailableBalance())
+                .nonAvailableBalance(existingAccount.getNonAvailableBalance())
                 .balance(existingAccount.getBalance())
                 .addressRegistryStatus(existingAccount.getAddressRegistryStatus())
                 .accountAddress(existingAccount.getAccountAddress())
@@ -112,15 +116,15 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
                 .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
 
-        BigDecimal availableBalance = account.getAvailableBalance().compareTo(BigDecimal.ZERO) != 0
-                ? account.getAvailableBalance()
+        BigDecimal availableBalance = account.getNonAvailableBalance().compareTo(BigDecimal.ZERO) != 0
+                ? account.getNonAvailableBalance()
                 : tokenHistory.getTotalSupplyAmount();
 
         Account updatedAccount = Account.builder()
                 .id(account.getId())
                 .bank(account.getBank())
                 .bankToken(bankToken)
-                .availableBalance(availableBalance)
+                .nonAvailableBalance(availableBalance)
                 .balance(tokenHistory.getTotalSupplyAmount())
                 .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
                 .accountAddress(account.getAccountAddress())
@@ -136,7 +140,13 @@ public class AccountServiceImpl implements AccountService {
                 ? accountRepository.findByBank_Email(email)
                 : accountRepository.findByActor_Email(email);
 
+        boolean hasValidCoinId = accounts.stream().anyMatch(account -> account.getCoin() != null);
+        if (!hasValidCoinId) {
+            throw new AccountNotFoundException();
+        }
+
         return accounts.stream()
+                .filter(account -> account.getCoin() != null)
                 .map(account -> GetBalanceResponse.builder()
                         .coinName(account.getCoin().getName())
                         .currency(account.getCoin().getCurrency())
@@ -242,4 +252,24 @@ public class AccountServiceImpl implements AccountService {
 
         return account.getBank() != null ? account.getBank().getName() : null;
     }
+
+
+    @Override
+    public Account getOrCreateTokenAccount(String email, String tokenCurrency) {
+        return accountRepository.findByActor_EmailAndBankToken_Currency(email, tokenCurrency)
+                .orElseGet(() -> {
+                    BankToken token = bankTokenRepository.findByCurrency(tokenCurrency)
+                            .orElseThrow(() -> new IllegalArgumentException("토큰 없음"));
+                    Actor actor = actorRepository.findByEmail(email)
+                            .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+
+                    return accountRepository.save(Account.builder()
+                            .actor(actor)
+                            .bankToken(token)
+                            .balance(BigDecimal.ZERO)
+                            .build());
+                });
+    }
+
 }
+

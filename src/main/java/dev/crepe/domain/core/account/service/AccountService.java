@@ -4,6 +4,7 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 
@@ -29,4 +30,7 @@ public interface AccountService {
     void reRegisterAddress(String email, GetAddressRequest request);
 
     String getAccountOwnerName(String email, String currency);
+
+    Account getOrCreateTokenAccount(String email, String tokenCurrency);
+
 }

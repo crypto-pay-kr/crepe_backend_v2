@@ -45,7 +45,7 @@ public class TokenCalculationUtil {
 
     // 유통 중인 토큰량 계산
     public BigDecimal getCirculatingSupply(Account bankTokenAccount) {
-        return bankTokenAccount.getBalance().subtract(bankTokenAccount.getAvailableBalance());
+        return bankTokenAccount.getNonAvailableBalance();
     }
 
 
