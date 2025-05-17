@@ -2,7 +2,7 @@ package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
-import dev.crepe.domain.core.util.history.token.model.entity.TokenPortfolioHistory;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -44,14 +44,17 @@ public class BankToken extends BaseEntity {
     private BankTokenStatus status;
 
     @OneToMany(mappedBy = "bankToken", fetch = FetchType.LAZY)
-    private List<TokenPortfolioHistory> tokenHistories;
+    private List<TokenHistory> tokenHistories;
 
     @OneToMany(mappedBy = "bankToken", fetch = FetchType.LAZY)
     private List<Portfolio> portfolios;
 
+    public void approve() { this.status = BankTokenStatus.APPROVED; }
 
-    public void updateStatus(BankTokenStatus status) {
-        this.status = status;
+    public void changeTotalSupply(BigDecimal totalSupply) {
+        this.totalSupply = totalSupply;
     }
+
+
 
 }

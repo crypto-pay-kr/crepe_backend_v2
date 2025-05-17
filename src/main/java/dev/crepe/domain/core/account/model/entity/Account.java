@@ -75,6 +75,10 @@ public class Account extends BaseEntity {
     }
 
 
+    // 계좌 등록 대기중
+    public void pendingAddress() { this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;}
+
+
     public void allocateBudget(BigDecimal amount) {
         if (nonAvailableBalance.compareTo(amount) < 0) {
             throw new InsufficientBalanceException();

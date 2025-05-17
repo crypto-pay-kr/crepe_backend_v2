@@ -1,7 +1,6 @@
 package dev.crepe.domain.core.account.service.impl;
 
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
@@ -18,6 +17,7 @@ import dev.crepe.domain.core.account.util.GenerateAccountAddress;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -89,6 +89,48 @@ public class AccountServiceImpl implements AccountService {
                 .build();
 
         accountRepository.save(account);
+    }
+
+    @Override
+    @Transactional
+    public void updateBankTokenAccount(BankToken bankToken) {
+        Account existingAccount = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
+                .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
+
+        Account updatedAccount = Account.builder()
+                .id(existingAccount.getId()) // 기존 ID 유지
+                .bank(existingAccount.getBank())
+                .bankToken(existingAccount.getBankToken())
+                .nonAvailableBalance(existingAccount.getNonAvailableBalance())
+                .balance(existingAccount.getBalance())
+                .addressRegistryStatus(existingAccount.getAddressRegistryStatus())
+                .accountAddress(existingAccount.getAccountAddress())
+                .build();
+
+        accountRepository.save(updatedAccount);
+    }
+
+    @Override
+    @Transactional
+    public void activeBankTokenAccount(BankToken bankToken, TokenHistory tokenHistory) {
+        Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
+                .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
+
+        BigDecimal availableBalance = account.getNonAvailableBalance().compareTo(BigDecimal.ZERO) != 0
+                ? account.getNonAvailableBalance()
+                : tokenHistory.getTotalSupplyAmount();
+
+        Account updatedAccount = Account.builder()
+                .id(account.getId())
+                .bank(account.getBank())
+                .bankToken(bankToken)
+                .nonAvailableBalance(availableBalance)
+                .balance(tokenHistory.getTotalSupplyAmount())
+                .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
+                .accountAddress(account.getAccountAddress())
+                .build();
+
+        accountRepository.save(updatedAccount);
     }
 
     @Override
@@ -203,6 +245,16 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public String getAccountOwnerName(String email, String currency) {
+        Account account = accountRepository.findByBank_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException(email));
+
+        return account.getBank() != null ? account.getBank().getName() : null;
+    }
+
+
+    @Override
     public Account getOrCreateTokenAccount(String email, String tokenCurrency) {
         return accountRepository.findByActor_EmailAndBankToken_Currency(email, tokenCurrency)
                 .orElseGet(() -> {
@@ -219,5 +271,5 @@ public class AccountServiceImpl implements AccountService {
                 });
     }
 
-
 }
+

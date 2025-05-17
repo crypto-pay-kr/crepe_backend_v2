@@ -18,5 +18,6 @@ public class GetTokenAccountInfoResponse {
     private String tokenName;
     private String tokenCurrency;
     private BigDecimal balance;
+    private BigDecimal availableBalance;
     private String accountAddress;
 }

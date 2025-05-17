@@ -5,6 +5,7 @@ import dev.crepe.domain.auth.jwt.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
+import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
@@ -139,12 +140,12 @@ public class BankServiceImpl implements BankService {
 
     // 은행 정보 조회
     @Override
-    public GetBankInfoDetailResponse getBankAllDetails(String userEmail) {
+    public GetBankInfoDetailResponse getBankAllDetails(String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+        Bank bank = bankRepository.findByEmail(bankEmail)
+                .orElseThrow(() -> new BankNotFoundException(bankEmail));
 
-        GetBankInfoDetailResponse  res =
+        GetBankInfoDetailResponse  response =
                 GetBankInfoDetailResponse .builder()
                         .bankId(bank.getId())
                         .bankEmail(bank.getEmail())
@@ -154,7 +155,7 @@ public class BankServiceImpl implements BankService {
                         .bankCode(bank.getBankCode())
                         .build();
 
-        return res;
+        return response;
     }
 
 
