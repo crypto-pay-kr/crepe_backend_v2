@@ -75,7 +75,6 @@ public class Subscribe extends BaseEntity {
     @Column(name = "next_regular_deposit_date")
     private LocalDate nextRegularDepositDate;
 
-
     // 자유납입 목표 (적금 상품인 경우)
     @Enumerated(EnumType.STRING)
     @Column(name = "selected_free_deposit_rate")

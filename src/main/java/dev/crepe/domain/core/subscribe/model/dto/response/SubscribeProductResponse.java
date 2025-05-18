@@ -23,4 +23,9 @@ public class SubscribeProductResponse {
 
     // 상품권 상품인 경우만 반환
     private String voucherCode;
+    // 잠재적 우대금리 안내 메세지
+    private String additionalMessage;
+
+    private String appliedRatesJson;   // 적용된 우대금리 상세 정보
+    private Float potentialMaxRate; // 잠재적 최대 금리
 }

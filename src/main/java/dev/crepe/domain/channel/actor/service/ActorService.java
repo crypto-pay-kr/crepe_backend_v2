@@ -22,9 +22,6 @@ public interface ActorService {
     //********** 로그인 **********/
 
     ApiResponse<TokenResponse> login(LoginRequest request);
-
-
-    SubscribeProductResponse subscribeProduct(String userEmail, SubscribeProductRequest request);
     ResponseEntity<Void> addOccupationName(AddOccupationRequest request, String userEmail);
     ResponseEntity<String> checkIncome(String useEmail);
 }
