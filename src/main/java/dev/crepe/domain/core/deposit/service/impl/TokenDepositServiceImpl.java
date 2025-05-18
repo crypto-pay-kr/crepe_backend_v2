@@ -34,7 +34,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
 
         Product product = subscribe.getProduct();
 
-        // 2. 토큰 계좌 잔액 확인
+        // 2. 토큰 계좌 확인
         Account account = accountRepository.findByActor_EmailAndBankTokenId(userEmail, product.getBankToken().getId())
                 .orElseThrow(() -> new RuntimeException("사용자의 은행 토큰 계좌가 없습니다."));
 
@@ -43,41 +43,44 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         }
 
         switch (product.getType()) {
-            case VOUCHER -> handleVoucher(account, subscribe, amount); // 상품권
-            case SAVING -> handleSaving(account, subscribe, amount); // 예금
-            case INSTALLMENT -> handleInstallment(account, subscribe, amount); // 적금
+            case VOUCHER -> handleDepositVoucher(account, subscribe, amount); // 상품권
+            case SAVING -> handleDepositSaving(account, subscribe, amount); // 예금
+            case INSTALLMENT -> handleDepositInstallment(account, subscribe, amount); // 적금
         }
         return "예치 완료";
     }
 
 
     // 상품권 예치
-    private void handleVoucher(Account account, Subscribe subscribe, BigDecimal amount) {
+    private void handleDepositVoucher(Account account, Subscribe subscribe, BigDecimal amount) {
         Product product = subscribe.getProduct();
+        // 1. 상품 가입 상태 확인
+        validateActiveSubscribe(subscribe);
 
-        // 1. 월 최대 한도 체크 (월 최대 한도 초과시 예외 처리)
+        // 2. 월 최대 한도 체크 (월 최대 한도 초과시 예외 처리)
         validateDepositLimit(subscribe, product, amount);
 
-        // 2. 할인율 적용
+        // 3. 할인율 적용
         BigDecimal discount = BigDecimal.valueOf(product.getBaseInterestRate());
         BigDecimal discountRatio = BigDecimal.ONE.subtract(discount.divide(BigDecimal.valueOf(100)));
         BigDecimal discountedAmount = amount.multiply(discountRatio);
 
-        // 3. 계좌 잔액 차감
-        Account bankTokenAccount = getBankTokenAccount(account.getActor().getEmail(), product.getBankToken().getId());
-        bankTokenAccount.reduceAmount(discountedAmount);
+        // 4. 계좌 잔액 차감
+        account.reduceAmount(discountedAmount);
 
-        // 4. 상품에 amount 추가
+        // 5. 상품에 amount 추가
         subscribe.deposit(amount);
         subscribeRepository.save(subscribe);
 
-        // 5. subscribe 거래내역에 예치 완료 내역 찍기
+        // 6. subscribe 거래내역에 예치 완료 내역 찍기
         saveDepositHistory(subscribe, amount);
     }
 
     // 예금 예치
-    private void handleSaving(Account account, Subscribe subscribe, BigDecimal amount) {
+    private void handleDepositSaving(Account account, Subscribe subscribe, BigDecimal amount) {
         Product product = subscribe.getProduct();
+        // 1. 상품 가입 상태 확인
+        validateActiveSubscribe(subscribe);
 
         // 2. 이미 예치한 경우 예외 처리
         if (subscribe.getBalance().compareTo(BigDecimal.ZERO) > 0) {
@@ -92,8 +95,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         }
 
         // 6. 해당 bankToken 계좌에서 amount 차감
-        Account bankTokenAccount = getBankTokenAccount(account.getActor().getEmail(), product.getBankToken().getId());
-        bankTokenAccount.reduceAmount(amount);
+        account.reduceAmount(amount);
 
         // 7. 상품에 amount 추가
         subscribe.deposit(amount);
@@ -106,29 +108,26 @@ public class TokenDepositServiceImpl implements TokenDepositService {
 
 
     // 적금 예치
-    private void handleInstallment(Account account, Subscribe subscribe, BigDecimal amount) {
+    private void handleDepositInstallment(Account account, Subscribe subscribe, BigDecimal amount) {
         Product product = subscribe.getProduct();
+        // 1. 상품 가입 상태 확인
+        validateActiveSubscribe(subscribe);
 
-        // 1. 월 최대 한도 체크
+        // 2. 월 최대 한도 체크
         validateDepositLimit(subscribe, product, amount);
 
-        // 2. 해당 bankToken 계좌에서 amount 차감
-        Account bankTokenAccount = getBankTokenAccount(account.getActor().getEmail(), product.getBankToken().getId());
-        bankTokenAccount.reduceAmount(amount);
+        // 3. 해당 bankToken 계좌에서 amount 차감
+        // Account bankTokenAccount = getBankTokenAccount(account.getActor().getEmail(), product.getBankToken().getId());
+        account.reduceAmount(amount);
 
-        // 3. 상품에 amount 추가
+        // 4. 상품에 amount 추가
         subscribe.deposit(amount);
         subscribeRepository.save(subscribe);
 
-        // 4. subscribe 거래내역에 예치 완료 내역 찍기
+        // 5. subscribe 거래내역에 예치 완료 내역 찍기
         saveDepositHistory(subscribe, amount);
     }
 
-    // 은행 토큰 계좌 조회
-    private Account getBankTokenAccount(String email, Long bankTokenId) {
-        return accountRepository.findByActor_EmailAndBankTokenId(email, bankTokenId)
-                .orElseThrow(() -> new RuntimeException("사용자의 은행 토큰 계좌가 없습니다."));
-    }
 
 
     // subscribe 거래내역에 예치 완료 내역 저장
@@ -140,6 +139,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
                 .build();
         subscribeHistoryRepository.save(history);
     }
+
 
     // 월 최대 한도 체크 (월 최대 한도 초과시 예외 처리)
     void validateDepositLimit(Subscribe subscribe, Product product, BigDecimal amount) {
@@ -160,6 +160,13 @@ public class TokenDepositServiceImpl implements TokenDepositService {
             if (totalAfterDeposit.compareTo(maxLimit) > 0) {
                 throw new IllegalArgumentException("월 최대 예치 한도를 초과했습니다");
             }
+        }
+    }
+
+    // 상품 가입 상태 검증
+    private void validateActiveSubscribe(Subscribe subscribe) {
+        if (!subscribe.isActive()) {
+            throw new IllegalStateException("예치 가능한 상태가 아닙니다. (현재 상태: " + subscribe.getStatus() + ")");
         }
     }
 }

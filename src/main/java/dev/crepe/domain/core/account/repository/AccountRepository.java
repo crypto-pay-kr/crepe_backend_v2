@@ -40,4 +40,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByBankAndBankToken(Bank bank, BankToken bankToken);
 
     boolean existsByAccountAddress(String accountAddress);
+
+    Optional<Account> findByBankTokenIdAndActorIsNull(Long bankTokenId);
 }

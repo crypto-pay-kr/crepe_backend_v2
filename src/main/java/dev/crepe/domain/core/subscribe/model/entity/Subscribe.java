@@ -59,4 +59,17 @@ public class Subscribe extends BaseEntity {
         this.balance = this.balance.add(amount);
     }
 
+    public void isExpired() {
+        this.balance = BigDecimal.ZERO;
+        this.status = SubscribeStatus.EXPIRED;
+    }
+
+    public boolean isActive() {
+        return this.status == SubscribeStatus.ACTIVE;
+    }
+
+    public boolean isMatured() {
+        return LocalDateTime.now().isAfter(this.expiredDate);
+    }
+
 }
