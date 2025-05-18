@@ -26,11 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.product.repository.CapitalRepository;
-import dev.crepe.domain.core.product.repository.ProductRepository;
-import dev.crepe.domain.core.util.coin.global.repository.PortfolioRepository;
-import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
