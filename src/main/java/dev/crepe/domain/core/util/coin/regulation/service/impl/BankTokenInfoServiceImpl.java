@@ -1,5 +1,7 @@
 package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
+import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
+import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
@@ -10,11 +12,13 @@ import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -68,5 +72,53 @@ public class BankTokenInfoServiceImpl implements BankTokenInfoService {
                 .tokenBalance(tokenAccount.getBalance())
                 .portfolios(portfolioItems).build();
 
+    }
+
+
+    @Override
+    public List<GetAllBankTokenResponse> getAllBankTokenResponseList(PageRequest pageRequest) {
+
+        return bankTokenRepository.findAll(pageRequest)
+                .stream()
+                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+                .map(tokenHistory -> {
+                    List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
+                            .stream()
+                            .map(detail -> GetAllBankTokenResponse.PortfolioDetail.builder()
+                                    .coinName(detail.getCoinName())
+                                    .coinCurrency(detail.getCoinCurrency())
+                                    .prevAmount(detail.getPrevAmount())
+                                    .prevPrice(detail.getPrevPrice())
+                                    .updateAmount(detail.getUpdateAmount())
+                                    .updatePrice(detail.getUpdatePrice())
+                                    .build())
+                            .collect(Collectors.toList());
+
+                    return GetAllBankTokenResponse.builder()
+                            .bankId(tokenHistory.getBankToken().getBank().getId())
+                            .bankName(tokenHistory.getBankToken().getBank().getName())
+                            .tokenHistoryId(tokenHistory.getId())
+                            .bankTokenId(tokenHistory.getBankToken().getId())
+                            .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
+                            .changeReason(tokenHistory.getChangeReason())
+                            .rejectReason(tokenHistory.getRejectReason())
+                            .requestType(tokenHistory.getRequestType())
+                            .status(tokenHistory.getStatus())
+                            .createdAt(tokenHistory.getCreatedAt())
+                            .portfolioDetails(portfolioDetails)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+
+    @Override
+    public Optional<BankToken> findByBank(Bank bank) {
+        return bankTokenRepository.findByBank(bank);
+    }
+
+    @Override
+    public void save(BankToken bankToken) {
+        bankTokenRepository.save(bankToken);
     }
 }

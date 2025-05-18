@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -247,6 +248,16 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new AccountNotFoundException(email));
 
         return account.getBank() != null ? account.getBank().getName() : null;
+    }
+
+    @Override
+    public List<Account> getAccountsByBankEmail(String bankEmail) {
+        return accountRepository.findByBank_Email(bankEmail);
+    }
+
+    @Override
+    public Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(Bank bank, BankToken bankToken, AddressRegistryStatus status) {
+        return accountRepository.findByBankAndBankTokenAndAddressRegistryStatus(bank, bankToken, status);
     }
 
 

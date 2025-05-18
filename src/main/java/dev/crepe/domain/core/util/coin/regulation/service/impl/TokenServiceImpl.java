@@ -23,46 +23,10 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class TokenServiceImpl implements TokenService {
 
-    private final BankTokenRepository bankTokenRepository;
     private final TokenHistoryService tokenHistoryService;
     private final AccountService accountService;
     private final PortfolioHistoryService portfolioHistoryService;
-
-    @Override
-    public List<GetAllBankTokenResponse> getAllBankTokenResponseList(PageRequest pageRequest) {
-
-        return bankTokenRepository.findAll(pageRequest)
-                .stream()
-                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
-                .map(tokenHistory -> {
-                    List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
-                            .stream()
-                            .map(detail -> GetAllBankTokenResponse.PortfolioDetail.builder()
-                                    .coinName(detail.getCoinName())
-                                    .coinCurrency(detail.getCoinCurrency())
-                                    .prevAmount(detail.getPrevAmount())
-                                    .prevPrice(detail.getPrevPrice())
-                                    .updateAmount(detail.getUpdateAmount())
-                                    .updatePrice(detail.getUpdatePrice())
-                                    .build())
-                            .collect(Collectors.toList());
-
-                    return GetAllBankTokenResponse.builder()
-                            .bankId(tokenHistory.getBankToken().getBank().getId())
-                            .bankName(tokenHistory.getBankToken().getBank().getName())
-                            .tokenHistoryId(tokenHistory.getId())
-                            .bankTokenId(tokenHistory.getBankToken().getId())
-                            .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
-                            .changeReason(tokenHistory.getChangeReason())
-                            .rejectReason(tokenHistory.getRejectReason())
-                            .requestType(tokenHistory.getRequestType())
-                            .status(tokenHistory.getStatus())
-                            .createdAt(tokenHistory.getCreatedAt())
-                            .portfolioDetails(portfolioDetails)
-                            .build();
-                })
-                .collect(Collectors.toList());
-    }
+    private final BankTokenRepository bankTokenRepository;
 
 
     @Override

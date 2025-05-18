@@ -6,6 +6,7 @@ import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
     private final TokenService tokenService;
     private final BankService bankService;
+    private final BankTokenInfoService bankTokenInfoService;
 
 
     // 은행 계정 생성
@@ -41,7 +43,7 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     @Transactional(readOnly = true)
     public List<GetAllBankTokenResponse> getAllBankTokenResponseList(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        return tokenService.getAllBankTokenResponseList(pageRequest);
+        return bankTokenInfoService.getAllBankTokenResponseList(pageRequest);
 
     }
 

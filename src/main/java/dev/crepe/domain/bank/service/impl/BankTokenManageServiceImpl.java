@@ -1,14 +1,13 @@
 package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.bank.exception.BankNameMismatchException;
-import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
 import dev.crepe.domain.bank.model.dto.response.GetTokenHistoryResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.bank.repository.BankRepository;
-import dev.crepe.domain.bank.service.BankTokenService;
+import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.bank.service.BankTokenManageService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
@@ -17,9 +16,11 @@ import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExis
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioConstituteService;
-import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
+import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.model.dto.GetPaginationRequest;
 import lombok.RequiredArgsConstructor;
@@ -33,23 +34,24 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class BankTokenServiceImpl implements BankTokenService {
+public class BankTokenManageServiceImpl implements BankTokenManageService {
 
-    private final PortfolioConstituteService portfolioConstituteService;
-    private final TokenSetupService tokenSetupService;
+
+    private final BankService bankService;
     private final AccountService accountService;
     private final UpbitExchangeService upbitExchangeService;
-    private final BankRepository bankRepository;
-    private final AccountRepository accountRepository;
-    private final BankTokenRepository bankTokenRepository;
-    private final TokenHistoryRepository tokenHistoryRepository;
+    private final BankTokenInfoService bankTokenInfoService;
+    private final TokenSetupService tokenSetupService;
+    private final TokenHistoryService tokenHistoryService;
+    private final PortfolioConstituteService portfolioConstituteService;
+
+
 
     // 은행 토큰 생성
     @Override
     public void createBankToken(CreateBankTokenRequest request, String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new BankNotFoundException(bankEmail));
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
         if (!bank.getName().equals(request.getBankName())) {
             throw new BankNameMismatchException(request.getBankName(), bank.getName());
@@ -78,13 +80,12 @@ public class BankTokenServiceImpl implements BankTokenService {
     @Override
     public void recreateBankToken(ReCreateBankTokenRequest request, String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new BankNotFoundException(bankEmail));
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
-        BankToken bankToken = bankTokenRepository.findByBank(bank)
+        BankToken bankToken = bankTokenInfoService.findByBank(bank)
                 .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
 
-        if (tokenHistoryRepository.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
+        if (tokenHistoryService.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
             throw new PendingBankTokenExistsException(bankToken.getName());
         }
 
@@ -114,13 +115,12 @@ public class BankTokenServiceImpl implements BankTokenService {
     @Transactional(readOnly = true)
     public GetTokenAccountInfoResponse getAccountByBankToken(String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new BankNotFoundException(bankEmail));
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
-        BankToken bankToken = bankTokenRepository.findByBank(bank)
+        BankToken bankToken = bankTokenInfoService.findByBank(bank)
                 .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
 
-        return accountRepository.findByBankAndBankTokenAndAddressRegistryStatus(
+        return accountService.findByBankAndBankTokenAndAddressRegistryStatus(
                 bank,
                 bankToken,
                 AddressRegistryStatus.ACTIVE
@@ -142,15 +142,13 @@ public class BankTokenServiceImpl implements BankTokenService {
     public List<GetTokenHistoryResponse> getTokenHistory(GetPaginationRequest request) {
         PageRequest pageRequest = PageRequest.of(request.getPage(), request.getSize());
 
-        Bank bank = bankRepository.findByEmail(request.getAuthEmail())
-                .orElseThrow(() -> new BankNotFoundException(request.getAuthEmail()));
+        Bank bank = bankService.findBankInfoByEmail(request.getAuthEmail());
 
-        // 특정 은행의 TokenHistory 조회
-        return bankTokenRepository.findByBank_Id(bank.getId(), pageRequest)
-                .stream()
-                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+        List<TokenHistory> tokenHistories = tokenHistoryService.findTokenHistoriesByBank(bank, pageRequest);
+
+        // 응답 객체 생성
+        return tokenHistories.stream()
                 .map(tokenHistory -> {
-                    // PortfolioHistoryDetail 매핑
                     List<GetTokenHistoryResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
                             .stream()
                             .map(detail -> GetTokenHistoryResponse.PortfolioDetail.builder()
@@ -163,8 +161,8 @@ public class BankTokenServiceImpl implements BankTokenService {
                                     .build())
                             .collect(Collectors.toList());
 
-                    // TokenHistoryResponse 생성
                     return GetTokenHistoryResponse.builder()
+                            .bankName(bank.getName())
                             .tokenHistoryId(tokenHistory.getId())
                             .bankTokenId(tokenHistory.getBankToken().getId())
                             .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())

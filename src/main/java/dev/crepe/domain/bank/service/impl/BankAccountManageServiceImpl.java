@@ -1,20 +1,18 @@
 package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.bank.exception.BankNameMismatchException;
-import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.bank.repository.BankRepository;
-import dev.crepe.domain.bank.service.BankAccountService;
+import dev.crepe.domain.bank.service.BankAccountManageService;
+import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.MissingAccountRequestException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
-import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,20 +23,17 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class BankAccountServiceImpl implements BankAccountService {
+public class BankAccountManageServiceImpl implements BankAccountManageService {
 
     private final AccountService accountService;
-    private final BankRepository bankRepository;
-    private final AccountRepository accountRepository;
+    private final BankService bankService;
 
     // 은행 출금 계좌 등록
     @Transactional
     @Override
     public void createBankAccount(CreateBankAccountRequest request, String bankEmail) {
 
-        // bankEmail을 통해 Bank 조회
-        Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new BankNotFoundException(bankEmail));
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
         // 조회한 bankName과 요청의 bankName 비교
         if (!request.getBankName().equals(bank.getName())) {
@@ -99,10 +94,10 @@ public class BankAccountServiceImpl implements BankAccountService {
     @Override
     public List<GetCoinAccountInfoResponse> getAccountInfoList(String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new BankNotFoundException(bankEmail));
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
-        List<Account> accounts = accountRepository.findByBank_Email(bank.getEmail());
+        List<Account> accounts = accountService.getAccountsByBankEmail(bank.getEmail());
+
         if (accounts.isEmpty()) {
             throw new AccountNotFoundException(bankEmail);
         }

@@ -6,7 +6,7 @@ import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 
 import java.util.List;
 
-public interface BankAccountService {
+public interface BankAccountManageService {
 
     void createBankAccount(CreateBankAccountRequest request, String bankEmail);
 
