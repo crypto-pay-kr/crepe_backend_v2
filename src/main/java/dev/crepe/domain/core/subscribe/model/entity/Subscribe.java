@@ -2,7 +2,6 @@ package dev.crepe.domain.core.subscribe.model.entity;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.product.model.dto.interest.FreeDepositCountPreferentialRate;
-import dev.crepe.domain.core.product.model.dto.interest.RegularDepositPreferentialRate;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.global.base.BaseEntity;
@@ -67,10 +66,6 @@ public class Subscribe extends BaseEntity {
     @Column(name = "regular_deposit_amount")
     private BigDecimal regularDepositAmount;
 
-    // 정기납입 빈도 (적금 상품인 경우)
-    @Enumerated(EnumType.STRING)
-    @Column(name = "regular_deposit_frequency")
-    private RegularDepositPreferentialRate regularDepositFrequency;
 
     public void deposit(BigDecimal amount) {
         this.balance = this.balance.add(amount);
@@ -80,9 +75,6 @@ public class Subscribe extends BaseEntity {
     @Column(name = "next_regular_deposit_date")
     private LocalDate nextRegularDepositDate;
 
-    // 정기납입 준수 횟수 (적금 상품인 경우)
-    @Column(name = "regular_deposit_compliance_count")
-    private Integer regularDepositComplianceCount;
 
     // 자유납입 목표 (적금 상품인 경우)
     @Enumerated(EnumType.STRING)
@@ -98,18 +90,5 @@ public class Subscribe extends BaseEntity {
     @Column(name = "voucher_code")
     private String voucherCode;
 
-    public void incrementCurrentMonthDepositCount() {
-        if (this.currentMonthDepositCount == null) {
-            this.currentMonthDepositCount = 0;
-        }
-        this.currentMonthDepositCount++;
-    }
 
-    public void resetCurrentMonthDepositCount() {
-        this.currentMonthDepositCount = 0;
-    }
-
-    public void updateInterestRate(float newRate) {
-        this.interestRate = newRate;
-    }
 }

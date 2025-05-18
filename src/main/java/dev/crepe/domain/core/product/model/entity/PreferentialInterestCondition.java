@@ -36,8 +36,9 @@ public class PreferentialInterestCondition {
         this.product = product;
     }
 
-    public static PreferentialInterestCondition create(String description, Float rate) {
+    public static PreferentialInterestCondition create(String title, String description, Float rate) {
         return PreferentialInterestCondition.builder()
+                .title(title)
                 .description(description)
                 .rate(rate)
                 .build();

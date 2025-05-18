@@ -77,7 +77,6 @@ public class BankProductServiceImpl implements BankProductService {
         EligibilityCriteria eligibilityCriteria = buildEligibilityCriteria(request.getEligibilityCriteria());
         String joinConditionJson = convertEligibilityCriteriaToString(eligibilityCriteria);
 
-        PreferentialRateCondition preferentialRateCondition = buildPreferentialRateCondition(request.getPreferentialRateCondition());
 
         // 상품 엔티티 생성
         Product product = Product.builder()
@@ -102,24 +101,43 @@ public class BankProductServiceImpl implements BankProductService {
             tags.forEach(product::addTag);
         }
 
+        if (request.getPreferentialRateCondition() != null) {
+            PreferentialRateConditionDto conditionDto = request.getPreferentialRateCondition();
 
-        if (preferentialRateCondition != null) {
-            // 각 적용된 우대 금리에 대한 설명 생성
-            List<String> rateDescriptions = preferentialRateCondition.getAppliedRateDescriptions();
-
-            // 우대 금리 총합 계산
-            BigDecimal totalRate = preferentialRateCondition.calculateTotalRate();
-
-            // 각 우대 금리 설명별 엔티티 생성
-            for (String description : rateDescriptions) {
+            // 연령별 우대금리들 처리 (여러 개 가능)
+            List<AgePreferentialRate> ageRates = conditionDto.getAgeRates();
+            for (AgePreferentialRate ageRate : ageRates) {
                 PreferentialInterestCondition condition = PreferentialInterestCondition.builder()
-                        .description(description)
-                        .rate(totalRate.floatValue())
+                        .title(ageRate.getName())
+                        .description(ageRate.getDescription())
+                        .rate(ageRate.getRate().floatValue())
                         .build();
+                product.addPreferentialCondition(condition);
+            }
 
+            // 예치금액별 우대금리들 처리 (여러 개 가능)
+            List<DepositPreferentialRate> depositRates = conditionDto.getDepositRates();
+            for (DepositPreferentialRate depositRate : depositRates) {
+                PreferentialInterestCondition condition = PreferentialInterestCondition.builder()
+                        .title(depositRate.getName())
+                        .description(depositRate.getDescription())
+                        .rate(depositRate.getRate().floatValue())
+                        .build();
+                product.addPreferentialCondition(condition);
+            }
+
+            // 자유납입별 우대금리들 처리 (여러 개 가능)
+            List<FreeDepositCountPreferentialRate> freeRates = conditionDto.getFreeDepositCountRates();
+            for (FreeDepositCountPreferentialRate freeRate : freeRates) {
+                PreferentialInterestCondition condition = PreferentialInterestCondition.builder()
+                        .title(freeRate.getName())
+                        .description(freeRate.getDescription())
+                        .rate(freeRate.getRate().floatValue())
+                        .build();
                 product.addPreferentialCondition(condition);
             }
         }
+
 
         Product saved = productRepository.save(product);
 
@@ -176,12 +194,10 @@ public class BankProductServiceImpl implements BankProductService {
                 try {
                     incomeLevels.add(IncomeLevel.valueOf(code));
                 } catch (IllegalArgumentException e) {
-                    // 잘못된 코드 처리
                     log.warn("잘못된 소득 수준 코드: {}", code);
                 }
             }
         } else {
-            // 선택이 없으면 NO_LIMIT 추가
             incomeLevels.add(IncomeLevel.NO_LIMIT);
         }
 
@@ -203,46 +219,7 @@ public class BankProductServiceImpl implements BankProductService {
         }
     }
 
-    // 우대 금리 조건 구성 메서드
-    private PreferentialRateCondition buildPreferentialRateCondition(PreferentialRateConditionDto selection) {
-        if (selection == null) {
-            return null;
-        }
 
-        AgePreferentialRate ageRate = null;
-        if (selection.getAgeRateName() != null && !selection.getAgeRateName().isEmpty()) {
-            try {
-                ageRate = AgePreferentialRate.valueOf(selection.getAgeRateName());
-            } catch (IllegalArgumentException e) {
-                log.warn("잘못된 연령 우대금리 코드: {}", selection.getAgeRateName());
-            }
-        }
-
-        DepositPreferentialRate depositRate = null;
-        if (selection.getDepositRateName() != null && !selection.getDepositRateName().isEmpty()) {
-            try {
-                depositRate = DepositPreferentialRate.valueOf(selection.getDepositRateName());
-            } catch (IllegalArgumentException e) {
-                log.warn("잘못된 예치금 우대금리 코드: {}", selection.getDepositRateName());
-            }
-        }
-
-
-        FreeDepositCountPreferentialRate freeDepositCountRate = null;
-        if (selection.getFreeDepositCountRateName() != null && !selection.getFreeDepositCountRateName().isEmpty()) {
-            try {
-                freeDepositCountRate = FreeDepositCountPreferentialRate.valueOf(selection.getFreeDepositCountRateName());
-            } catch (IllegalArgumentException e) {
-                log.warn("잘못된 자유납입 우대금리 코드: {}", selection.getFreeDepositCountRateName());
-            }
-        }
-
-        return PreferentialRateCondition.builder()
-                .ageRate(ageRate)
-                .depositRate(depositRate)
-                .freeDepositCountRate(freeDepositCountRate)
-                .build();
-    }
 
     public List<Tag> getOrCreateTags(List<String> tagNames) {
         List<Tag> tags = new ArrayList<>();

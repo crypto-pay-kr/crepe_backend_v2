@@ -88,11 +88,16 @@ public class Product extends BaseEntity {
     private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
 
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductTag> productTags = new ArrayList<>();
 
 
     public void addTag(Tag tag) {
+        if (this.productTags == null) {
+            this.productTags = new ArrayList<>();
+        }
+
         boolean exists = productTags.stream()
                 .anyMatch(pt -> pt.getTag().equals(tag));
 
