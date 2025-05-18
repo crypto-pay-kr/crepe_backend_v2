@@ -8,6 +8,7 @@ import dev.crepe.domain.core.account.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -40,4 +41,10 @@ public class ActorAccountServiceImpl implements ActorAccountService {
     public GetBalanceResponse getBalanceByCurrency(String currency, String email) {
         return accountService.getBalanceByCurrency(email, currency);
     }
+
+    @Override
+    public BigDecimal getTokenBalance(String email, String currency) {
+        return accountService.getTokenBalance(email, currency);
+    }
+
 }

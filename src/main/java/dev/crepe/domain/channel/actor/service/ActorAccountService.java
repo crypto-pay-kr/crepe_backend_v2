@@ -4,6 +4,7 @@ import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface ActorAccountService {
@@ -22,4 +23,6 @@ public interface ActorAccountService {
 
     // 특정 코인 잔액 조회
     GetBalanceResponse getBalanceByCurrency(String email, String currency);
+
+    BigDecimal getTokenBalance(String email, String currency);
 }

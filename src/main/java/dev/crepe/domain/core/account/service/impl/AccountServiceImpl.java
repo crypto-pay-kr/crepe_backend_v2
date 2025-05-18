@@ -267,5 +267,14 @@ public class AccountServiceImpl implements AccountService {
                 });
     }
 
+
+    @Override
+    public BigDecimal getTokenBalance(String email, String currency) {
+        return accountRepository.findByActor_EmailAndBankToken_Currency(email, currency).stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
 }
 
