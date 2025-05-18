@@ -5,6 +5,7 @@ import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 
 
 import java.math.BigDecimal;
@@ -21,4 +22,6 @@ public interface PortfolioHistoryService {
     void updateTokenHistoryStatus(RejectBankTokenRequest request, Long tokenHistoryId, BankTokenStatus status);
 
     void updatePortfolio(BankToken bankToken);
+
+    TokenHistory findById(Long tokenHistoryId);
 }

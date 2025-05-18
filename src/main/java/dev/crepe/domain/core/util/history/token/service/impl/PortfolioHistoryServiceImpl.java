@@ -173,4 +173,10 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
             throw new PortfolioUpdateFailedException("토큰 히스토리 상태 업데이트 중 오류가 발생했습니다.");
         }
     }
+
+    @Override
+    public TokenHistory findById(Long tokenHistoryId) {
+        return tokenHistoryRepository.findById(tokenHistoryId)
+                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
+    }
 }
