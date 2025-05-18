@@ -4,6 +4,7 @@ import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.service.impl.ActorServiceImpl;
+import dev.crepe.domain.channel.actor.service.impl.ActorSubscribeServiceImpl;
 import dev.crepe.domain.core.subscribe.model.dto.request.SubscribeProductRequest;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeProductResponse;
 import lombok.AllArgsConstructor;
@@ -19,14 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 @AllArgsConstructor
 public class ActorSubscribeController {
 
-    private final ActorServiceImpl actorService;
+    private final ActorSubscribeServiceImpl actorSubscribeService;
 
     @UserAuth
     @PostMapping("/subscribe")
     public ResponseEntity<SubscribeProductResponse> subscribeProduct(AppAuthentication auth,
                                                                      @RequestBody SubscribeProductRequest request) {
 
-        SubscribeProductResponse res = actorService.subscribeProduct(auth.getUserEmail(), request);
+        SubscribeProductResponse res = actorSubscribeService.subscribeProduct(auth.getUserEmail(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 }

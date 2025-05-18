@@ -62,8 +62,6 @@ import java.util.UUID;
 public class ActorServiceImpl  implements ActorService {
 
     private final ActorRepository actorRepository;
-    private final ProductRepository productRepository;
-    private final SubscribeRepository subscribeRepository;
     private final PasswordEncoder encoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenRepository tokenRepository;
