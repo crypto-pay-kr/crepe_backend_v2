@@ -9,9 +9,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -88,19 +86,23 @@ public class Product extends BaseEntity {
     // 우대 금리, 조건
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
-    
 
-    @Builder.Default
+
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tag> tags = new ArrayList<>();
+    private List<ProductTag> productTags = new ArrayList<>();
 
 
     public void addTag(Tag tag) {
-        if (this.tags == null) {
-            this.tags = new ArrayList<>();
+        boolean exists = productTags.stream()
+                .anyMatch(pt -> pt.getTag().equals(tag));
+
+        if (!exists) {
+            ProductTag productTag = ProductTag.create(this, tag);
+            this.productTags.add(productTag);
         }
-        this.tags.add(tag);
     }
+
+
 
 
     public void addPreferentialCondition(PreferentialInterestCondition condition) {
