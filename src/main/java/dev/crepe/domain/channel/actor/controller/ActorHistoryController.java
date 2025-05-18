@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 
 @RestController
-@RequestMapping
+@RequestMapping("/history")
 @AllArgsConstructor
 @Tag(name = "history API", description = "거래 내역 API")
 public class ActorHistoryController {
@@ -27,14 +27,14 @@ public class ActorHistoryController {
             security = @SecurityRequirement(name = "bearer-jwt")
     )
     @ActorAuth
-    @GetMapping("/history")
+    @GetMapping("/coin")
     public ResponseEntity<Slice<GetTransactionHistoryResponse>> getHistory(
             AppAuthentication auth,
             @RequestParam("currency") String currency,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        Slice<GetTransactionHistoryResponse> response = actorHistoryService.getTransactionHistory(
+        Slice<GetTransactionHistoryResponse> response = actorHistoryService.getNonRegulationHistory(
                 auth.getUserEmail(), currency, page, size);
         return ResponseEntity.ok(response);
     }

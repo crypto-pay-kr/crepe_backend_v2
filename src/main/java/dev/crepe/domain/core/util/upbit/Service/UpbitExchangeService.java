@@ -40,7 +40,7 @@ public class UpbitExchangeService {
 
         } catch (Exception e) {
             log.error("시세 조회 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("시세 조회 중 오류 발생");
+            throw new RuntimeException("시세 조회 중 오류 발생"+e.getMessage());
         }
     }
 

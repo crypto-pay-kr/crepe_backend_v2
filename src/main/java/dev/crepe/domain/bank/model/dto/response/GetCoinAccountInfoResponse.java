@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 public class GetCoinAccountInfoResponse {
 
 
-    private String bankname;
+    private String bankName;
     private String coinName;
     private String currency;
     private String accountAddress;
