@@ -18,9 +18,10 @@ public interface BankService {
 
     ApiResponse<TokenResponse> login(LoginRequest request);
 
-    GetBankInfoDetailResponse getBankAllDetails(String email);
+    GetBankInfoDetailResponse getBankAllDetails(String bankEmail);
 
-    ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String email);
+    ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String bankEmail);
+    RegisterProductResponse registerProduct(String email, MultipartFile productImg, RegisterProductRequest request);
 
 
 }

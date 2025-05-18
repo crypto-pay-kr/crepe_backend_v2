@@ -50,20 +50,19 @@ public class BankProductServiceImpl implements BankProductService {
     @Override
     public RegisterProductResponse registerProduct(String email, MultipartFile productImage, RegisterProductRequest request) {
         Bank bank = bankRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("은행 계정을 찾을 수 없습니다: " + email));
+                .orElseThrow(() -> new EntityNotFoundException(STR."은행 계정을 찾을 수 없습니다: \{email}"));
 
         BankToken bankToken = bankTokenRepository.findByBank(bank)
                 .orElseThrow(() -> new EntityNotFoundException("은행의 토큰을 찾을 수 없습니다"));
 
         Account tokenAccount = accountRepository.findByBankAndBankToken(bank, bankToken)
                 .orElseThrow(() -> new EntityNotFoundException(
-                        "은행의 " + bankToken.getCurrency() + " 토큰 계좌를 찾을 수 없습니다"));
+                        STR."은행의 \{bankToken.getCurrency()} 토큰 계좌를 찾을 수 없습니다"));
 
         BigDecimal budget = request.getBudget();
 
         if (tokenAccount.getBalance().compareTo(budget) < 0) {
-            throw new InsufficientCapitalException("상품 예산으로 설정할 자금이 부족합니다. 현재 잔액: "
-                    + tokenAccount.getBalance() + ", 필요 금액: " + budget);
+            throw new InsufficientCapitalException(STR."상품 예산으로 설정할 자금이 부족합니다. 현재 잔액: \{tokenAccount.getBalance()}, 필요 금액: \{budget}");
         }
 
         tokenAccount.deductBalance(budget);

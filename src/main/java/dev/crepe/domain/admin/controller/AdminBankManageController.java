@@ -1,10 +1,12 @@
 package dev.crepe.domain.admin.controller;
 
+
 import dev.crepe.domain.admin.service.AdminProductService;
-import dev.crepe.domain.admin.service.impl.AdminProductServiceImpl;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
-import dev.crepe.domain.admin.service.AdminService;
+import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
+import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
+import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.auth.role.AdminAuth;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,14 +18,19 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
+
 @RestController
 @RequestMapping("/admin/bank")
 @RequiredArgsConstructor
 @Slf4j
 public class AdminBankManageController {
 
+
     private final AdminProductService adminProductService;
-    private final AdminService adminService;
+    private final AdminBankManageService adminBankManageService;
+
 
     // 은행 계정 활성화
     @Operation(summary = "은행 계정 활성화", description = "관리자가 특정 은행 계정을 활성화합니다")
@@ -32,7 +39,7 @@ public class AdminBankManageController {
     public ResponseEntity<String> bankSignup(
             @RequestPart("BankData") @Valid BankSignupDataRequest request,
             @RequestPart("BankCiImage") MultipartFile bankCiImage) {
-        adminService.bankSignup(request, bankCiImage);
+        adminBankManageService.bankSignup(request, bankCiImage);
         return ResponseEntity.ok("은행 계정 활성화 성공");
     }
 
@@ -46,5 +53,40 @@ public class AdminBankManageController {
         ReviewProductSubmissionResponse response = adminProductService.reviewProductSubmission(request);
         return ResponseEntity.ok(response);
     }
+
+    @Operation(summary = "토큰 발행 요청 목록 조회", description = "관리자가 토큰 발행 요청 목록을 조회합니다")
+    @AdminAuth
+    @GetMapping("/token")
+    public ResponseEntity<List<GetAllBankTokenResponse>> getBankTokenRequestList(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        List<GetAllBankTokenResponse> tokenRequests = adminBankManageService.getAllBankTokenResponseList(page, size);
+        return ResponseEntity.ok(tokenRequests);
+    }
+
+
+
+
+    // 은행 토큰 발행 요청 승인
+    @Operation(summary = "은행 토큰 발행 요청 승인", description = "관리자가 특정 은행 토큰 발행 요청을 승인합니다")
+    @AdminAuth
+    @PatchMapping("/token/approve/{tokenHistoryId}")
+    public ResponseEntity<String> approveBankTokenRequest(@PathVariable Long tokenHistoryId) {
+        adminBankManageService.approveBankTokenRequest(tokenHistoryId);
+        return ResponseEntity.ok("토큰 발행 요청이 승인되었습니다.");
+    }
+
+
+    // 은행 토큰 발행 요청 반려
+    @Operation(summary = "은행 토큰 발행 요청 반려", description = "관리자가 특정 은행 토큰 발행 요청을 반려합니다")
+    @AdminAuth
+    @PatchMapping("/token/reject/{tokenHistoryId}")
+    public ResponseEntity<String> rejectBankTokenRequest(@PathVariable Long tokenHistoryId,
+                                                         @RequestBody @Valid RejectBankTokenRequest request) {
+        adminBankManageService.rejectBankTokenRequest(request, tokenHistoryId);
+        return ResponseEntity.ok("토큰 발행 요청이 반려되었습니다.");
+    }
+
+
 
 }

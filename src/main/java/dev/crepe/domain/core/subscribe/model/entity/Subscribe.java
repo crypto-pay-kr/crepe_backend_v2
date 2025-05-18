@@ -5,11 +5,13 @@ import dev.crepe.domain.core.product.model.dto.interest.FreeDepositCountPreferen
 import dev.crepe.domain.core.product.model.dto.interest.RegularDepositPreferentialRate;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
+import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,7 +24,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "subscribe")
-public class Subscribe {
+public class Subscribe extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -55,7 +57,7 @@ public class Subscribe {
     private BigDecimal balance;
 
     // 이자율
-    @Column(name = "interestRate", nullable = false)
+    @Column(name = "interestRate")
     private float interestRate;
 
     // 적용된 우대금리 정보 (JSON 문자열)
@@ -69,6 +71,10 @@ public class Subscribe {
     @Enumerated(EnumType.STRING)
     @Column(name = "regular_deposit_frequency")
     private RegularDepositPreferentialRate regularDepositFrequency;
+
+    public void deposit(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
 
     // 다음 정기납입 예정일 (적금 상품인 경우)
     @Column(name = "next_regular_deposit_date")

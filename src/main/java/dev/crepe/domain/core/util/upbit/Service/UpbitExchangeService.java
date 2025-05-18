@@ -10,6 +10,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Slf4j
 @Component
@@ -39,7 +40,18 @@ public class UpbitExchangeService {
 
         } catch (Exception e) {
             log.error("시세 조회 실패: {}", e.getMessage(), e);
-            throw new RuntimeException("시세 조회 중 오류 발생");
+            throw new RuntimeException("시세 조회 중 오류 발생"+e.getMessage());
+        }
+    }
+
+    public void validateRateWithinThreshold(BigDecimal requestedRate, String currency, BigDecimal thresholdPercent) {
+        BigDecimal latestRate = getLatestRate(currency);
+        BigDecimal diff = requestedRate.subtract(latestRate).abs();
+        BigDecimal percentDiff = diff.divide(latestRate, 4, RoundingMode.HALF_UP).multiply(BigDecimal.valueOf(100));
+
+        if (percentDiff.compareTo(thresholdPercent) > 0) {
+            throw new IllegalArgumentException(
+                    "시세 오차가 설정된 허용 범위를 초과했습니다. (" + thresholdPercent + "% 이내)");
         }
     }
 }

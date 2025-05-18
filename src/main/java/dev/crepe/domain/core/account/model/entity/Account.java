@@ -31,7 +31,7 @@ public class Account extends BaseEntity {
     private Actor actor;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "bank_id", nullable = false)
+    @JoinColumn(name = "bank_id")
     private Bank bank;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -86,8 +86,33 @@ public class Account extends BaseEntity {
         this.balance = this.balance.subtract(amount);
     }
 
+    // 계좌 등록 대기중
+    public void pendingAddress() { this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;}
+
+
+    public void allocateBudget(BigDecimal amount) {
+        if (nonAvailableBalance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.nonAvailableBalance = this.nonAvailableBalance.subtract(amount);
+    }
+
+   public void releaseBudget(BigDecimal amount) {
+        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
+    }
+
+    public void reduceAmount(BigDecimal amount) {
+        if (balance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.balance = this.balance.subtract(amount);
+        //this.availableBalance = this.availableBalance.subtract(amount);
+    }
+
     public void addAmount(BigDecimal amount) {
         this.balance = this.balance.add(amount);
+       //this.availableBalance = this.availableBalance.add(amount);
+
     }
 
 }
