@@ -22,15 +22,6 @@ public class EligibilityCriteria {
         return incomeLevels.contains(IncomeLevel.NO_LIMIT);
     }
 
-    // 기본값으로 모든 항목이 비어있는 객체 생성
-    public static EligibilityCriteria createEmpty() {
-        return EligibilityCriteria.builder()
-                .ageGroups(Collections.emptyList())
-                .occupations(Collections.emptyList())
-                .incomeLevels(Collections.emptyList())
-                .build();
-    }
-
     // 모든 대상을 포함하는 객체 생성
     public static EligibilityCriteria createForAll() {
         return EligibilityCriteria.builder()

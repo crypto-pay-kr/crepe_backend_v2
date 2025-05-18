@@ -20,29 +20,21 @@ import dev.crepe.domain.core.product.model.dto.request.RegisterProductRequest;
 import dev.crepe.domain.core.product.model.dto.response.RegisterProductResponse;
 import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.product.model.entity.Product;
-import dev.crepe.domain.core.product.repository.CapitalRepository;
+import dev.crepe.domain.core.product.model.entity.Tag;
 import dev.crepe.domain.core.product.repository.ProductRepository;
-import dev.crepe.domain.core.util.coin.global.repository.PortfolioRepository;
-import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
+import dev.crepe.domain.core.product.repository.TagRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.Capital;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.TokenPrice;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
-import dev.crepe.domain.core.util.coin.regulation.repository.TokenPriceRepository;
 import dev.crepe.infra.s3.service.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+
 
 @Slf4j
 @Service
@@ -53,7 +45,7 @@ public class BankProductServiceImpl implements BankProductService {
     private final BankRepository bankRepository;
     private final S3Service s3Service;
     private final ProductRepository productRepository;
-    private final TokenPriceRepository tokenPriceRepository;
+    private final TagRepository tagRepository;
 
     @Override
     public RegisterProductResponse registerProduct(String email, MultipartFile productImage, RegisterProductRequest request) {
@@ -104,8 +96,9 @@ public class BankProductServiceImpl implements BankProductService {
                 .imageUrl(productImageUrl)
                 .build();
 
-        if (request.getTags() != null) {
-            product.addTags(request.getTags());
+        if (request.getTagNames() != null && !request.getTagNames().isEmpty()) {
+            List<Tag> tags = getOrCreateTags(request.getTagNames());
+            tags.forEach(product::addTag);
         }
 
 
@@ -129,14 +122,10 @@ public class BankProductServiceImpl implements BankProductService {
 
         Product saved = productRepository.save(product);
 
-
-
-        RegisterProductResponse response = RegisterProductResponse.builder()
+        return RegisterProductResponse.builder()
                 .productId(saved.getId())
                 .productName(saved.getProductName())
                 .type(saved.getType()).build();
-
-        return response;
 
     }
 
@@ -152,7 +141,6 @@ public class BankProductServiceImpl implements BankProductService {
                 try {
                     ageGroups.add(AgeGroup.valueOf(code));
                 } catch (IllegalArgumentException e) {
-                    // 잘못된 코드 처리
                     log.warn("잘못된 연령대 코드: {}", code);
                 }
             }
@@ -166,15 +154,14 @@ public class BankProductServiceImpl implements BankProductService {
             for (String code : selection.getOccupations()) {
                 try {
                     Occupation occupation = Occupation.valueOf(code);
-                    // ALL_OCCUPATIONS가 포함되어 있으면 모든 직업 추가 후 루프 종료
+                    // ALL_OCCUPATIONS가 포함되어 있으면 모든 직업 추가
                     if (occupation == Occupation.ALL_OCCUPATIONS) {
-                        occupations.clear(); // 기존 목록 비우기
+                        occupations.clear();
                         occupations.add(Occupation.ALL_OCCUPATIONS);
                         break;
                     }
                     occupations.add(occupation);
                 } catch (IllegalArgumentException e) {
-                    // 잘못된 코드 처리
                     log.warn("잘못된 직업 코드: {}", code);
                 }
             }
@@ -204,14 +191,14 @@ public class BankProductServiceImpl implements BankProductService {
                 .build();
     }
 
-    // 가입 조건을 JSON 문자열로 변환하는 메서드
+    // 가입 조건을 JSON 문자열로 변환
     private String convertEligibilityCriteriaToString(EligibilityCriteria criteria) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             return objectMapper.writeValueAsString(criteria);
         } catch (JsonProcessingException e) {
             log.error("가입 조건 직렬화 오류", e);
-            return "{}"; // 기본값
+            return "{}";
         }
     }
 
@@ -239,14 +226,6 @@ public class BankProductServiceImpl implements BankProductService {
             }
         }
 
-        RegularDepositPreferentialRate regularDepositRate = null;
-        if (selection.getRegularDepositRateName() != null && !selection.getRegularDepositRateName().isEmpty()) {
-            try {
-                regularDepositRate = RegularDepositPreferentialRate.valueOf(selection.getRegularDepositRateName());
-            } catch (IllegalArgumentException e) {
-                log.warn("잘못된 정기납입 우대금리 코드: {}", selection.getRegularDepositRateName());
-            }
-        }
 
         FreeDepositCountPreferentialRate freeDepositCountRate = null;
         if (selection.getFreeDepositCountRateName() != null && !selection.getFreeDepositCountRateName().isEmpty()) {
@@ -260,8 +239,22 @@ public class BankProductServiceImpl implements BankProductService {
         return PreferentialRateCondition.builder()
                 .ageRate(ageRate)
                 .depositRate(depositRate)
-                .regularDepositRate(regularDepositRate)
                 .freeDepositCountRate(freeDepositCountRate)
                 .build();
+    }
+
+    public List<Tag> getOrCreateTags(List<String> tagNames) {
+        List<Tag> tags = new ArrayList<>();
+
+        for (String tagName : tagNames) {
+            Tag tag = tagRepository.findByName(tagName)
+                    .orElseGet(() -> {
+                        Tag newTag = new Tag(tagName);
+                        return tagRepository.save(newTag);
+                    });
+            tags.add(tag);
+        }
+
+        return tags;
     }
 }

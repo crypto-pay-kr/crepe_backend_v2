@@ -86,4 +86,8 @@ public class Account extends BaseEntity {
         this.balance = this.balance.subtract(amount);
     }
 
+    public void addAmount(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
+
 }

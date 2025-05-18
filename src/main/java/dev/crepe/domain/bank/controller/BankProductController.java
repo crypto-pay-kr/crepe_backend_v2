@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @RestController
-@RequestMapping
+@RequestMapping("/bank")
 @RequiredArgsConstructor
 @Tag(name = "Bank Product API", description = "은행 상품 등록 API")
 public class BankProductController {
@@ -27,7 +27,8 @@ public class BankProductController {
     @PostMapping(value = "/register/product", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @BankAuth
     @SecurityRequirement(name="bearer-jwt")
-    public ResponseEntity<RegisterProductResponse> register(AppAuthentication auth, @RequestPart("productImage") MultipartFile productImage, @RequestBody RegisterProductRequest request) {
+    public ResponseEntity<RegisterProductResponse> register(AppAuthentication auth, @RequestPart("productImage") MultipartFile productImage,
+                                                            @RequestPart("request") RegisterProductRequest request) {
         RegisterProductResponse res = bankProductService.registerProduct(auth.getUserEmail(),productImage,request);
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }

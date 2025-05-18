@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.product.model.dto.request;
 
 import dev.crepe.domain.core.product.model.dto.interest.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -13,22 +14,31 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Builder
 public class PreferentialRateConditionDto {
+    @Schema(description = "연령대별 우대금리",
+            example = "YOUTH",
+            allowableValues = {"YOUTH", "MIDDLE_AGED", "SENIOR", "ALL_AGES"})
     private String ageRateName;
+
+    @Schema(description = "예치금액별 우대금리",
+            example = "MEDIUM",
+            allowableValues = {"SMALL", "MEDIUM", "LARGE", "PREMIUM"})
     private String depositRateName;
-    private String regularDepositRateName;
+
+    @Schema(description = "자유 납입 횟수별 우대금리",
+            example = "LEVEL2",
+            allowableValues = {"NONE", "LEVEL1", "LEVEL2", "LEVEL3"})
     private String freeDepositCountRateName;
+
 
     // 엔티티 변환 메서드
     public PreferentialRateCondition toEntity() {
         AgePreferentialRate ageRate = convertToEnum(ageRateName, AgePreferentialRate.class);
         DepositPreferentialRate depositRate = convertToEnum(depositRateName, DepositPreferentialRate.class);
-        RegularDepositPreferentialRate regularDepositRate = convertToEnum(regularDepositRateName, RegularDepositPreferentialRate.class);
         FreeDepositCountPreferentialRate freeDepositCountRate = convertToEnum(freeDepositCountRateName, FreeDepositCountPreferentialRate.class);
 
         return PreferentialRateCondition.builder()
                 .ageRate(ageRate)
                 .depositRate(depositRate)
-                .regularDepositRate(regularDepositRate)
                 .freeDepositCountRate(freeDepositCountRate)
                 .build();
     }

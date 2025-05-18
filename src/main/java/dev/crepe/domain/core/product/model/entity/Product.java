@@ -41,12 +41,10 @@ public class Product extends BaseEntity {
     @Column(name = "product_name", length = 100, nullable = false)
     private String productName;
 
-    // 은행 상품 유형
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private BankProductType type;
 
-    // 은행 상품 승인 상태
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private BankProductStatus status;
@@ -92,25 +90,18 @@ public class Product extends BaseEntity {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
-    @Builder.Default
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "product_id")
     private List<Tag> tags = new ArrayList<>();
+
 
     public void addTag(Tag tag) {
         if (this.tags == null) {
             this.tags = new ArrayList<>();
         }
-        tag.setProduct(this);
         this.tags.add(tag);
     }
 
-    public void addTags(List<Tag> tagsToAdd) {
-        if (tagsToAdd != null) {
-            for (Tag tag : tagsToAdd) {
-                addTag(tag);
-            }
-        }
-    }
 
     public void addPreferentialCondition(PreferentialInterestCondition condition) {
         if (this.preferentialConditions == null) {

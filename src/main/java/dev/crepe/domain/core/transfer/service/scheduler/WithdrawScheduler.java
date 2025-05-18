@@ -40,7 +40,7 @@ public class WithdrawScheduler {
 
                     Account account = payment.getAccount();
                     // 실제 출금 처리
-                    account.reduceAmount(payment.getAmount().abs());
+                    account.deductBalance(payment.getAmount().abs());
                     // 거래 상태 및 잔액 업데이트
                     payment.acceptedTransactionStatus();
                     payment.updateAfterBalance(account.getBalance());

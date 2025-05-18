@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 public class AdminBankManageController {
 
-    private final AdminProductServiceImpl adminProductService;
+    private final AdminProductService adminProductService;
     private final AdminService adminService;
 
     // 은행 계정 활성화

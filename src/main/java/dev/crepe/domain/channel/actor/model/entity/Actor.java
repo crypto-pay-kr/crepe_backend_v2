@@ -6,6 +6,7 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
 import dev.crepe.domain.channel.market.like.model.entity.Like;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
+import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +20,7 @@ import lombok.experimental.SuperBuilder;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.global.base.BaseEntity;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,6 +57,16 @@ public class Actor extends BaseEntity {
 
     @Column
     private String gender;
+
+    @Column
+    private Occupation occupation;
+    // 연간 소득 (null 허용)
+    @Column(name="annual_income", precision = 20, scale = 2)
+    private BigDecimal annualIncome;
+
+    // 총 자산 (null 허용)
+    @Column(name="total_asset", precision = 20, scale = 2)
+    private BigDecimal totalAsset;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -123,6 +135,19 @@ public class Actor extends BaseEntity {
         this.status = newStoreStatus;
     }
 
+    public void updateFinancialInfo(BigDecimal annualIncome, BigDecimal totalAsset) {
+        this.annualIncome = annualIncome;
+        this.totalAsset = totalAsset;
+    }
 
+    public void addOccupation(Occupation occupation) {
+        this.occupation = occupation;
+    }
 
+    public void addAnnualIncome(BigDecimal annualIncome) {
+        this.annualIncome = annualIncome;
+    }
+    public void addTotalAsset(BigDecimal totalAsset) {
+        this.totalAsset = totalAsset;
+    }
 }
