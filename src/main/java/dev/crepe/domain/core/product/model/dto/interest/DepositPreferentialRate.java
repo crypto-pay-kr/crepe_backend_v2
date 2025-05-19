@@ -17,5 +17,5 @@ public enum DepositPreferentialRate {
 
     private final String name;
     private final String description;
-    private final BigDecimal rate;  // 우대금리 (%)
+    private final BigDecimal rate;
 }

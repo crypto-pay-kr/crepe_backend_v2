@@ -4,6 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+
 /**
  * 연령대별 우대금리 enum
  */

@@ -1,4 +1,4 @@
-package dev.crepe.domain.auth.otp.model.dto;
+package dev.crepe.infra.otp.model.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

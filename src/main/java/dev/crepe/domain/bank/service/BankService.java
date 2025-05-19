@@ -24,7 +24,6 @@ public interface BankService {
     Bank findBankInfoByEmail(String email);
 
     ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String bankEmail);
-    RegisterProductResponse registerProduct(String email, MultipartFile productImg, RegisterProductRequest request);
 
 
 }

@@ -1,6 +1,6 @@
-package dev.crepe.domain.auth.otp.repository;
+package dev.crepe.infra.otp.repository;
 
-import dev.crepe.domain.auth.otp.model.entity.OtpCredential;
+import dev.crepe.infra.otp.model.entity.OtpCredential;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

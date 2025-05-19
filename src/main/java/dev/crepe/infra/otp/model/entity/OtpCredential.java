@@ -1,4 +1,4 @@
-package dev.crepe.domain.auth.otp.model.entity;
+package dev.crepe.infra.otp.model.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

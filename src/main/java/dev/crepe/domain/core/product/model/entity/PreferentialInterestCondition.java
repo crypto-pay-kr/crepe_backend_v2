@@ -3,6 +3,7 @@ package dev.crepe.domain.core.product.model.entity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 
@@ -10,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
 @Entity
 @Table(name = "preferential_interest_condition")
 public class PreferentialInterestCondition {
@@ -36,8 +38,9 @@ public class PreferentialInterestCondition {
         this.product = product;
     }
 
-    public static PreferentialInterestCondition create(String description, Float rate) {
+    public static PreferentialInterestCondition create(String title, String description, Float rate) {
         return PreferentialInterestCondition.builder()
+                .title(title)
                 .description(description)
                 .rate(rate)
                 .build();

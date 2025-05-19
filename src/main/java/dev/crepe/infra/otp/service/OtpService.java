@@ -1,11 +1,11 @@
-package dev.crepe.domain.auth.otp.service;
+package dev.crepe.infra.otp.service;
 
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
-import dev.crepe.domain.auth.otp.model.dto.OtpSetupResponse;
-import dev.crepe.domain.auth.otp.model.entity.OtpCredential;
-import dev.crepe.domain.auth.otp.repository.OtpCredentialRepository;
+import dev.crepe.infra.otp.model.dto.OtpSetupResponse;
+import dev.crepe.infra.otp.model.entity.OtpCredential;
+import dev.crepe.infra.otp.repository.OtpCredentialRepository;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.global.model.dto.ApiResponse;
@@ -17,13 +17,16 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class OtpService {
-    private final GoogleAuthenticator gAuth = new GoogleAuthenticator();
-
+    private final GoogleAuthenticator gAuth;
     private final OtpCredentialRepository otpCredentialRepository;
     private final ActorRepository actorRepository;
+
+
+
     @Transactional
-    public GoogleAuthenticatorKey generateAndSaveKey(Long userId, String email) {
-        GoogleAuthenticatorKey key = gAuth.createCredentials(email);
+    public GoogleAuthenticatorKey generateAndSaveKey(Long userId) {
+
+        GoogleAuthenticatorKey key = gAuth.createCredentials();
 
         otpCredentialRepository.findByUserId(userId)
                 .ifPresentOrElse(
@@ -66,10 +69,8 @@ public class OtpService {
         Actor actor = actorRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
-        // 새 OTP 키 생성 및 저장
-        GoogleAuthenticatorKey key = generateAndSaveKey(actor.getId(), email);
+        GoogleAuthenticatorKey key = generateAndSaveKey(actor.getId());
 
-        // QR 코드 URL 생성
         String qrCodeUrl = generateQRUrl(email, key);
 
         OtpSetupResponse response = new OtpSetupResponse(

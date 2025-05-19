@@ -26,7 +26,7 @@ public class BankSignupDataRequest {
             regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=!])(?=\\S+$).{10,}$",
             message = "비밀번호는 숫자, 대문자, 소문자, 특수문자를 포함해야 합니다."
     )
-    @Schema(description = "비밀번호 (10자 이상, 숫자/대문자/소문자/특수문자 포함)", example = "Bank1234!")
+    @Schema(description = "비밀번호 (10자 이상, 숫자/대문자/소문자/특수문자 포함)", example = "Bank12345!")
     private String password;
 
     @NotBlank(message = "은행명은 필수 입력값입니다.")
