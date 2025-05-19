@@ -5,11 +5,19 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 //우대 조건 충족
 @Entity
+@Getter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Table(name = "preferential_condition_satisfaction")
 public class PreferentialConditionSatisfaction extends BaseEntity {
 
@@ -34,5 +42,6 @@ public class PreferentialConditionSatisfaction extends BaseEntity {
 
     @Column(name = "evaluated_at", nullable = false)
     private LocalDateTime evaluatedAt;
+
 
 }

@@ -74,6 +74,17 @@ public class Account extends BaseEntity {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
 
+    public void addNonAvailableBalance(BigDecimal amount) {
+        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
+    }
+
+
+    public void deductBalance(BigDecimal amount) {
+        if (this.balance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.balance = this.balance.subtract(amount);
+    }
 
     // 계좌 등록 대기중
     public void pendingAddress() { this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;}
@@ -98,8 +109,17 @@ public class Account extends BaseEntity {
         //this.availableBalance = this.availableBalance.subtract(amount);
     }
 
+    public void reduceNonAvailableBalance(BigDecimal amount) {
+        if (nonAvailableBalance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.nonAvailableBalance = this.nonAvailableBalance.subtract(amount);
+    }
+
     public void addAmount(BigDecimal amount) {
         this.balance = this.balance.add(amount);
        //this.availableBalance = this.availableBalance.add(amount);
+
     }
+
 }

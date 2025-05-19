@@ -1,6 +1,9 @@
 package dev.crepe.domain.admin.controller;
 
 
+import dev.crepe.domain.admin.service.AdminProductService;
+import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
+import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
 import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.admin.service.AdminBankManageService;
@@ -24,7 +27,10 @@ import java.util.List;
 @Slf4j
 public class AdminBankManageController {
 
+
+    private final AdminProductService adminProductService;
     private final AdminBankManageService adminBankManageService;
+
 
     // 은행 계정 활성화
     @Operation(summary = "은행 계정 활성화", description = "관리자가 특정 은행 계정을 활성화합니다")
@@ -37,6 +43,16 @@ public class AdminBankManageController {
         return ResponseEntity.ok("은행 계정 활성화 성공");
     }
 
+
+    // 상품 승인 or 거절
+    @Operation(summary = "은행 상품 활성화", description = "관리자가 특정 은행 상품을 활성화,비활성화합니다")
+    @AdminAuth
+    @PatchMapping(value="/product/review")
+    public ResponseEntity<ReviewProductSubmissionResponse> productInspect(
+            @RequestBody ReviewProductSubmissionRequest request){
+        ReviewProductSubmissionResponse response = adminProductService.reviewProductSubmission(request);
+        return ResponseEntity.ok(response);
+    }
 
     @Operation(summary = "토큰 발행 요청 목록 조회", description = "관리자가 토큰 발행 요청 목록을 조회합니다")
     @AdminAuth

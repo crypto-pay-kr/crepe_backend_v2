@@ -9,12 +9,9 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,15 +38,9 @@ public class Product extends BaseEntity {
     @Column(name = "product_name", length = 100, nullable = false)
     private String productName;
 
-    // 은행 상품 유형
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private BankProductType type;
-
-    // 은행 상품 승인 상태
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private BankProductStatus status;
 
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
@@ -59,10 +50,10 @@ public class Product extends BaseEntity {
 
     // duration 필드 제거하고 시작일/종료일 추가
     @Column(name = "start_date")
-    private LocalDateTime startDate;
+    private LocalDate startDate;
 
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private LocalDate endDate;
 
     // 가입대상
     @Column(name = "join_condition", columnDefinition = "TEXT")
@@ -80,32 +71,44 @@ public class Product extends BaseEntity {
     @Column(name = "max_participants")
     private Integer maxParticipants;
 
+    @Column(name="product_image")
+    private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BankProductStatus status;
+
+    // 반려사유
+    @Column(name = "rejection_reason", columnDefinition = "TEXT")
+    private String rejectionReason;
+
+
     // 우대 금리, 조건
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
 
-    @Column(name="product_image")
-    private String imageUrl;
 
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Tag> tags = new ArrayList<>();
+    private List<ProductTag> productTags = new ArrayList<>();
+
 
     public void addTag(Tag tag) {
-        if (this.tags == null) {
-            this.tags = new ArrayList<>();
+        if (this.productTags == null) {
+            this.productTags = new ArrayList<>();
         }
-        tag.setProduct(this);
-        this.tags.add(tag);
+
+        boolean exists = productTags.stream()
+                .anyMatch(pt -> pt.getTag().equals(tag));
+
+        if (!exists) {
+            ProductTag productTag = ProductTag.create(this, tag);
+            this.productTags.add(productTag);
+        }
     }
 
-    public void addTags(List<Tag> tagsToAdd) {
-        if (tagsToAdd != null) {
-            for (Tag tag : tagsToAdd) {
-                addTag(tag);
-            }
-        }
-    }
+
+
 
     public void addPreferentialCondition(PreferentialInterestCondition condition) {
         if (this.preferentialConditions == null) {
@@ -115,12 +118,13 @@ public class Product extends BaseEntity {
         this.preferentialConditions.add(condition);
     }
 
-    // 여러 우대 금리 조건 추가 메서드
-    public void addPreferentialConditions(List<PreferentialInterestCondition> conditions) {
-        if (conditions != null) {
-            for (PreferentialInterestCondition condition : conditions) {
-                addPreferentialCondition(condition);
-            }
+    public void updateStatus(BankProductStatus status, String reason) {
+        this.status = status;
+
+        if (status == BankProductStatus.APPROVED) {
+            this.rejectionReason = null;
+        } else if (status == BankProductStatus.REJECTED) {
+            this.rejectionReason = reason;
         }
     }
 }
