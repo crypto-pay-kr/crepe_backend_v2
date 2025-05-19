@@ -17,7 +17,7 @@ public interface BankService {
 
     ApiResponse<ResponseEntity<Void>> signup(BankDataRequest request);
 
-    ApiResponse<TokenResponse> login(LoginRequest request);
+   ApiResponse<TokenResponse> login(LoginRequest request);
 
     GetBankInfoDetailResponse getBankAllDetails(String bankEmail);
 

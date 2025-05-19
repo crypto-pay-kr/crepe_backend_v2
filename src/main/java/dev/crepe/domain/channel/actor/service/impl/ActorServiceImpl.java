@@ -4,6 +4,7 @@ import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
+import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
 import dev.crepe.domain.channel.actor.exception.*;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
@@ -37,8 +38,7 @@ public class ActorServiceImpl  implements ActorService {
 
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final TokenRepository tokenRepository;
+    private final AuthServiceImpl authService;
     private final SmsManageService smsManageService;
     private final Random random = new Random();
 
@@ -46,7 +46,6 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
-
         Actor actor = actorRepository.findByEmail(request.getEmail())
                 .orElseThrow(LoginFailedException::new);
 
@@ -54,15 +53,8 @@ public class ActorServiceImpl  implements ActorService {
             throw new LoginFailedException();
         }
 
-        AuthenticationToken token;
-        token = jwtTokenProvider.createToken(actor.getEmail(),actor.getRole());
-
-
-        tokenRepository.findById(actor.getId())
-                .ifPresentOrElse(
-                        existingToken -> existingToken.updateTokens(token.getAccessToken(), token.getRefreshToken()),
-                        () -> tokenRepository.save(new JwtToken(actor.getId(),actor.getRole(), token.getAccessToken(), token.getRefreshToken()))
-                );
+        // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
+        AuthenticationToken token = authService.createAndSaveToken(actor.getEmail(), actor.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, actor);
         return ApiResponse.success(actor.getRole() + " 로그인 성공", tokenResponse);

@@ -1,10 +1,13 @@
 package dev.crepe.domain.bank.service.impl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
+import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
 import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
@@ -19,6 +22,7 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
+import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import dev.crepe.infra.s3.service.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -26,6 +30,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -36,8 +43,7 @@ public class BankServiceImpl implements BankService {
     private final S3Service s3Service;
     private final AccountService accountService;
     private final CheckAlreadyField checkAlreadyField;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final TokenRepository tokenRepository;
+    private final AuthServiceImpl authService;
     private final PasswordEncoder encoder;
 
     // 은행 회원가입
@@ -79,7 +85,6 @@ public class BankServiceImpl implements BankService {
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
-
         Bank bank = bankRepository.findByEmail(request.getEmail())
                 .orElseThrow(LoginFailedException::new);
 
@@ -87,20 +92,12 @@ public class BankServiceImpl implements BankService {
             throw new LoginFailedException();
         }
 
-        AuthenticationToken token;
-        token = jwtTokenProvider.createToken(bank.getEmail(),bank.getRole());
-
-
-        tokenRepository.findById(bank.getId())
-                .ifPresentOrElse(
-                        existingToken -> existingToken.updateTokens(token.getAccessToken(), token.getRefreshToken()),
-                        () -> tokenRepository.save(new JwtToken(bank.getId(),bank.getRole(), token.getAccessToken(), token.getRefreshToken()))
-                );
+        // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
+        AuthenticationToken token = authService.createAndSaveToken(bank.getEmail(), bank.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, bank);
         return ApiResponse.success(bank.getRole() + " 로그인 성공", tokenResponse);
     }
-
 
 
     // 은행 정보 조회
