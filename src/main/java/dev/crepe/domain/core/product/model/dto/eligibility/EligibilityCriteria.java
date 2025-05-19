@@ -26,7 +26,7 @@ public class EligibilityCriteria {
     public static EligibilityCriteria createForAll() {
         return EligibilityCriteria.builder()
                 .ageGroups(List.of(AgeGroup.ALL_AGES))
-                .occupations(List.of(Occupation.values()))
+                .occupations(List.of(Occupation.ALL_OCCUPATIONS))
                 .incomeLevels(List.of(IncomeLevel.NO_LIMIT))
                 .build();
     }

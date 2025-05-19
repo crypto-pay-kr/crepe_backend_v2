@@ -147,7 +147,7 @@ public class ActorServiceImpl  implements ActorService {
                 .orElseThrow(() -> new UserNotFoundException(userEmail));
         actor.addOccupation(request.getOccupation());
         actorRepository.save(actor);
-        return null;
+        return ResponseEntity.ok(null);
     }
 
     // 소득 랜덤 부여 함수

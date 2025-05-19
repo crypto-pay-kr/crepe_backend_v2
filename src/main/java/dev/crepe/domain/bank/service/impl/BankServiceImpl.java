@@ -106,10 +106,10 @@ public class BankServiceImpl implements BankService {
 
     // 은행 정보 조회
     @Override
-    public GetBankInfoDetailResponse getBankAllDetails(String userEmail) {
+    public GetBankInfoDetailResponse getBankAllDetails(String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+        Bank bank = bankRepository.findByEmail(bankEmail)
+                .orElseThrow(() -> new UnauthorizedStoreAccessException(bankEmail));
 
         GetBankInfoDetailResponse  res =
                 GetBankInfoDetailResponse .builder()

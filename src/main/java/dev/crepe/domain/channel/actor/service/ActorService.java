@@ -8,7 +8,7 @@ import dev.crepe.global.model.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-@Service
+
 public interface ActorService {
 
     //********** 회원 정보 수정 **********/
@@ -23,5 +23,5 @@ public interface ActorService {
 
     ApiResponse<TokenResponse> login(LoginRequest request);
     ResponseEntity<Void> addOccupationName(AddOccupationRequest request, String userEmail);
-    ResponseEntity<String> checkIncome(String useEmail);
+    ResponseEntity<String> checkIncome(String userEmail);
 }

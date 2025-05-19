@@ -49,7 +49,7 @@ public class AdminBankManageController {
     @AdminAuth
     @PatchMapping(value="/product/review")
     public ResponseEntity<ReviewProductSubmissionResponse> productInspect(
-            ReviewProductSubmissionRequest request){
+            @RequestBody ReviewProductSubmissionRequest request){
         ReviewProductSubmissionResponse response = adminProductService.reviewProductSubmission(request);
         return ResponseEntity.ok(response);
     }
