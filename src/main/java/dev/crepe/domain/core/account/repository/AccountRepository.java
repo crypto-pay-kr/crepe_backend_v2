@@ -48,5 +48,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     boolean existsByAccountAddress(String accountAddress);
 
+    Optional<Account> findByBankTokenIdAndActorIsNull(Long bankTokenId);
+  
     List<Account> findByBank_IdAndCoin_IdIn(Long BankId, List<Long> coinIds);
+
 }

@@ -31,7 +31,7 @@ public class Bank extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "bank_phone_num",nullable = false)
     private String bankPhoneNum;
 
     @Column(nullable = false)

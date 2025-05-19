@@ -18,5 +18,20 @@ public enum AgeGroup {
     public String getKey() {
         return this.name();
     }
+
+    public boolean isInRange(int age) {
+        switch (this) {
+            case YOUTH:
+                return age >= 19 && age <= 34;
+            case MIDDLE_AGED:
+                return age >= 35 && age <= 64;
+            case SENIOR:
+                return age >= 65;
+            case ALL_AGES:
+                return true;
+            default:
+                return false;
+        }
+    }
 }
 

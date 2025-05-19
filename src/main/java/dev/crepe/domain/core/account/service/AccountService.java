@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.account.service;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
@@ -10,6 +11,7 @@ import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public interface AccountService {
 
@@ -31,6 +33,13 @@ public interface AccountService {
     void reRegisterAddress(String email, GetAddressRequest request);
 
     String getAccountOwnerName(String email, String currency);
+    List<Account> getAccountsByBankEmail(String bankEmail);
+
+    Account findBankTokenAccount(Long bankId, BankToken bankToken);
+
+    Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(Bank bank, BankToken bankToken, AddressRegistryStatus status);
+
+    void findActiveAccountByBankEmailAndCurrency(String bankEmail, String currency);
 
     Account getOrCreateTokenAccount(String email, String tokenCurrency);
 

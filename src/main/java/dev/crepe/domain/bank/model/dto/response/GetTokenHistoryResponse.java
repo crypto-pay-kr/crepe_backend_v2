@@ -17,6 +17,8 @@ import java.util.List;
 @Builder
 public class GetTokenHistoryResponse {
 
+    private String bankName;
+
     private Long tokenHistoryId;
     private Long bankTokenId;
     private String changeReason;

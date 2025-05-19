@@ -54,7 +54,7 @@ public class PayServiceImpl implements PayService {
         }
 
         // 4. 유저 계좌에서 결제 금액 차감
-        userAccount.reduceAmount(totalAmount);
+        userAccount.deductBalance(totalAmount);
 
         // 5. 결제 내역(PayHistory) 생성 - 아직 승인되지 않은 상태
         PayHistory payHistory = PayHistory.builder()

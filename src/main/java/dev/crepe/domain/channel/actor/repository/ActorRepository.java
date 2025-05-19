@@ -3,6 +3,7 @@ package dev.crepe.domain.channel.actor.repository;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
+import dev.crepe.domain.core.product.model.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
