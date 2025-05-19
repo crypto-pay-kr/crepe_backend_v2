@@ -12,7 +12,6 @@ import java.util.List;
 public class PreferentialRateCondition {
     private AgePreferentialRate ageRate;
     private DepositPreferentialRate depositRate;
-    private RegularDepositPreferentialRate regularDepositRate;
     private FreeDepositCountPreferentialRate freeDepositCountRate;
 
     /**
@@ -28,10 +27,6 @@ public class PreferentialRateCondition {
 
         if (depositRate != null) {
             total = total.add(depositRate.getRate());
-        }
-
-        if (regularDepositRate != null) {
-            total = total.add(regularDepositRate.getRate());
         }
 
         if (freeDepositCountRate != null) {
@@ -54,10 +49,6 @@ public class PreferentialRateCondition {
 
         if (depositRate != null && !depositRate.getRate().equals(BigDecimal.ZERO)) {
             descriptions.add(depositRate.getName() + " 예치금 우대금리: " + depositRate.getRate() + "% (" + depositRate.getDescription() + ")");
-        }
-
-        if (regularDepositRate != null && !regularDepositRate.getRate().equals(BigDecimal.ZERO)) {
-            descriptions.add(regularDepositRate.getName() + " 정기납입 우대금리: " + regularDepositRate.getRate() + "% (" + regularDepositRate.getDescription() + ")");
         }
 
         if (freeDepositCountRate != null && !freeDepositCountRate.getRate().equals(BigDecimal.ZERO)) {
