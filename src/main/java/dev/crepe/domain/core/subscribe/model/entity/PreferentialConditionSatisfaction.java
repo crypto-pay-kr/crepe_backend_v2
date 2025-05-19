@@ -6,6 +6,7 @@ import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.subscribe.model.SatisfactionType;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,10 +20,10 @@ import java.time.LocalDateTime;
  * - 가입 시점에 즉시 충족된 조건과 나중에 충족된 조건 모두 기록
  */
 @Entity
+@Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
 @Table(name = "preferential_condition_satisfaction")
 public class PreferentialConditionSatisfaction extends BaseEntity {
 

@@ -64,7 +64,6 @@ public class Subscribe extends BaseEntity {
     @Column(name = "applied_preferential_rates", columnDefinition = "TEXT")
     private String appliedPreferentialRates;
 
-
     // 자유납입 목표 (적금 상품인 경우)
     @Enumerated(EnumType.STRING)
     @Column(name = "selected_free_deposit_rate")
@@ -80,7 +79,6 @@ public class Subscribe extends BaseEntity {
     private String voucherCode;
 
 
-
     /**
      * 예치 (잔액 증가)
      */
@@ -92,12 +90,18 @@ public class Subscribe extends BaseEntity {
     }
 
 
-    /**
-     * 활성 상태인지 확인
-     */
+    public void changeExpired() {
+        this.balance = BigDecimal.ZERO;
+        this.status = SubscribeStatus.EXPIRED;
+    }
+
     public boolean isActive() {
         return this.status == SubscribeStatus.ACTIVE;
     }
 
+
+    public boolean isMatured() {
+        return LocalDateTime.now().isAfter(this.expiredDate);
+    }
 
 }
