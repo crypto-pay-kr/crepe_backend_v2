@@ -2,7 +2,6 @@ package dev.crepe.domain.channel.actor.service.impl;
 
 import dev.crepe.domain.channel.actor.service.ActorHistoryService;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
-import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import dev.crepe.domain.core.util.history.global.service.HistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Slice;
