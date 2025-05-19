@@ -48,13 +48,13 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
             throw new IllegalStateException("예치된 금액이 없습니다.");
         }
 
-        // 사용 개월 계산 (30일 기준)
+        // 가입 개월 계산
         LocalDate startDate = subscribe.getSubscribeDate().toLocalDate();
         LocalDate endDate = LocalDate.now();
-        long daysUsed = ChronoUnit.DAYS.between(startDate, endDate);
-        long usedMonths = daysUsed / 30;
 
-        if (usedMonths <= 0) {
+        int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate) ;
+
+        if (totalMonths <= 0) {
             throw new IllegalStateException("1개월 이상 사용해야 중도해지가 가능합니다.");
         }
 
@@ -64,7 +64,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         BigDecimal preTaxInterest;
 
         switch (product.getType()) {
-            case SAVING -> preTaxInterest = balance.multiply(monthlyRate).multiply(BigDecimal.valueOf(usedMonths));
+            case SAVING -> preTaxInterest = balance.multiply(monthlyRate).multiply(BigDecimal.valueOf(totalMonths));
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentInterest(subscribe, interestRate);
             }
@@ -81,7 +81,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
                 .orElseThrow(() -> new RuntimeException("은행 자본금 계좌가 없습니다."));
 
-        bankTokenAccount.reduceAmount(postTaxInterest);
+        bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
@@ -101,13 +101,17 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         return "만기 완료";
     }
 
-    // 적금 이자 계산
+    // 적금 이자 계산 - 단리
     private BigDecimal calculateInstallmentInterest(Subscribe subscribe, BigDecimal annualRate) {
         BigDecimal totalInterest = BigDecimal.ZERO;
 
         LocalDate startDate = subscribe.getSubscribeDate().toLocalDate(); // 가입일
         LocalDate endDate = subscribe.getExpiredDate().toLocalDate();     // 만기일
         int totalMonths = (int)ChronoUnit.MONTHS.between(startDate, endDate);
+
+        // 단리용 월 이율
+        BigDecimal monthlyRate = annualRate.divide(BigDecimal.valueOf(12), 10, RoundingMode.DOWN);
+
 
         for (int i = 0; i < totalMonths; i++) {
             LocalDate monthStart = startDate.plusMonths(i).withDayOfMonth(1);
@@ -124,17 +128,33 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                     endOfMonth
             );
 
+
             // 입금 없는 달은 건너뜀
             if (deposited == null || deposited.compareTo(BigDecimal.ZERO) == 0) {
                 continue;
             }
 
-            // 이자 = 월 입금액 × (연이율 ÷ 12) (단순 월이자만)
+            // 이자 = 입금액 × 월이율 (단리)
             BigDecimal interest = deposited
-                    .multiply(annualRate)
-                    .divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
+                    .multiply(monthlyRate)
+                    .setScale(10, RoundingMode.DOWN);
 
             totalInterest = totalInterest.add(interest);
+
+        }
+
+        // 일할 이자 계산
+        if (!endDate.equals(endDate.withDayOfMonth(endDate.lengthOfMonth()))) {
+            int daysPast = endDate.getDayOfMonth() - 1;
+            int daysInMonth = endDate.lengthOfMonth();
+
+            BigDecimal thisMonthInterest = totalInterest.multiply(monthlyRate).setScale(10, RoundingMode.DOWN);
+            BigDecimal daysInterest = thisMonthInterest.multiply(
+                    BigDecimal.valueOf(daysPast)
+                            .divide(BigDecimal.valueOf(daysInMonth), 10, RoundingMode.DOWN)
+            ).setScale(10, RoundingMode.DOWN);
+
+            totalInterest = totalInterest.add(daysInterest);
         }
 
         return totalInterest;

@@ -69,13 +69,14 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         // 기본 + 우대 금리 합산
         BigDecimal baseInterestRate = new BigDecimal(Float.toString(product.getBaseInterestRate()));
-        BigDecimal totalInterestRate = baseInterestRate.add(additionalRate).divide(BigDecimal.valueOf(100), 10, RoundingMode.HALF_UP);
+        BigDecimal totalInterestRate = baseInterestRate.add(additionalRate).divide(BigDecimal.valueOf(100), 10, RoundingMode.DOWN);
         BigDecimal preTaxInterest;
+
 
         switch (product.getType()) {
             case SAVING -> preTaxInterest = balance.multiply(totalInterestRate);
             case INSTALLMENT -> {
-                preTaxInterest = calculateInstallmentInterest(subscribe, totalInterestRate);
+                preTaxInterest = calculateInstallmentCompoundInterest(subscribe, totalInterestRate);
             }
             default -> throw new IllegalStateException("이자 계산이 지원되지 않는 상품 유형입니다.");
         }
@@ -90,7 +91,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
                 .orElseThrow(() -> new RuntimeException("은행 자본금 계좌가 없습니다."));
 
-        bankTokenAccount.reduceAmount(postTaxInterest);
+        bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
@@ -102,7 +103,6 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         BigDecimal totalPayout = balance.add(postTaxInterest);
         userTokenAccount.addAmount(totalPayout);
 
-
         // 상태 변경 (만기 처리)
         subscribe.isExpired();
         subscribeRepository.save(subscribe);
@@ -110,8 +110,75 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         return "만기 완료";
     }
 
-    // 적금 이자 계산
-    private BigDecimal calculateInstallmentInterest(Subscribe subscribe, BigDecimal annualRate) {
+    // 적금 복리 이자 계산
+    private BigDecimal calculateInstallmentCompoundInterest(Subscribe subscribe, BigDecimal annualRate) {
+        BigDecimal totalBalance = BigDecimal.ZERO; // 총 입금액 (원금)
+        BigDecimal totalAmount = BigDecimal.ZERO;  // 누적된 원리금
+
+        LocalDate startDate = subscribe.getSubscribeDate().toLocalDate();
+        LocalDate endDate = subscribe.getExpiredDate().toLocalDate();
+
+        int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate) ;
+
+        // 월복리 이율 = (1 + 연이율)^(1/12) - 1
+        BigDecimal monthlyRate = BigDecimal.valueOf(
+                Math.pow(annualRate.add(BigDecimal.ONE).doubleValue(), 1.0 / 12.0) - 1
+        ).setScale(10, RoundingMode.DOWN);
+
+
+        for (int i = 0; i < totalMonths; i++) {
+            LocalDate monthDate = startDate.plusMonths(i);
+            LocalDate monthEnd = monthDate.withDayOfMonth(monthDate.lengthOfMonth()); // 매 월 말일
+
+            LocalDateTime startOfMonth = monthDate.withDayOfMonth(1).atStartOfDay();
+            LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
+
+            // 월별 입금합 조회
+            BigDecimal deposited = subscribeHistoryRepository.sumMonthlyDeposit(
+                    subscribe,
+                    SubscribeHistoryType.DEPOSIT,
+                    startOfMonth,
+                    endOfMonth
+            );
+
+
+            if (deposited != null && deposited.compareTo(BigDecimal.ZERO) > 0) {
+                totalAmount = totalAmount.add(deposited);
+                totalBalance = totalBalance.add(deposited);
+            }
+
+            // 복리 이자 적용
+            totalAmount = totalAmount.multiply(BigDecimal.ONE.add(monthlyRate))
+                    .setScale(10, RoundingMode.DOWN);
+
+
+        }
+
+        // 일할 이자 계산
+        if (!endDate.equals(endDate.withDayOfMonth(endDate.lengthOfMonth()))) {
+            int daysPast = endDate.getDayOfMonth() - 1;
+            int daysInMonth = endDate.lengthOfMonth();
+
+            BigDecimal thisMonthInterest = totalAmount.multiply(monthlyRate).setScale(10, RoundingMode.DOWN);
+            BigDecimal daysInterest = thisMonthInterest.multiply(
+                    BigDecimal.valueOf(daysPast)
+                            .divide(BigDecimal.valueOf(daysInMonth), 10, RoundingMode.DOWN)
+            ).setScale(10, RoundingMode.DOWN);
+
+            totalAmount = totalAmount.add(daysInterest);
+        }
+
+        // 총 이자 = 누적금 - 원금
+        BigDecimal totalInterest = totalAmount.subtract(totalBalance).setScale(10, RoundingMode.DOWN);
+
+        return totalInterest;
+
+    }
+
+
+
+    // 적금 단리 이자 계산
+    private BigDecimal calculateInstallmentSimpleInterest(Subscribe subscribe, BigDecimal annualRate) {
         BigDecimal totalInterest = BigDecimal.ZERO;
         boolean hasMissingDepositMonth = false;
 
@@ -146,7 +213,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
             BigDecimal interest = deposited
                     .multiply(annualRate)
                     .multiply(BigDecimal.valueOf(remainingMonths))
-                    .divide(BigDecimal.valueOf(12), 10, RoundingMode.HALF_UP);
+                    .divide(BigDecimal.valueOf(12), 10, RoundingMode.DOWN);
 
             totalInterest = totalInterest.add(interest);
         }

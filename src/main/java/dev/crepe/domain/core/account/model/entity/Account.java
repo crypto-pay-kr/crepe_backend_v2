@@ -94,6 +94,13 @@ public class Account extends BaseEntity {
         //this.availableBalance = this.availableBalance.subtract(amount);
     }
 
+    public void reduceNonAvailableBalance(BigDecimal amount) {
+        if (nonAvailableBalance.compareTo(amount) < 0) {
+            throw new InsufficientBalanceException();
+        }
+        this.nonAvailableBalance = this.nonAvailableBalance.subtract(amount);
+    }
+
     public void addAmount(BigDecimal amount) {
         this.balance = this.balance.add(amount);
        //this.availableBalance = this.availableBalance.add(amount);
