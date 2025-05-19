@@ -12,26 +12,25 @@ public enum Gender {
     private final String description;
 
     public static Gender fromPersonalNumber(String personalNumber) {
-        if (personalNumber == null || personalNumber.length() < 8) {
+        if (personalNumber == null || personalNumber.trim().isEmpty()) {
             throw new IllegalArgumentException("유효하지 않은 주민번호입니다.");
         }
 
-        // 주민번호에서 성별 구분 숫자 추출 (7번째 자리)
-        String[] parts = personalNumber.split("-");
-        if (parts.length != 2 || parts[1].length() < 1) {
+        // 하이픈과 모든 공백 제거
+        String cleanedNum = personalNumber.replace("-", "").replace(" ", "").trim();
+
+        if (cleanedNum.length() < 7) {
             throw new IllegalArgumentException("유효하지 않은 주민번호 형식입니다.");
         }
 
-        char genderDigit = parts[1].charAt(0);
+        // 7번째 자리에서 성별 구분 숫자 추출
+        char genderDigit = cleanedNum.charAt(6);
 
         // 성별 구분: 1,3 -> 남성, 2,4 -> 여성
-        switch (genderDigit) {
-            case '1': case '3':
-                return MALE;
-            case '2': case '4':
-                return FEMALE;
-            default:
-                throw new IllegalArgumentException("유효하지 않은 성별 구분 숫자입니다: " + genderDigit);
-        }
+        return switch (genderDigit) {
+            case '1', '3' -> MALE;
+            case '2', '4' -> FEMALE;
+            default -> throw new IllegalArgumentException("유효하지 않은 성별 구분 숫자입니다: " + genderDigit);
+        };
     }
 }

@@ -58,6 +58,7 @@ public class Actor extends BaseEntity {
     @Column
     private String birth;
 
+    @Enumerated(EnumType.STRING)
     @Column
     private Gender gender;
 
@@ -153,13 +154,7 @@ public class Actor extends BaseEntity {
     public void addTotalAsset(BigDecimal totalAsset) {
         this.totalAsset = totalAsset;
     }
-    public void updateBirth(String newBirth) {
-        this.birth = newBirth;
-    }
 
-    public void updateGender(Gender newGender) {
-        this.gender = newGender;
-    }
 
     public void updateFromIdCard(IdCardOcrResponse idCardResponse) {
         // 이름 업데이트

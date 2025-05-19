@@ -186,30 +186,53 @@ public class ActorServiceImpl  implements ActorService {
 
     @Transactional
     @Override
-    public ResponseEntity<String> checkIncome(String userEmail) {
+    public GetFinancialSummaryResponse checkIncome(String userEmail) {
         Actor actor = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UserNotFoundException(userEmail));
         if (actor.getAnnualIncome() != null && actor.getTotalAsset() != null) {
-            return new ResponseEntity<>("이미 소득이 부여되었습니다", HttpStatus.BAD_REQUEST);
+            return GetFinancialSummaryResponse.builder()
+                    .userId(actor.getId())
+                    .annualIncome(actor.getAnnualIncome())
+                    .totalAsset(actor.getTotalAsset())
+                    .build();
         }
         GetFinancialSummaryResponse financialData = getActorAsset(actor.getId());
         actor.addAnnualIncome(financialData.getAnnualIncome());
         actor.addTotalAsset(financialData.getTotalAsset());
 
-        return new ResponseEntity<>("소득 정보가 성공적으로 조회되었습니다.", HttpStatus.OK);
+        return financialData;
     }
 
     @Transactional
     @Override
-    public ResponseEntity<String> updateFromIdCard(String userEmail,IdCardOcrResponse idCardResponse) {
-        Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+    public ResponseEntity<String> updateFromIdCard(String userEmail, IdCardOcrResponse idCardResponse) {
+        log.info("사용자 정보 업데이트 시작 - 이메일: {}", userEmail);
 
-        if(actor.getName().equals(idCardResponse.getName())) {
+        Actor actor = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음: {}", userEmail);
+                    return new EntityNotFoundException("사용자를 찾을 수 없습니다.");
+                });
+
+        log.info("기존 사용자 정보 - ID: {}, 이름: {}", actor.getId(), actor.getName());
+
+        // 논리 수정: equals가 아니라 !equals 또는 이름 검증 로직 변경
+        if (!actor.getName().equals(idCardResponse.getName())) {
+            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
+                    actor.getName(), idCardResponse.getName());
             throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
         }
-        actor.updateFromIdCard(idCardResponse);
-        return new ResponseEntity<>("ocr 인증 성공", HttpStatus.OK);
+
+
+        try {
+            actor.updateFromIdCard(idCardResponse);
+            actorRepository.save(actor); // 명시적 저장 (선택사항)
+            log.info("사용자 정보 업데이트 완료");
+            return new ResponseEntity<>("OCR 인증 성공", HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("업데이트 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
 

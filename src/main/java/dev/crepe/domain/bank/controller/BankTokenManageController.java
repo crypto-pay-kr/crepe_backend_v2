@@ -25,7 +25,7 @@ public class BankTokenManageController {
     private final BankTokenManageService bankTokenManageService;
 
 
-    // 은행 토큰 발행 요청
+    @Operation(summary = "토큰 발행", description = "은행 토큰 발행 요청")
     @PostMapping("/create")
     @BankAuth
     public ResponseEntity<String> createBankToken(@RequestBody @Valid CreateBankTokenRequest request, AppAuthentication auth) {
@@ -33,7 +33,7 @@ public class BankTokenManageController {
         return ResponseEntity.ok("토큰 발행 요청이 접수되었습니다.");
     }
 
-    // 은행 토큰 재발행 요청
+    @Operation(summary = "토큰 재발행", description = "은행 토큰 재발행 요청")
     @PatchMapping("/recreate")
     @BankAuth
     public ResponseEntity<String> recreateBankToken(@RequestBody @Valid ReCreateBankTokenRequest request, AppAuthentication auth) {
@@ -42,7 +42,8 @@ public class BankTokenManageController {
     }
 
 
-    // 토큰 계좌 정보 조회
+
+    @Operation(summary = "토큰 계좌 정보 조회", description = "은행 토큰 계좌 정보 조회")
     @GetMapping("/account")
     @BankAuth
     public ResponseEntity<GetTokenAccountInfoResponse> getAccountByBankToken(AppAuthentication auth) {

@@ -71,12 +71,4 @@ public class PotentialPreferentialCondition extends BaseEntity {
                 .build();
     }
 
-    public void updateAchievement(String currentAchievement) {
-        this.currentAchievement = currentAchievement;
-        this.lastCheckedAt = LocalDateTime.now();
-    }
-
-    public void stopMonitoring() {
-        this.isMonitoring = false;
-    }
 }

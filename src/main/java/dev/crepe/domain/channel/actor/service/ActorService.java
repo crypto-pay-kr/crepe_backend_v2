@@ -1,6 +1,7 @@
 package dev.crepe.domain.channel.actor.service;
 
 import dev.crepe.domain.channel.actor.model.dto.request.*;
+import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.core.subscribe.model.dto.request.SubscribeProductRequest;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeProductResponse;
@@ -24,6 +25,6 @@ public interface ActorService {
 
     ApiResponse<TokenResponse> login(LoginRequest request);
     ResponseEntity<Void> addOccupationName(AddOccupationRequest request, String userEmail);
-    ResponseEntity<String> checkIncome(String userEmail);
+    GetFinancialSummaryResponse checkIncome(String userEmail);
     ResponseEntity<String> updateFromIdCard(String userEmail,IdCardOcrResponse idCardResponse);
 }
