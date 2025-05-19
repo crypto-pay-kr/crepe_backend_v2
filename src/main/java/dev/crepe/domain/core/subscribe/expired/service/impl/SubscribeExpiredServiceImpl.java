@@ -86,18 +86,18 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         BigDecimal postTaxInterest = preTaxInterest.multiply(BigDecimal.ONE.subtract(taxRate));
 
 
+        // 사용자 토큰 계좌에 원금 + 세후 이자 지급
+        Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
+                subscribe.getUser().getEmail(), product.getBankToken().getId()
+        ).orElseThrow(() -> new RuntimeException("사용자의 토큰 계좌가 없습니다."));
+
+
         // 은행 자본금 계좌에서 이자 차감
         Account bankTokenAccount = accountRepository
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
                 .orElseThrow(() -> new RuntimeException("은행 자본금 계좌가 없습니다."));
 
         bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
-
-
-        // 사용자 토큰 계좌에 원금 + 세후 이자 지급
-        Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
-                subscribe.getUser().getEmail(), product.getBankToken().getId()
-        ).orElseThrow(() -> new RuntimeException("사용자의 토큰 계좌가 없습니다."));
 
 
         BigDecimal totalPayout = balance.add(postTaxInterest);
