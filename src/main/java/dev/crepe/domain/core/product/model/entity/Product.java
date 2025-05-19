@@ -42,10 +42,6 @@ public class Product extends BaseEntity {
     @Column(name = "type", nullable = false)
     private BankProductType type;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
-    private BankProductStatus status;
-
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
@@ -77,6 +73,10 @@ public class Product extends BaseEntity {
 
     @Column(name="product_image")
     private String imageUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BankProductStatus status;
 
     // 반려사유
     @Column(name = "rejection_reason", columnDefinition = "TEXT")
