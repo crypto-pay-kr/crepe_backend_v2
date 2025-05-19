@@ -1,6 +1,5 @@
 package dev.crepe.domain.core.util.coin.regulation.service;
 
-import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
@@ -13,8 +12,12 @@ public interface BankTokenInfoService {
 
     TokenInfoResponse getTokenInfo(String tokenCurrency);
 
-    List<GetAllBankTokenResponse> getAllBankTokenResponseList(PageRequest pageRequest);
+    List<BankToken> findAllBankTokens(PageRequest pageRequest);
 
-    Optional<BankToken> findByBank(Bank bank);
-    void save(BankToken bankToken);
+    void validateTokenNotAlreadyRequested(Long bankId);
+
+    BankToken findByBank(Bank bank);
+
+    void saveBankToken(BankToken bankToken);
+
 }

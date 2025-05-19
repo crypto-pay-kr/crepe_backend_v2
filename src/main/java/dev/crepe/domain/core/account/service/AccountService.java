@@ -33,7 +33,12 @@ public interface AccountService {
 
     String getAccountOwnerName(String email, String currency);
     List<Account> getAccountsByBankEmail(String bankEmail);
+
+    Account findBankTokenAccount(Long bankId, BankToken bankToken);
+
     Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(Bank bank, BankToken bankToken, AddressRegistryStatus status);
+
+    void findActiveAccountByBankEmailAndCurrency(String bankEmail, String currency);
 
     Account getOrCreateTokenAccount(String email, String tokenCurrency);
 

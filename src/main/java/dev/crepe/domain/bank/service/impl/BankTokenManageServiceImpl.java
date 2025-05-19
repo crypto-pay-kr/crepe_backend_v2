@@ -9,16 +9,13 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.service.BankTokenManageService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
-import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
-import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
-import dev.crepe.domain.core.util.coin.regulation.service.PortfolioConstituteService;
+import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
@@ -43,7 +40,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     private final BankTokenInfoService bankTokenInfoService;
     private final TokenSetupService tokenSetupService;
     private final TokenHistoryService tokenHistoryService;
-    private final PortfolioConstituteService portfolioConstituteService;
+    private final PortfolioService portfolioService;
 
 
 
@@ -58,7 +55,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
         }
 
         // 포토폴리오 구성 정보 유효성 검증
-        portfolioConstituteService.validatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
+        portfolioService.validatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
 
         // 시세 오차 허용 범위 충족 여부 검증
         request.getPortfolioCoins().forEach(coin -> {
@@ -69,7 +66,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
             );
         });
         // bankToken 발행 요청 service 호출
-        BankToken bankToken = tokenSetupService.requestTokenGenerate(request, bankEmail);
+        BankToken bankToken = tokenSetupService.requestTokenGenerate(request, bank);
 
         // PENDING 상태 계좌 생성
         accountService.createBankTokenAccount(bankToken);
@@ -82,16 +79,14 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
 
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
-        BankToken bankToken = bankTokenInfoService.findByBank(bank)
-                .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
+        BankToken bankToken = bankTokenInfoService.findByBank(bank);
 
         if (tokenHistoryService.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
             throw new PendingBankTokenExistsException(bankToken.getName());
         }
 
         // 포토폴리오 재구성 정보 유효성 검증
-        portfolioConstituteService.revalidatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
-
+        portfolioService.revalidatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
 
         // 시세 오차 허용 범위 충족 여부 검증
         request.getPortfolioCoins().forEach(coin -> {
@@ -103,7 +98,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
         });
 
         // bankToken 발행 요청 service 호출
-        bankToken = tokenSetupService.requestTokenReGenerate(request, bankEmail);
+        bankToken = tokenSetupService.requestTokenReGenerate(request, bank);
 
         accountService.updateBankTokenAccount(bankToken);
 
@@ -117,8 +112,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
 
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
-        BankToken bankToken = bankTokenInfoService.findByBank(bank)
-                .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
+        BankToken bankToken = bankTokenInfoService.findByBank(bank);
 
         return accountService.findByBankAndBankTokenAndAddressRegistryStatus(
                 bank,
@@ -128,8 +122,8 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                 .bankName(bank.getName())
                 .tokenName(bankToken.getName())
                 .tokenCurrency(bankToken.getCurrency())
-                .balance(account.getBalance())
-                .nonAvailableBalance(account.getNonAvailableBalance())
+                .balance(account.getBalance().toPlainString())
+                .nonAvailableBalance(account.getNonAvailableBalance().toPlainString())
                 .accountAddress(account.getAccountAddress())
                 .build()
         ).orElseGet(() -> GetTokenAccountInfoResponse.builder().build());

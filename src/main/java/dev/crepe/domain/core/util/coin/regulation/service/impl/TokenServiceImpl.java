@@ -2,22 +2,18 @@ package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
 
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
-import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenService;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.service.PortfolioHistoryService;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,7 +22,7 @@ public class TokenServiceImpl implements TokenService {
     private final TokenHistoryService tokenHistoryService;
     private final AccountService accountService;
     private final PortfolioHistoryService portfolioHistoryService;
-    private final BankTokenRepository bankTokenRepository;
+    private final BankTokenInfoService bankTokenInfoService;
 
 
     @Override
@@ -47,7 +43,8 @@ public class TokenServiceImpl implements TokenService {
         // 토큰 발행 승인
         bankToken.approve();
         bankToken.changeTotalSupply(tokenHistory.getTotalSupplyAmount());
-        bankTokenRepository.save(bankToken);
+
+        bankTokenInfoService.saveBankToken(bankToken);
     }
 
     @Override

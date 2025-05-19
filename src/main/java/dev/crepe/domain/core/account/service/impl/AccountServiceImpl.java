@@ -17,6 +17,7 @@ import dev.crepe.domain.core.account.util.GenerateAccountAddress;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.util.SecurityUtil;
@@ -26,7 +27,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -84,7 +87,7 @@ public class AccountServiceImpl implements AccountService {
                 .bank(bankToken.getBank())
                 .bankToken(bankToken)
                 .nonAvailableBalance(BigDecimal.ZERO)
-                .balance(bankToken.getTotalSupply())
+                .balance(BigDecimal.ZERO)
                 .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
                 .accountAddress(accountAddress)
                 .build();
@@ -167,6 +170,7 @@ public class AccountServiceImpl implements AccountService {
                 .balance(account.getBalance())
                 .build();
     }
+
 
     @Transactional
     @Override
@@ -255,9 +259,25 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findByBank_Email(bankEmail);
     }
 
+
+    @Override
+    public Account findBankTokenAccount(Long bankId, BankToken bankToken) {
+        return accountRepository.findByBankIdAndBankTokenAndActorIsNull(bankId, bankToken)
+                .orElseThrow(() -> new AccountNotFoundException("은행의 BankToken 계좌를 찾을 수 없습니다."));
+    }
+
     @Override
     public Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(Bank bank, BankToken bankToken, AddressRegistryStatus status) {
         return accountRepository.findByBankAndBankTokenAndAddressRegistryStatus(bank, bankToken, status);
+    }
+
+    @Override
+    public void findActiveAccountByBankEmailAndCurrency(String bankEmail, String currency) {
+        accountRepository.findByBank_EmailAndCoin_CurrencyAndAddressRegistryStatus(
+                bankEmail,
+                currency,
+                AddressRegistryStatus.ACTIVE
+        ).orElseThrow(() -> new AccountNotFoundException(bankEmail));
     }
 
 

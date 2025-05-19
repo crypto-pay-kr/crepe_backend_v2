@@ -6,6 +6,7 @@ import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenService;
 import lombok.RequiredArgsConstructor;
@@ -43,8 +44,41 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     @Transactional(readOnly = true)
     public List<GetAllBankTokenResponse> getAllBankTokenResponseList(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        return bankTokenInfoService.getAllBankTokenResponseList(pageRequest);
 
+        // BankToken 조회
+        List<BankToken> bankTokens = bankTokenInfoService.findAllBankTokens(pageRequest);
+
+        // 응답 생성
+        return bankTokens.stream()
+                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+                .map(tokenHistory -> {
+                    List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
+                            .stream()
+                            .map(detail -> GetAllBankTokenResponse.PortfolioDetail.builder()
+                                    .coinName(detail.getCoinName())
+                                    .coinCurrency(detail.getCoinCurrency())
+                                    .prevAmount(detail.getPrevAmount())
+                                    .prevPrice(detail.getPrevPrice())
+                                    .updateAmount(detail.getUpdateAmount())
+                                    .updatePrice(detail.getUpdatePrice())
+                                    .build())
+                            .toList();
+
+                    return GetAllBankTokenResponse.builder()
+                            .bankId(tokenHistory.getBankToken().getBank().getId())
+                            .bankName(tokenHistory.getBankToken().getBank().getName())
+                            .tokenHistoryId(tokenHistory.getId())
+                            .bankTokenId(tokenHistory.getBankToken().getId())
+                            .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
+                            .changeReason(tokenHistory.getChangeReason())
+                            .rejectReason(tokenHistory.getRejectReason())
+                            .requestType(tokenHistory.getRequestType())
+                            .status(tokenHistory.getStatus())
+                            .createdAt(tokenHistory.getCreatedAt())
+                            .portfolioDetails(portfolioDetails)
+                            .build();
+                })
+                .toList();
     }
 
     // 은행 토큰 발행 요청 승인

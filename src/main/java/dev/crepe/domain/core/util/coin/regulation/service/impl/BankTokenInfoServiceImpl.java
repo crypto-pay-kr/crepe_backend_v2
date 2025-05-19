@@ -5,6 +5,8 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
+import dev.crepe.domain.core.util.coin.regulation.exception.TokenAlreadyRequestedException;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
@@ -74,51 +76,26 @@ public class BankTokenInfoServiceImpl implements BankTokenInfoService {
 
     }
 
+    @Override
+    public void validateTokenNotAlreadyRequested(Long bankId) {
+        if (bankTokenRepository.existsByBank_Id(bankId)) {
+            throw new TokenAlreadyRequestedException("이미 발행 요청된 토큰이 존재합니다.");
+        }
+    }
 
     @Override
-    public List<GetAllBankTokenResponse> getAllBankTokenResponseList(PageRequest pageRequest) {
-
-        return bankTokenRepository.findAll(pageRequest)
-                .stream()
-                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
-                .map(tokenHistory -> {
-                    List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
-                            .stream()
-                            .map(detail -> GetAllBankTokenResponse.PortfolioDetail.builder()
-                                    .coinName(detail.getCoinName())
-                                    .coinCurrency(detail.getCoinCurrency())
-                                    .prevAmount(detail.getPrevAmount())
-                                    .prevPrice(detail.getPrevPrice())
-                                    .updateAmount(detail.getUpdateAmount())
-                                    .updatePrice(detail.getUpdatePrice())
-                                    .build())
-                            .collect(Collectors.toList());
-
-                    return GetAllBankTokenResponse.builder()
-                            .bankId(tokenHistory.getBankToken().getBank().getId())
-                            .bankName(tokenHistory.getBankToken().getBank().getName())
-                            .tokenHistoryId(tokenHistory.getId())
-                            .bankTokenId(tokenHistory.getBankToken().getId())
-                            .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
-                            .changeReason(tokenHistory.getChangeReason())
-                            .rejectReason(tokenHistory.getRejectReason())
-                            .requestType(tokenHistory.getRequestType())
-                            .status(tokenHistory.getStatus())
-                            .createdAt(tokenHistory.getCreatedAt())
-                            .portfolioDetails(portfolioDetails)
-                            .build();
-                })
-                .collect(Collectors.toList());
+    public List<BankToken> findAllBankTokens(PageRequest pageRequest) {
+        return bankTokenRepository.findAll(pageRequest).getContent();
     }
 
 
     @Override
-    public Optional<BankToken> findByBank(Bank bank) {
-        return bankTokenRepository.findByBank(bank);
+    public BankToken findByBank(Bank bank) {
+        return bankTokenRepository.findByBank(bank)
+                .orElseThrow(() -> new BankTokenNotFoundException("해당 은행에 연결된 BankToken이 존재하지 않습니다."));
     }
 
     @Override
-    public void save(BankToken bankToken) {
-        bankTokenRepository.save(bankToken);
-    }
+    public void saveBankToken(BankToken bankToken) {  bankTokenRepository.save(bankToken);}
+
 }
