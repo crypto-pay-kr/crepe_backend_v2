@@ -65,12 +65,7 @@ public class Subscribe extends BaseEntity {
 
     @Column(name = "regular_deposit_amount")
     private BigDecimal regularDepositAmount;
-
-
-    public void deposit(BigDecimal amount) {
-        this.balance = this.balance.add(amount);
-    }
-
+  
     // 다음 정기납입 예정일 (적금 상품인 경우)
     @Column(name = "next_regular_deposit_date")
     private LocalDate nextRegularDepositDate;
@@ -89,5 +84,22 @@ public class Subscribe extends BaseEntity {
     @Column(name = "voucher_code")
     private String voucherCode;
 
+
+    public void deposit(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
+
+    public void changeExpired() {
+        this.balance = BigDecimal.ZERO;
+        this.status = SubscribeStatus.EXPIRED;
+    }
+
+    public boolean isActive() {
+        return this.status == SubscribeStatus.ACTIVE;
+    }
+
+    public boolean isMatured() {
+        return LocalDateTime.now().isAfter(this.expiredDate);
+    }
 
 }
