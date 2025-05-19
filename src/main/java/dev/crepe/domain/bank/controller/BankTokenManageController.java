@@ -1,7 +1,7 @@
 package dev.crepe.domain.bank.controller;
 
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.BankAuth;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;

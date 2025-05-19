@@ -1,9 +1,8 @@
 package dev.crepe.domain.admin.service.impl;
 
-;
 import dev.crepe.domain.admin.service.AdminService;
-import dev.crepe.domain.auth.jwt.AuthenticationToken;
-import dev.crepe.domain.auth.jwt.JwtTokenProvider;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.channel.actor.exception.LoginFailedException;

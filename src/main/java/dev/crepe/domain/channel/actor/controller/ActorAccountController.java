@@ -1,12 +1,11 @@
 package dev.crepe.domain.channel.actor.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
-import dev.crepe.domain.core.account.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

@@ -1,8 +1,8 @@
 package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.auth.jwt.AuthenticationToken;
-import dev.crepe.domain.auth.jwt.JwtTokenProvider;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.bank.exception.BankNotFoundException;
@@ -16,8 +16,6 @@ import dev.crepe.domain.bank.util.CheckAlreadyField;
 import dev.crepe.domain.channel.actor.exception.LoginFailedException;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
-import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;

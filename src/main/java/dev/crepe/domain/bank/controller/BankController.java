@@ -2,18 +2,14 @@ package dev.crepe.domain.bank.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.auth.jwt.AppAuthentication;
-import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.BankAuth;
-import dev.crepe.domain.auth.role.SellerAuth;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.service.BankService;
-import dev.crepe.domain.channel.actor.model.dto.request.ChangePhoneRequest;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 
-import dev.crepe.domain.channel.actor.store.model.dto.response.GetMyStoreAllDetailResponse;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;

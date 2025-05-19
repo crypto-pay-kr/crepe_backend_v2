@@ -1,8 +1,7 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.auth.jwt.AuthenticationToken;
-import dev.crepe.domain.auth.jwt.JwtTokenProvider;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.channel.actor.exception.*;
@@ -13,24 +12,6 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
-import dev.crepe.domain.core.product.model.BankProductType;
-import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
-import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
-import dev.crepe.domain.core.product.model.dto.eligibility.IncomeLevel;
-import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
-import dev.crepe.domain.core.product.model.dto.interest.AgePreferentialRate;
-import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
-import dev.crepe.domain.core.product.model.entity.Product;
-import dev.crepe.domain.core.product.repository.ProductRepository;
-import dev.crepe.domain.core.subscribe.model.PreferentialRateModels;
-import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
-import dev.crepe.domain.core.subscribe.model.dto.request.SubscribeProductRequest;
-import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeProductResponse;
-import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfaction;
-import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
-import dev.crepe.domain.core.subscribe.repository.PreferentialConditionSatisfactionRepository;
-import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
-import dev.crepe.domain.core.subscribe.util.PreferentialRateUtils;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -45,16 +26,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 
 @Service

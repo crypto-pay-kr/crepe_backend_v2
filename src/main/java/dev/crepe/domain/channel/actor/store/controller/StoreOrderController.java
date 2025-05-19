@@ -1,6 +1,6 @@
 package dev.crepe.domain.channel.actor.store.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.SellerAuth;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.actor.store.exception.EmptyValueException;
@@ -12,7 +12,6 @@ import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderManageR
 import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderResponse;
 import dev.crepe.domain.channel.actor.store.service.StoreOrderService;
 import dev.crepe.domain.channel.actor.store.service.StoreService;
-import dev.crepe.global.error.exception.LocalizedMessageException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

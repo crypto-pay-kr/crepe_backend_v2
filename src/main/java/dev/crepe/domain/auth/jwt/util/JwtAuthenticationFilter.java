@@ -1,4 +1,4 @@
-package dev.crepe.domain.auth.jwt;
+package dev.crepe.domain.auth.jwt.util;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

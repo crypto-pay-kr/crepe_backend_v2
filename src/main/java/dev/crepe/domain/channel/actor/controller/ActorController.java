@@ -3,10 +3,9 @@ package dev.crepe.domain.channel.actor.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
-import dev.crepe.domain.channel.actor.service.impl.ActorServiceImpl;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.ocr.id.service.IdCardOcrService;
 import dev.crepe.infra.otp.model.dto.OtpSetupResponse;
