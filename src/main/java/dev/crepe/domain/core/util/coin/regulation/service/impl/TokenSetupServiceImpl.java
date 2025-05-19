@@ -1,26 +1,18 @@
 package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
-import dev.crepe.domain.bank.exception.BankNotFoundException;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+
 import dev.crepe.domain.core.account.model.entity.Account;
-import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
-import dev.crepe.domain.core.util.coin.regulation.exception.TokenAlreadyRequestedException;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.bank.repository.BankRepository;
-import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
-import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.exception.TokenGenerateFailedException;
-import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
+import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
+import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
+import dev.crepe.domain.core.util.coin.regulation.service.TokenPriceService;
 import dev.crepe.domain.core.util.coin.regulation.util.TokenCalculationUtil;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.TokenPrice;
-import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
-import dev.crepe.domain.core.util.coin.regulation.repository.TokenPriceRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
 import dev.crepe.domain.core.util.history.token.service.PortfolioHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -36,25 +28,19 @@ import java.math.BigDecimal;
 public class TokenSetupServiceImpl implements TokenSetupService {
 
     private final PortfolioHistoryService portfolioHistoryService;
-    private final TokenPriceRepository tokenPriceRepository;
-    private final BankTokenRepository bankTokenRepository;
-    private final PortfolioRepository portfolioRepository;
-    private final AccountRepository accountRepository;
-    private final CoinRepository coinRepository;
-    private final BankRepository bankRepository;
+    private final TokenPriceService tokenPriceService;
+    private final AccountService accountService;
+    private final BankTokenInfoService bankTokenInfoService;
+    private final PortfolioService portfolioService;
     private final TokenCalculationUtil tokenCalculationUtil;
 
     // 토큰 발행 프로세스
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public BankToken requestTokenGenerate(CreateBankTokenRequest request, String bankEmail) {
+    public BankToken requestTokenGenerate(CreateBankTokenRequest request, Bank bank) {
         try {
-            Bank bank = bankRepository.findByEmail(bankEmail)
-                    .orElseThrow(() -> new BankNotFoundException(bankEmail));
-
-            if (bankTokenRepository.existsByBank_Id(bank.getId())) {
-                throw new TokenAlreadyRequestedException("이미 발행 요청된 토큰이 존재합니다.");
-            }
+            // 중복 토큰 요청 검증
+            bankTokenInfoService.validateTokenNotAlreadyRequested(bank.getId());
 
             BigDecimal totalSupplyAmount = tokenCalculationUtil.calculateTotalPrice(request);
 
@@ -65,24 +51,13 @@ public class TokenSetupServiceImpl implements TokenSetupService {
                     .totalSupply(totalSupplyAmount)
                     .status(BankTokenStatus.PENDING)
                     .build();
-            bankTokenRepository.save(bankToken);
+            bankTokenInfoService.saveBankToken(bankToken);
 
-            TokenPrice tokenPrice = TokenPrice.builder()
-                    .bankToken(bankToken)
-                    .price(totalSupplyAmount)
-                    .build();
-            tokenPriceRepository.save(tokenPrice);
+            // TokenPrice 생성 및 저장
+            tokenPriceService.createAndSaveTokenPrice(bankToken, totalSupplyAmount);
 
-            request.getPortfolioCoins().forEach(coinInfo -> {
-                Coin coin = coinRepository.findByCurrency(coinInfo.getCurrency());
-                Portfolio portfolio = Portfolio.builder()
-                        .bankToken(bankToken)
-                        .coin(coin)
-                        .amount(coinInfo.getAmount())
-                        .initialPrice(coinInfo.getCurrentPrice())
-                        .build();
-                portfolioRepository.save(portfolio);
-            });
+            // 포트폴리오 저장
+            portfolioService.savePortfolios(request, bankToken);
 
             log.info("예상 총 발행량: {}", totalSupplyAmount);
 
@@ -99,17 +74,14 @@ public class TokenSetupServiceImpl implements TokenSetupService {
     // 토큰 재발행 프로세스
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public BankToken requestTokenReGenerate(ReCreateBankTokenRequest request, String bankEmail) {
+    public BankToken requestTokenReGenerate(ReCreateBankTokenRequest request, Bank bank) {
        try {
-           Bank bank = bankRepository.findByEmail(bankEmail)
-                   .orElseThrow(() -> new BankNotFoundException(bankEmail));
 
-           // 은행에 연결된 기존 토큰 조회
-           BankToken bankToken = bankTokenRepository.findByBank(bank)
-                   .orElseThrow(() -> new BankTokenNotFoundException(bank.getName()));
+           // 기존 토큰 조회
+           BankToken bankToken = bankTokenInfoService.findByBank(bank);
 
-           Account bankTokenAccount = accountRepository.findByBankIdAndBankTokenAndActorIsNull(bank.getId(), bankToken)
-                   .orElseThrow(() -> new AccountNotFoundException("은행의 BankToken 계좌를 찾을 수 없습니다."));
+           // BankToken 계좌 조회
+           Account bankTokenAccount = accountService.findBankTokenAccount(bank.getId(), bankToken);
 
            // 유통 중인 토큰량 계산
            BigDecimal circulatingSupply = tokenCalculationUtil.getCirculatingSupply(bankTokenAccount);

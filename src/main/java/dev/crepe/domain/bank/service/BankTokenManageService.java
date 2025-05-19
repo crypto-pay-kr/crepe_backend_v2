@@ -7,9 +7,8 @@ import dev.crepe.domain.bank.model.dto.response.GetTokenHistoryResponse;
 import dev.crepe.global.model.dto.GetPaginationRequest;
 
 import java.util.List;
-import java.util.Optional;
 
-public interface BankTokenService {
+public interface BankTokenManageService {
 
     void createBankToken(CreateBankTokenRequest request, String bankEmail);
 

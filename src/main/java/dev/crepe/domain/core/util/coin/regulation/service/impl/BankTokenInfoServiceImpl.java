@@ -1,8 +1,12 @@
 package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
+import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
+import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
+import dev.crepe.domain.core.util.coin.regulation.exception.TokenAlreadyRequestedException;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
@@ -10,11 +14,13 @@ import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -69,4 +75,27 @@ public class BankTokenInfoServiceImpl implements BankTokenInfoService {
                 .portfolios(portfolioItems).build();
 
     }
+
+    @Override
+    public void validateTokenNotAlreadyRequested(Long bankId) {
+        if (bankTokenRepository.existsByBank_Id(bankId)) {
+            throw new TokenAlreadyRequestedException("이미 발행 요청된 토큰이 존재합니다.");
+        }
+    }
+
+    @Override
+    public List<BankToken> findAllBankTokens(PageRequest pageRequest) {
+        return bankTokenRepository.findAll(pageRequest).getContent();
+    }
+
+
+    @Override
+    public BankToken findByBank(Bank bank) {
+        return bankTokenRepository.findByBank(bank)
+                .orElseThrow(() -> new BankTokenNotFoundException("해당 은행에 연결된 BankToken이 존재하지 않습니다."));
+    }
+
+    @Override
+    public void saveBankToken(BankToken bankToken) {  bankTokenRepository.save(bankToken);}
+
 }

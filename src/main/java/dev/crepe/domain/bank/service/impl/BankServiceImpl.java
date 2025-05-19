@@ -108,8 +108,8 @@ public class BankServiceImpl implements BankService {
     @Override
     public GetBankInfoDetailResponse getBankAllDetails(String bankEmail) {
 
-        Bank bank = bankRepository.findByEmail(bankEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(bankEmail));
+        Bank bank = findBankInfoByEmail(bankEmail);
+
 
         GetBankInfoDetailResponse  res =
                 GetBankInfoDetailResponse .builder()
@@ -130,8 +130,7 @@ public class BankServiceImpl implements BankService {
     @Transactional
     public ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String userEmail) {
 
-        Bank bank = bankRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+        Bank bank = findBankInfoByEmail(userEmail);
 
         String successNewPhone = NumberUtil.removeDash(request.getBankPhoneNumber());
         bank.changePhoneNum(successNewPhone);
@@ -139,7 +138,15 @@ public class BankServiceImpl implements BankService {
         return ResponseEntity.ok(null);
     }
 
+  
+    @Override
+    public Bank findBankInfoByEmail(String email) {
+        return bankRepository.findByEmail(email)
+                .orElseThrow(() -> new BankNotFoundException(email));
+    }
 
+
+ 
 
 }
 

@@ -5,7 +5,7 @@ import dev.crepe.domain.auth.role.BankAuth;
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
-import dev.crepe.domain.bank.service.BankAccountService;
+import dev.crepe.domain.bank.service.BankAccountManageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +18,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/bank")
 @RequiredArgsConstructor
-public class BankAccountController {
+public class BankCoinManageController {
 
-    private final BankAccountService bankAccountService;
-
+    private final BankAccountManageService bankAccountManageService;
 
     @Operation(
             summary = "은행 계좌 등록 요청",
@@ -34,7 +33,7 @@ public class BankAccountController {
             AppAuthentication auth,
             @RequestBody CreateBankAccountRequest request
     ) {
-        bankAccountService.createBankAccount(request,auth.getUserEmail());
+        bankAccountManageService.createBankAccount(request,auth.getUserEmail());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
@@ -47,7 +46,7 @@ public class BankAccountController {
     @BankAuth
     @GetMapping("/account/all")
     public ResponseEntity<List<GetCoinAccountInfoResponse>> getAccountInfoList(AppAuthentication auth) {
-        List<GetCoinAccountInfoResponse> accountInfoList = bankAccountService.getAccountInfoList(auth.getUserEmail());
+        List<GetCoinAccountInfoResponse> accountInfoList = bankAccountManageService.getAccountInfoList(auth.getUserEmail());
         return ResponseEntity.ok(accountInfoList);
     }
 
@@ -62,7 +61,7 @@ public class BankAccountController {
             AppAuthentication auth,
             @RequestParam String currency
     ) {
-        GetAccountDetailResponse accountDetail = bankAccountService.getAccountByCurrency(currency, auth.getUserEmail());
+        GetAccountDetailResponse accountDetail = bankAccountManageService.getAccountByCurrency(currency, auth.getUserEmail());
         return ResponseEntity.ok(accountDetail);
     }
 
@@ -76,7 +75,7 @@ public class BankAccountController {
             AppAuthentication auth,
             @RequestBody  CreateBankAccountRequest request
     ) {
-        bankAccountService.changeBankAccount(request,auth.getUserEmail());
+        bankAccountManageService.changeBankAccount(request,auth.getUserEmail());
         return ResponseEntity.ok(request.getGetAddressRequest().getCurrency() + " 계좌 변경 성공");
     }
 
