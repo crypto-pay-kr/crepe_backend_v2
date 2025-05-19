@@ -1,16 +1,21 @@
 package dev.crepe.domain.admin.service.impl;
 
-import dev.crepe.domain.admin.dto.response.GetPendingBankTokenResponse;
+import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
+import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.exception.TokenHistoryNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
-import dev.crepe.domain.core.util.history.token.model.entity.TokenPortfolioHistory;
+import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
+import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
+import dev.crepe.domain.core.util.history.token.service.impl.PortfolioHistoryServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -18,9 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,8 +33,10 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
 
     private final BankService bankService;
+    private final AccountService accountService;
+    private final PortfolioHistoryServiceImpl portfolioHistoryService;
     private final BankTokenRepository bankTokenRepository;
-    private final AccountRepository accountRepository;
+    private final TokenHistoryRepository tokenHistoryRepository;
 
 
     // 은행 계정 생성
@@ -43,43 +48,43 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
         bankService.signup(bankDataRequest);
     }
 
-    // 토큰 생성 요청  목록 조회
+    // 전체 은행토큰 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public List<GetPendingBankTokenResponse> getPendingBankTokenResponseList(int page, int size) {
+    public List<GetAllBankTokenResponse> getAllBankTokenResponseList(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
 
+        // 모든 TokenHistory 조회
         return bankTokenRepository.findAll(pageRequest)
                 .stream()
-                .map(bankToken -> {
-                    // TokenHistory에서 가장 최근 기록 가져오기
-                    TokenPortfolioHistory latestHistory = bankToken.getTokenHistories()
+                .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+                .map(tokenHistory -> {
+                    // PortfolioHistoryDetail 매핑
+                    List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
                             .stream()
-                            .max(Comparator.comparing(TokenPortfolioHistory::getCreatedAt))
-                            .orElse(null);
-
-                    // Portfolio 데이터를 매핑하여 CoinInfo 리스트 생성
-                    List<GetPendingBankTokenResponse.CoinInfo> portfolioCoins = bankToken.getPortfolios()
-                            .stream()
-                            .map(portfolio -> GetPendingBankTokenResponse.CoinInfo.builder()
-                                    .coinName(portfolio.getCoin().getName())
-                                    .amount(portfolio.getAmount())
-                                    .currency(portfolio.getCoin().getCurrency())
-                                    .currentPrice(portfolio.getInitialPrice())
+                            .map(detail -> GetAllBankTokenResponse.PortfolioDetail.builder()
+                                    .coinName(detail.getCoinName())
+                                    .coinCurrency(detail.getCoinCurrency())
+                                    .prevAmount(detail.getPrevAmount())
+                                    .prevPrice(detail.getPrevPrice())
+                                    .updateAmount(detail.getUpdateAmount())
+                                    .updatePrice(detail.getUpdatePrice())
                                     .build())
                             .collect(Collectors.toList());
 
-                    // GetPendingBankTokenResponse 생성
-                    return GetPendingBankTokenResponse.builder()
-                            .bankTokenId(bankToken.getId())
-                            .bankName(bankToken.getBank().getName())
-                            .createdAt(bankToken.getCreatedAt())
-                            .tokenName(bankToken.getName())
-                            .tokenCurrency(bankToken.getCurrency())
-                            .portfolioCoins(portfolioCoins)
-                            .status(latestHistory != null ? latestHistory.getStatus() : null)
-                            .totalSupply(latestHistory != null ? latestHistory.getAmount() : null)
-                            .description(latestHistory != null ? latestHistory.getDescription() : null)
+                    // TokenHistoryResponse 생성
+                    return GetAllBankTokenResponse.builder()
+                            .bankId(tokenHistory.getBankToken().getBank().getId())
+                            .bankName(tokenHistory.getBankToken().getBank().getName())
+                            .tokenHistoryId(tokenHistory.getId())
+                            .bankTokenId(tokenHistory.getBankToken().getId())
+                            .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
+                            .changeReason(tokenHistory.getChangeReason())
+                            .rejectReason(tokenHistory.getRejectReason())
+                            .requestType(tokenHistory.getRequestType())
+                            .status(tokenHistory.getStatus())
+                            .createdAt(tokenHistory.getCreatedAt())
+                            .portfolioDetails(portfolioDetails)
                             .build();
                 })
                 .collect(Collectors.toList());
@@ -87,25 +92,41 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
     // 은행 토큰 발행 요청 승인
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void approveBankTokenRequest(Long tokenHistoryId) {
+
+        // TokenHistory 조회
+        TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
+                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
+        BankToken bankToken = tokenHistory.getBankToken();
+
+        // 계좌 활성화
+        accountService.activeBankTokenAccount(bankToken, tokenHistory);
+        // 포토폴리오 변경 내역 추가
+        portfolioHistoryService.updatePortfolio(bankToken);
+        // 토큰 발행 내역 추가
+        portfolioHistoryService.updateTokenHistoryStatus( tokenHistoryId, BankTokenStatus.APPROVED);
+
+        // 토큰 발행 승인
+        bankToken.approve();
+        bankToken.changeTotalSupply(tokenHistory.getTotalSupplyAmount());
+        bankTokenRepository.save(bankToken);
+
+
+    }
+
+
+    // 은행 토큰 발행 요청 반려
     @Transactional
-    public void approveBankTokenRequest(Long tokenId) {
-        // BankToken 조회
-        BankToken bankToken = bankTokenRepository.findById(tokenId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 토큰 발행 요청을 찾을 수 없습니다."));
+    @Override
+    public void rejectBankTokenRequest(RejectBankTokenRequest request, Long tokenHistoryId) {
 
-        // 가장 최근의 TokenHistory 가져오기
-        TokenPortfolioHistory latestHistory = bankToken.getTokenHistories()
-                .stream()
-                .max(Comparator.comparing(TokenPortfolioHistory::getCreatedAt))
-                .orElseThrow(() -> new IllegalArgumentException("토큰 히스토리가 존재하지 않습니다."));
+        // TokenHistory 조회
+        TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
+                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
 
-        // 계좌 상태 업데이트
-        Account account = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
-                .orElseThrow(() -> new IllegalArgumentException("해당 토큰에 대한 계좌를 찾을 수 없습니다."));
-        account.approveAddress();
+        // 토큰 발행 상태 변경
+        portfolioHistoryService.updateTokenHistoryStatus(request, tokenHistory.getId(),  BankTokenStatus.REJECTED);
 
-        // TokenHistory와 BankToken 상태 업데이트
-        latestHistory.approve();
-        bankToken.updateStatus(BankTokenStatus.APPROVED);
     }
 }

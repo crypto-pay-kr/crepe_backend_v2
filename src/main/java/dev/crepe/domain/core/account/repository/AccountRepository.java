@@ -18,13 +18,11 @@ import java.util.List;
 public interface AccountRepository extends JpaRepository<Account, Long> {
 
     Optional<Account> findByActor_EmailAndCoin_Currency(String email, String currency);
-
+    Optional<Account> findByActor_EmailAndBankToken_Currency(String email, String currency);
+    Optional<Account> findByBankToken_CurrencyAndActorIsNull(String currency);
     Optional<Account> findByBank_EmailAndCoin_Currency(String email, String currency);
-
     List<Account> findByActor_Email(String email);
-
     List<Account> findByBank_Email(String email);
-
     Page<Account> findByAddressRegistryStatus(AddressRegistryStatus status, Pageable pageable);
   
     Optional<Account> findByActor_EmailAndBankTokenId(String email, Long bankTokenId);
@@ -35,6 +33,14 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             AddressRegistryStatus status
     );
 
+    Optional<Account> findByBank_EmailAndCoin_CurrencyAndAddressRegistryStatus(
+            String bankEmail,
+            String currency,
+            AddressRegistryStatus status
+    );
+
+    Optional<Account> findByBankIdAndBankTokenAndActorIsNull(Long bankId, BankToken bankToken);
+
     Optional<Account> findByBankAndCoin(Bank bank, Coin coin);
 
     Optional<Account> findByBankAndBankToken(Bank bank, BankToken bankToken);
@@ -42,4 +48,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     boolean existsByAccountAddress(String accountAddress);
 
     Optional<Account> findByBankTokenIdAndActorIsNull(Long bankTokenId);
+  
+    List<Account> findByBank_IdAndCoin_IdIn(Long BankId, List<Long> coinIds);
+
 }

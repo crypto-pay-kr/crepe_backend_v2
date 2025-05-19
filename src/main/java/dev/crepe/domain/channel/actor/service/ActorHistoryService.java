@@ -4,5 +4,5 @@ import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHisto
 import org.springframework.data.domain.Slice;
 
 public interface ActorHistoryService {
-    Slice<GetTransactionHistoryResponse> getTransactionHistory(String email, String currency, int page, int size);
+    Slice<GetTransactionHistoryResponse> getNonRegulationHistory(String email, String currency, int page, int size);
 }

@@ -7,9 +7,12 @@ import dev.crepe.domain.core.util.history.business.model.entity.TransactionHisto
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+@Repository
 public interface TransactionHistoryRepository extends JpaRepository<TransactionHistory, Long> {
 
     boolean existsByTransactionId(String transactionId);
@@ -19,20 +22,10 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
             LocalDateTime createdAtBefore
     );
     List<TransactionHistory> findByStatusAndType(TransactionStatus status, TransactionType type);
-    Slice<TransactionHistory> findByAccount_Id(Long accountId, Pageable pageable);
+    List<TransactionHistory> findByAccount_Id(Long accountId);
 
     List<TransactionHistory> findAllByPayHistory_Order(Order order);
 
-    TransactionHistory findByPayHistory_IdAndAccount_Actor_EmailAndType(
-            Long payHistoryId,
-            String email,
-            TransactionType type
-    );
-    TransactionHistory findByPayHistory_IdAndAccount_Actor_EmailNotAndType(
-            Long payHistoryId,
-            String email,
-            TransactionType type
-    );
 
 
 }
