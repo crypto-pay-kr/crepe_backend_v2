@@ -62,6 +62,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
+
         // 이미 가입한 상품인지 확인
         if (subscribeRepository.existsByUserAndProduct(user, product)) {
             throw new IllegalStateException("이미 가입한 상품입니다.");
@@ -167,6 +168,10 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
      * 사용자가 상품 가입 조건에 부합하는지 확인
      */
     public void checkEligibility(Actor user, Product product) {
+        LocalDate now = LocalDate.now();
+        if (product.getEndDate() != null && now.isAfter(product.getEndDate())) {
+            throw new IllegalStateException("판매가 종료된 상품입니다.");
+        }
         // 상품의 가입 조건 파싱
         EligibilityCriteria eligibilityCriteria;
         try {
