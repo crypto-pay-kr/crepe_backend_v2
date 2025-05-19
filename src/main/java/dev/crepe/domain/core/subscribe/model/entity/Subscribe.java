@@ -89,7 +89,7 @@ public class Subscribe extends BaseEntity {
         this.balance = this.balance.add(amount);
     }
 
-    public void isExpired() {
+    public void changeExpired() {
         this.balance = BigDecimal.ZERO;
         this.status = SubscribeStatus.EXPIRED;
     }

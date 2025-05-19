@@ -56,7 +56,6 @@ public class SubscribeExpiredScheduler {
             }
         }
 
-        subscribeRepository.saveAll(toExpire);
     }
 }
 

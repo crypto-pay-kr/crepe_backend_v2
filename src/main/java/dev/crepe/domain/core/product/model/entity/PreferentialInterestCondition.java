@@ -13,7 +13,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 @Entity
-@Getter
 @Table(name = "preferential_interest_condition")
 public class PreferentialInterestCondition {
 

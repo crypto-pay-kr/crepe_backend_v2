@@ -95,7 +95,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
 
         // 상태 변경 (만기 처리)
-        subscribe.isExpired();
+        subscribe.changeExpired();
         subscribeRepository.save(subscribe);
 
         return "만기 완료";
