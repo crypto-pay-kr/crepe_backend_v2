@@ -1,9 +1,12 @@
 package dev.crepe.domain.core.subscribe.repository;
 
+
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import org.springframework.data.jpa.repository.JpaRepository;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.core.product.model.entity.Product;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -18,4 +21,6 @@ public interface SubscribeRepository extends JpaRepository<Subscribe,Long> {
             LocalDateTime expiredBefore,
             SubscribeStatus status
     );
+  
+    boolean existsByUserAndProduct(Actor user, Product product);
 }

@@ -4,8 +4,9 @@ import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfa
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import org.springframework.stereotype.Repository;
 
-public interface PreferentialConditionSatisfactionRepository
-        extends JpaRepository<PreferentialConditionSatisfaction, Long> {
-    List<PreferentialConditionSatisfaction> findBySubscribe_IdAndIsSatisfiedTrue(Long subscribeId);
+@Repository
+public interface PreferentialConditionSatisfactionRepository extends JpaRepository<PreferentialConditionSatisfaction, Long> {
+  List<PreferentialConditionSatisfaction> findBySubscribe_IdAndIsSatisfiedTrue(Long subscribeId);
 }
