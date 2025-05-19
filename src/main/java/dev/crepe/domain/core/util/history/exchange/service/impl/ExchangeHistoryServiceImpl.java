@@ -36,7 +36,7 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
                 .type("EXCHANGE")
                 .status("ACCEPTED")
                 .amount(signedAmount)
-                .afterBalance(isSender ? ex.getAfterBalanceFrom() : ex.getAfterBalanceTo())
+                .afterBalance(isSender ? ex.getAfterCoinBalanceFrom() : ex.getAfterCoinBalanceTo())
                 .transferredAt(ex.getCreatedAt())
                 .build();
     }
@@ -80,15 +80,15 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
             if (isFromAccountMine && toAccount.getBankToken() != null &&
                     toAccount.getBankToken().getCurrency().equalsIgnoreCase(currency)) {
                 isRelatedToCurrency = true;
-                amount = ex.getFromAmount().negate();
-                afterBalance = ex.getAfterBalanceFrom();
+                amount = ex.getToAmount();
+                afterBalance = ex.getAfterTokenBalanceFrom();
             }
             else if (isToAccountMine && fromAccount.getBankToken() != null &&
                     fromAccount.getBankToken().getCurrency().equalsIgnoreCase(currency)) {
                 isRelatedToCurrency = true;
 
-                amount = ex.getToAmount();
-                afterBalance = ex.getAfterBalanceTo();
+                amount = ex.getFromAmount().negate();
+                afterBalance = ex.getAfterTokenBalanceTo();
             }
 
             if (!isRelatedToCurrency) {
