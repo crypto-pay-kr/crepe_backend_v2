@@ -5,6 +5,7 @@ import dev.crepe.domain.auth.jwt.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
+import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
