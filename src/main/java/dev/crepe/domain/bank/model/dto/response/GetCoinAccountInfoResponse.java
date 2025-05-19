@@ -1,5 +1,6 @@
 package dev.crepe.domain.bank.model.dto.response;
 
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,6 +21,8 @@ public class GetCoinAccountInfoResponse {
     private String accountAddress;
     private String tag;
     private String balance;
+
+    private AddressRegistryStatus status;
 
 
 }
