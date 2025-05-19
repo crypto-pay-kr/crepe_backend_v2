@@ -43,8 +43,6 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
 
 
 
-    //TODO 나중에 이자지급 상품구매 내역 추가 해야 할듯
-
     @Override
     public Slice<GetTransactionHistoryResponse> getExchangeHistoryList(String email, String currency, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
