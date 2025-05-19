@@ -32,6 +32,7 @@ import dev.crepe.domain.core.subscribe.repository.PreferentialConditionSatisfact
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.subscribe.util.PreferentialRateUtils;
 import dev.crepe.global.model.dto.ApiResponse;
+import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
 import dev.crepe.infra.sms.model.SmsType;
 import dev.crepe.infra.sms.service.SmsManageService;
@@ -183,6 +184,7 @@ public class ActorServiceImpl  implements ActorService {
                 .build();
     }
 
+    @Transactional
     @Override
     public ResponseEntity<String> checkIncome(String userEmail) {
         Actor actor = actorRepository.findByEmail(userEmail)
@@ -193,9 +195,21 @@ public class ActorServiceImpl  implements ActorService {
         GetFinancialSummaryResponse financialData = getActorAsset(actor.getId());
         actor.addAnnualIncome(financialData.getAnnualIncome());
         actor.addTotalAsset(financialData.getTotalAsset());
-        actorRepository.save(actor);
 
         return new ResponseEntity<>("소득 정보가 성공적으로 조회되었습니다.", HttpStatus.OK);
+    }
+
+    @Transactional
+    @Override
+    public ResponseEntity<String> updateFromIdCard(String userEmail,IdCardOcrResponse idCardResponse) {
+        Actor actor = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다."));
+
+        if(actor.getName().equals(idCardResponse.getName())) {
+            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
+        }
+        actor.updateFromIdCard(idCardResponse);
+        return new ResponseEntity<>("ocr 인증 성공", HttpStatus.OK);
     }
 
 

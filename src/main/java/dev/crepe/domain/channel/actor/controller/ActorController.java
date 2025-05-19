@@ -5,6 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.auth.jwt.AppAuthentication;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
+import dev.crepe.domain.channel.actor.service.impl.ActorServiceImpl;
+import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
+import dev.crepe.infra.naver.ocr.id.service.IdCardOcrService;
 import dev.crepe.infra.otp.model.dto.OtpSetupResponse;
 import dev.crepe.infra.otp.service.OtpService;
 import dev.crepe.domain.auth.role.ActorAuth;
@@ -14,13 +17,16 @@ import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,6 +39,7 @@ public class ActorController {
     private final ActorService actorService;
     private final NaverCaptchaService captchaService;
     private final OtpService otpService;
+    private final IdCardOcrService idCardOcrService;
 
     @GetMapping("/captcha")
     @Operation(summary = "로그인에 필요한 captcha 키 발급", description = "captcha 키 발급")
@@ -163,6 +170,7 @@ public class ActorController {
     }
 
     // 소득 조회 api
+    @Operation(summary = "소득 조회 및 등록", description = "소득을 조회하고 db에 등록")
     @PostMapping("/check/income")
     @ActorAuth
     @SecurityRequirement(name = "bearer-jwt")
@@ -170,5 +178,31 @@ public class ActorController {
         actorService.checkIncome(auth.getUserEmail());
         return new ResponseEntity<>("소득 조회 성공",HttpStatus.OK);
     }
+
+    @Operation(summary = "신분증 ocr", description = "ocr 인증 후 나이, 성별 저장")
+    @PostMapping("/ocr/id")
+    public ResponseEntity<IdCardOcrResponse> processIdentityCardAndUpdateActor(
+            @RequestParam("file") MultipartFile file, AppAuthentication auth) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().build();
+            }
+
+            // OCR 처리
+            IdCardOcrResponse response = idCardOcrService.recognizeIdentityCard(file);
+
+            // Actor 정보 업데이트
+            actorService.updateFromIdCard(auth.getUserEmail(), response);
+
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

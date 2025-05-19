@@ -3,11 +3,14 @@ package dev.crepe.domain.channel.actor.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.channel.actor.model.Gender;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
 import dev.crepe.domain.channel.market.like.model.entity.Like;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
+import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
+import dev.crepe.infra.naver.ocr.id.util.PersonalNumberParser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -56,7 +59,7 @@ public class Actor extends BaseEntity {
     private String birth;
 
     @Column
-    private String gender;
+    private Gender gender;
 
     @Column
     private Occupation occupation;
@@ -149,5 +152,31 @@ public class Actor extends BaseEntity {
     }
     public void addTotalAsset(BigDecimal totalAsset) {
         this.totalAsset = totalAsset;
+    }
+    public void updateBirth(String newBirth) {
+        this.birth = newBirth;
+    }
+
+    public void updateGender(Gender newGender) {
+        this.gender = newGender;
+    }
+
+    public void updateFromIdCard(IdCardOcrResponse idCardResponse) {
+        // 이름 업데이트
+        if (idCardResponse.getName() != null && !idCardResponse.getName().trim().isEmpty()) {
+            this.name = idCardResponse.getName().trim();
+        }
+
+        if (idCardResponse.getPersonalNum() != null && !idCardResponse.getPersonalNum().trim().isEmpty()) {
+            try {
+                String birthDate = PersonalNumberParser.parseBirthDate(idCardResponse.getPersonalNum());
+                Gender gender = PersonalNumberParser.parseGender(idCardResponse.getPersonalNum());
+
+                this.birth = birthDate;
+                this.gender = gender;
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
+        }
     }
 }

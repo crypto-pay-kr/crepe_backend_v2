@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 public class IdCardOcrResponse {
-
     private String name;
     private String personalNum;
     private String address;
