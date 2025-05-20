@@ -22,4 +22,8 @@ public interface ActorAccountService {
 
     // 특정 코인 잔액 조회
     GetBalanceResponse getBalanceByCurrency(String email, String currency);
+
+    //계좌 등록 해제
+    void unRegisterAccount(String email, String currency);
+
 }

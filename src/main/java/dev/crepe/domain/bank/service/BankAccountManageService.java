@@ -16,5 +16,5 @@ public interface BankAccountManageService {
 
     List<GetCoinAccountInfoResponse> getAccountInfoList(String bankEmail);
 
-
+    void unRegisterBankAccount( String currency,String email);
 }

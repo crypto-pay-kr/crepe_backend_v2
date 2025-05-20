@@ -40,4 +40,10 @@ public class ActorAccountServiceImpl implements ActorAccountService {
     public GetBalanceResponse getBalanceByCurrency(String currency, String email) {
         return accountService.getBalanceByCurrency(email, currency);
     }
+
+    @Override
+    public void unRegisterAccount(String email, String currency) {
+        accountService.unRegisterAccount(email, currency);
+    }
+
 }

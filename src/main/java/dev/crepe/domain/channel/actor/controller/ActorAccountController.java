@@ -99,5 +99,18 @@ public class ActorAccountController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "계좌 등록해제 요청",
+            description = "등록된 계좌를 등록 해제 요청 합니다",
+            security = @SecurityRequirement(name = "bearer-jwt")
+    )
+    @ActorAuth
+    @GetMapping("/unregister/address")
+    public ResponseEntity<String> deActiveAccount (@RequestParam String currency,
+                                                                   AppAuthentication auth) {
+        actorAccountService.unRegisterAccount( auth.getUserEmail(),currency);
+        return ResponseEntity.ok("계좌 해제 완료");
+    }
+
 
 }
