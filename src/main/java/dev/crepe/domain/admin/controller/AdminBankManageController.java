@@ -1,6 +1,8 @@
 package dev.crepe.domain.admin.controller;
 
 
+import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
+import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.service.AdminProductService;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
@@ -43,17 +45,6 @@ public class AdminBankManageController {
         return ResponseEntity.ok("은행 계정 활성화 성공");
     }
 
-
-    // 상품 승인 or 거절
-    @Operation(summary = "은행 상품 활성화", description = "관리자가 특정 은행 상품을 활성화,비활성화합니다")
-    @AdminAuth
-    @PatchMapping(value="/product/review")
-    public ResponseEntity<ReviewProductSubmissionResponse> productInspect(
-            @RequestBody ReviewProductSubmissionRequest request){
-        ReviewProductSubmissionResponse response = adminProductService.reviewProductSubmission(request);
-        return ResponseEntity.ok(response);
-    }
-
     @Operation(summary = "토큰 발행 요청 목록 조회", description = "관리자가 토큰 발행 요청 목록을 조회합니다")
     @AdminAuth
     @GetMapping("/token")
@@ -86,6 +77,35 @@ public class AdminBankManageController {
         adminBankManageService.rejectBankTokenRequest(request, tokenHistoryId);
         return ResponseEntity.ok("토큰 발행 요청이 반려되었습니다.");
     }
+
+    // 상품 승인 or 거절
+    @Operation(summary = "은행 상품 활성화", description = "관리자가 특정 은행 상품을 승인, 거절 합니다")
+    @AdminAuth
+    @PatchMapping(value="/product/review")
+    public ResponseEntity<ReviewProductSubmissionResponse> changeProductStatus(
+            @RequestBody ReviewProductSubmissionRequest request){
+        ReviewProductSubmissionResponse response = adminProductService.reviewProductSubmission(request);
+        return ResponseEntity.ok(response);
+    }
+
+    // 상품 판매정지(승인 -> 판매정지)
+    @Operation(summary = "은행 상품 판매정지, 해제", description = "관리자가 특정 은행 상품을 판매정지,해제 합니다")
+    @AdminAuth
+    @PatchMapping(value="/product/suspend")
+    public ResponseEntity<ReviewProductSubmissionResponse> changeProductSalesStatus(
+            @RequestBody ChangeProductSaleRequest request){
+        ReviewProductSubmissionResponse response = adminProductService.changeProductSalesStatus(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary="상품 발행 요청 조회",description = "관리자가 은행이 발행 요청한 상품을 조회")
+    @AdminAuth
+    @GetMapping("/product/{bankId}")
+    public ResponseEntity<List<GetAllProductResponse>> getAllProductList(@PathVariable Long bankId) {
+
+    }
+
+    // TODO: 특정 은행의 판매 정지 상품 조회
 
 
 

@@ -1,5 +1,6 @@
 package dev.crepe.domain.admin.service.impl;
 
+import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
 import dev.crepe.domain.admin.service.AdminProductService;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
@@ -15,5 +16,10 @@ public class AdminProductServiceImpl implements AdminProductService {
     @Override
     public ReviewProductSubmissionResponse reviewProductSubmission(ReviewProductSubmissionRequest request) {
         return productService.productInspect(request);
+    }
+
+    @Override
+    public ReviewProductSubmissionResponse changeProductSalesStatus(ChangeProductSaleRequest request) {
+        return productService.changeProductSalesStatus(request);
     }
 }

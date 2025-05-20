@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.product.service.impl;
 
+import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
@@ -8,36 +9,44 @@ import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.service.ProductService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+
     @Override
+    @Transactional
     public ReviewProductSubmissionResponse productInspect(ReviewProductSubmissionRequest request) {
-        Product product = productRepository.findById(Long.valueOf(request.getProductId()))
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. ID: " + request.getProductId()));
+        return updateProductStatus(request.getProductId(), request.getStatus(), request.getDescription());
+    }
 
-        // 상품 상태 업데이트
-        BankProductStatus newStatus = request.getStatus();
-        product.updateStatus(newStatus, request.getDescription());
+    @Override
+    @Transactional
+    public ReviewProductSubmissionResponse changeProductSalesStatus(ChangeProductSaleRequest request) {
+        return updateProductStatus(request.getProductId(), request.getStatus(), request.getDescription());
+    }
 
-        // 상품 저장
-        Product updatedProduct = productRepository.save(product);
+    private ReviewProductSubmissionResponse updateProductStatus(Long productId, BankProductStatus newStatus, String description) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다. ID: " + productId));
+
+        product.updateStatus(newStatus, description);
 
         ReviewProductSubmissionResponse.ReviewProductSubmissionResponseBuilder builder =
                 ReviewProductSubmissionResponse.builder()
-                        .productId(updatedProduct.getId())
-                        .productName(updatedProduct.getProductName())
-                        .status(updatedProduct.getStatus());
+                        .productId(product.getId())
+                        .productName(product.getProductName())
+                        .status(product.getStatus());
 
-        if (updatedProduct.getStatus() == BankProductStatus.REJECTED &&
-                updatedProduct.getRejectionReason() != null &&
-                !updatedProduct.getRejectionReason().trim().isEmpty()) {
-            builder.message(updatedProduct.getRejectionReason());
+
+        if ((product.getStatus() == BankProductStatus.REJECTED || product.getStatus() == BankProductStatus.SUSPENDED) &&
+                product.getRejectionReason() != null &&
+                !product.getRejectionReason().trim().isEmpty()) {
+            builder.message(product.getRejectionReason());
         }
         return builder.build();
     }

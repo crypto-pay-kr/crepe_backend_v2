@@ -5,6 +5,7 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorSubscribeService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
 import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
@@ -62,6 +63,9 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Product not found"));
 
+        if (product.getStatus().equals(BankProductStatus.WAITING)) {
+            throw new IllegalStateException("Product is not available for subscription");
+        }
 
         // 이미 가입한 상품인지 확인
         if (subscribeRepository.existsByUserAndProduct(user, product)) {
