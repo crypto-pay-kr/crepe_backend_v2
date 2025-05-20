@@ -50,10 +50,6 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
 
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
-        if (!bank.getName().equals(request.getBankName())) {
-            throw new BankNameMismatchException(request.getBankName(), bank.getName());
-        }
-
         // 포토폴리오 구성 정보 유효성 검증
         portfolioService.validatePortfolioConstitute(request.getPortfolioCoins(),  bankEmail);
 
@@ -159,6 +155,8 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                             .bankName(bank.getName())
                             .tokenHistoryId(tokenHistory.getId())
                             .bankTokenId(tokenHistory.getBankToken().getId())
+                            .tokenName(tokenHistory.getBankToken().getName())
+                            .currency(tokenHistory.getBankToken().getCurrency())
                             .totalSupplyAmount(tokenHistory.getTotalSupplyAmount())
                             .changeReason(tokenHistory.getChangeReason())
                             .rejectReason(tokenHistory.getRejectReason())
