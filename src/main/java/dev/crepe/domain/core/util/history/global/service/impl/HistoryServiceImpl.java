@@ -35,42 +35,60 @@ public class HistoryServiceImpl implements HistoryService {
     public Slice<GetTransactionHistoryResponse> getNonRegulationHistory(String email, String currency, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
 
-        // 사용자의 전체 계좌 조회
+        // 1. 사용자의 전체 계좌 조회
         List<Account> userAccounts = accountRepository.findByActor_Email(email);
-        List<Long> userAccountIds = userAccounts.stream()
+
+        if (userAccounts.isEmpty()) {
+            return new SliceImpl<>(List.of(), pageRequest, false);
+        }
+
+        // 2. 현재 요청된 화폐(currency)에 해당하는 계좌만 필터링
+        List<Account> relevantAccounts = userAccounts.stream()
+                .filter(acc -> {
+                    if (acc.getCoin() != null) {
+                        return acc.getCoin().getCurrency().equalsIgnoreCase(currency);
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+
+        List<Long> relevantAccountIds = relevantAccounts.stream()
                 .map(Account::getId)
                 .collect(Collectors.toList());
 
-        // 특정 화폐의 코인 계좌 조회
-        Account coinAccount = userAccounts.stream()
-                .filter(acc -> acc.getCoin() != null && acc.getCoin().getCurrency().equalsIgnoreCase(currency))
-                .findFirst()
-                .orElse(null);
-
         List<GetTransactionHistoryResponse> resultList = new ArrayList<>();
 
-        // 코인 계좌에 대한 일반 거래 이력
-        if (coinAccount != null) {
-            List<TransactionHistory> txList = txhRepo.findByAccount_Id(coinAccount.getId());
-            resultList.addAll(txList.stream().map(txhService::getTransactionHistory).toList());
+        // 3. 일반 거래 이력 (코인 계좌)
+        relevantAccounts.stream()
+                .filter(acc -> acc.getCoin() != null) // 코인 계좌인 경우
+                .forEach(acc -> {
+                    List<TransactionHistory> txList = txhRepo.findByAccount_Id(acc.getId());
+                    resultList.addAll(txList.stream().map(txhService::getTransactionHistory).toList());
+                });
+
+        // 4. 환전 이력 (해당 계좌에 관련된 것만)
+        if (!relevantAccountIds.isEmpty()) {
+            List<ExchangeHistory> exList =
+                    exhRepo.findByFromAccount_IdInOrToAccount_IdIn(relevantAccountIds, relevantAccountIds);
+            resultList.addAll(
+                    exList.stream()
+                            .map(e -> {
+                                Account matchedAccount = relevantAccounts.stream()
+                                        .filter(acc ->
+                                                acc.getId().equals(e.getFromAccount().getId()) ||
+                                                        acc.getId().equals(e.getToAccount().getId()))
+                                        .findFirst()
+                                        .orElse(null);
+                                return exhService.getExchangeHistory(e, matchedAccount);
+                            })
+                            .toList()
+            );
         }
 
-        // 토큰 계좌 관련 환전 이력
-        if (!userAccountIds.isEmpty()) {
-            List<ExchangeHistory> exList = exhRepo.findByFromAccount_IdInOrToAccount_IdIn(userAccountIds, userAccountIds);
-            resultList.addAll(exList.stream().map(e -> {
-                Account match = userAccounts.stream()
-                        .filter(acc -> acc.getId().equals(e.getFromAccount().getId()) || acc.getId().equals(e.getToAccount().getId()))
-                        .findFirst()
-                        .orElse(null);
-                return exhService.getExchangeHistory(e, match);
-            }).toList());
-        }
-
-        // 최신순 정렬
+        // 5. 최신순 정렬
         resultList.sort(Comparator.comparing(GetTransactionHistoryResponse::getTransferredAt).reversed());
 
-        // 수동 페이징 처리
+        // 6. 수동 페이징 처리
         int start = page * size;
         int end = Math.min(start + size, resultList.size());
 

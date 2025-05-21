@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -113,4 +114,14 @@ public class ActorAccountController {
     }
 
 
+    @Operation(
+            summary = "특정 종목 잔액 조회",
+            description = "현재 로그인한 유저, 가맹점의 특정 코인 잔액을 조회합니다.",
+            security = @SecurityRequirement(name = "bearer-jwt"))
+     @ActorAuth
+    @GetMapping("/token/balance/{currency}")
+    public ResponseEntity<BigDecimal> getTokenBalance(@PathVariable String currency, AppAuthentication auth) {
+        BigDecimal balance = actorAccountService.getTokenBalance(auth.getUserEmail(), currency);
+        return ResponseEntity.ok(balance);
+    }
 }

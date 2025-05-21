@@ -9,6 +9,7 @@ import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -42,5 +43,9 @@ public interface AccountService {
 
     Account getOrCreateTokenAccount(String email, String tokenCurrency);
 
+    BigDecimal getTokenBalance(String email, String currency);
+
+
     void unRegisterAccount(String email, String currency);
+
 }
