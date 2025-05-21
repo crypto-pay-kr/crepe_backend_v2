@@ -93,5 +93,10 @@ public class ActorAccountServiceImpl implements ActorAccountService {
                 })
                 .collect(Collectors.toList());
     }
+  
+    public void unRegisterAccount(String email, String currency) {
+        accountService.unRegisterAccount(email, currency);
+
+    }
 
 }

@@ -15,8 +15,6 @@ import java.util.List;
 @Schema(description = "은행 토큰 생성 요청 DTO")
 public class CreateBankTokenRequest {
 
-    @Schema(description = "은행 이름", example = "우리은행")
-    private String bankName;
     @Schema(description = "토큰 이름", example = "우리토큰")
     private String tokenName;
     @Schema(description = "토큰 심볼", example = "WTK")

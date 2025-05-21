@@ -24,5 +24,11 @@ public interface ActorAccountService {
     // 특정 코인 잔액 조회
     GetBalanceResponse getBalanceByCurrency(String email, String currency);
 
+    // 내가 가진 계좌, 상품 조회
     List<BankTokenAccountDto> getMyAccountsSubscription(String email);
+
+    //계좌 등록 해제
+    void unRegisterAccount(String email, String currency);
+
+
 }

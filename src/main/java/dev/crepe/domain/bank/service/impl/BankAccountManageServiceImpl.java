@@ -71,6 +71,16 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
 
     }
 
+    // 은행 출금 계좌 해제
+    @Transactional
+    @Override
+    public void unRegisterBankAccount(String currency, String bankEmail) {
+
+        accountService.unRegisterAccount(bankEmail, currency);
+
+    }
+
+
 
     // 코인별 계좌 정보 조회
     @Transactional(readOnly = true)

@@ -42,4 +42,5 @@ public interface AccountService {
 
     Account getOrCreateTokenAccount(String email, String tokenCurrency);
 
+    void unRegisterAccount(String email, String currency);
 }

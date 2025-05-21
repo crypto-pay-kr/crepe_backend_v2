@@ -80,6 +80,20 @@ public class BankCoinManageController {
     }
 
 
+    @Operation(
+            summary = "은행 코인 계좌 등록 해제",
+            description = "기존 등록된 코인별 은행 계좌를 해제 합니다.",
+            security = @SecurityRequirement(name = "bearer-jwt"))
+    @GetMapping("/unregister/account")
+    @BankAuth
+    public ResponseEntity<String> changeBankAccount(
+            AppAuthentication auth,
+                @RequestParam String currency
+    ) {
+        bankAccountManageService.unRegisterBankAccount(currency,auth.getUserEmail());
+        return ResponseEntity.ok(currency + " 계좌 해지 성공");
+    }
+
 
 
 }

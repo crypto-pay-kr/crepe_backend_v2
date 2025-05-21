@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import dev.crepe.infra.naver.ocr.business.dto.BusinessOcrResponse;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -40,10 +41,16 @@ public class BusinessOcrService {
         connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
         connection.setRequestProperty("X-OCR-SECRET",secretKey);
 
+
+        // 파일 확장자 확인
+        String extension = FilenameUtils.getExtension(file.getOriginalFilename()).toLowerCase();
+        if (!extension.equals("jpg") && !extension.equals("jpeg") && !extension.equals("png")) {
+            throw new IllegalArgumentException("지원하지 않는 파일 형식입니다. jpg, jpeg, png만 가능합니다.");
+        }
         // 메시지 본문 JSON
-         String messageJson = String.format(
-                "{\"version\":\"V2\",\"requestId\":\"%s\",\"timestamp\":%d,\"images\":[{\"name\":\"%s\",\"format\":\"jpg\"}]}",
-                UUID.randomUUID(), System.currentTimeMillis(), file.getOriginalFilename()
+        String messageJson = String.format(
+                "{\"version\":\"V2\",\"requestId\":\"%s\",\"timestamp\":%d,\"images\":[{\"name\":\"%s\",\"format\":\"%s\"}]}",
+                UUID.randomUUID(), System.currentTimeMillis(), file.getOriginalFilename(), extension
         );
 
         try (DataOutputStream out = new DataOutputStream(connection.getOutputStream())) {
