@@ -9,4 +9,5 @@ public interface AdminAddressService {
 
     Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(int page, int size, AddressRegistryStatus status);
     String approveAddress(Long accountId);
+    String disapproveAddress(Long accountId);
 }

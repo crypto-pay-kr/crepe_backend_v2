@@ -3,8 +3,11 @@ package dev.crepe.domain.channel.actor.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
+import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
+import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
+import dev.crepe.infra.naver.ocr.id.service.IdCardOcrService;
 import dev.crepe.infra.otp.model.dto.OtpSetupResponse;
 import dev.crepe.infra.otp.service.OtpService;
 import dev.crepe.domain.auth.role.ActorAuth;
@@ -14,25 +17,30 @@ import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping()
+@RequestMapping
 @RequiredArgsConstructor
 public class ActorController {
 
     private final ActorService actorService;
     private final NaverCaptchaService captchaService;
     private final OtpService otpService;
+    private final IdCardOcrService idCardOcrService;
 
     @GetMapping("/captcha")
     @Operation(summary = "로그인에 필요한 captcha 키 발급", description = "captcha 키 발급")
@@ -163,12 +171,64 @@ public class ActorController {
     }
 
     // 소득 조회 api
+    @Operation(summary = "소득 조회 및 등록", description = "소득을 조회하고 db에 등록")
     @PostMapping("/check/income")
     @ActorAuth
     @SecurityRequirement(name = "bearer-jwt")
-    public ResponseEntity<String> checkActorIncome(AppAuthentication auth) {
-        actorService.checkIncome(auth.getUserEmail());
-        return new ResponseEntity<>("소득 조회 성공",HttpStatus.OK);
+    public ResponseEntity<GetFinancialSummaryResponse> checkActorIncome(AppAuthentication auth) {
+        GetFinancialSummaryResponse res = actorService.checkIncome(auth.getUserEmail());
+        return ResponseEntity.ok(res);
     }
+
+
+    @Operation(summary = "신분증 ocr", description = "ocr 인증 후 나이, 성별 저장")
+    @PostMapping(value = "/ocr/id", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ActorAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<IdCardOcrResponse> processIdentityCardAndUpdateActor(
+            @RequestParam("file") MultipartFile file, AppAuthentication auth) {
+
+        log.info("OCR API 호출 시작");
+        log.info("파일 정보 - 이름: {}, 크기: {}, 타입: {}",
+                file.getOriginalFilename(), file.getSize(), file.getContentType());
+
+        try {
+            // 인증 정보 확인
+            String userEmail = auth.getUserEmail();
+            log.info("요청한 사용자 이메일: {}", userEmail);
+
+            if (file.isEmpty()) {
+                log.warn("업로드된 파일이 비어있음");
+                return ResponseEntity.badRequest().build();
+            }
+
+            log.info("OCR 처리 시작");
+            // OCR 처리
+            IdCardOcrResponse response = idCardOcrService.recognizeIdentityCard(file);
+            log.info("OCR 처리 완료: {}", response);
+
+            log.info("Actor 정보 업데이트 시작");
+            // Actor 정보 업데이트
+            actorService.updateFromIdCard(userEmail, response);
+            log.info("Actor 정보 업데이트 완료");
+
+            log.info("OCR API 성공적으로 완료");
+            return ResponseEntity.ok(response);
+
+        } catch (EntityNotFoundException e) {
+            log.error("엔티티를 찾을 수 없음: {}", e.getMessage(), e);
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            log.error("잘못된 인수: {}", e.getMessage(), e);
+            return ResponseEntity.badRequest().build();
+        } catch (IOException e) {
+            log.error("IO 예외 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        } catch (Exception e) {
+            log.error("예상치 못한 예외 발생: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 
 }

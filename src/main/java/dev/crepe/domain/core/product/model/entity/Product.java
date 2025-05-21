@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Entity
-@Table(name = "bank_product")
+@Table(name = "product")
 public class Product extends BaseEntity {
 
     @Id

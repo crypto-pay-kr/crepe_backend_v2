@@ -1,6 +1,6 @@
 package dev.crepe.domain.channel.actor.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorHistoryService;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;

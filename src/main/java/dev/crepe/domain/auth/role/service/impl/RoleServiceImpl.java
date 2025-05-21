@@ -1,7 +1,7 @@
 package dev.crepe.domain.auth.role.service.impl;
 
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.auth.jwt.JwtAuthentication;
+import dev.crepe.domain.auth.jwt.util.JwtAuthentication;
 import dev.crepe.domain.auth.role.service.RoleService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;

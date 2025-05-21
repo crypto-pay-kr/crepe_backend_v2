@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.subscribe.model.entity;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.interest.FreeDepositCountPreferentialRate;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
@@ -63,13 +64,6 @@ public class Subscribe extends BaseEntity {
     @Column(name = "applied_preferential_rates", columnDefinition = "TEXT")
     private String appliedPreferentialRates;
 
-    @Column(name = "regular_deposit_amount")
-    private BigDecimal regularDepositAmount;
-  
-    // 다음 정기납입 예정일 (적금 상품인 경우)
-    @Column(name = "next_regular_deposit_date")
-    private LocalDate nextRegularDepositDate;
-
     // 자유납입 목표 (적금 상품인 경우)
     @Enumerated(EnumType.STRING)
     @Column(name = "selected_free_deposit_rate")
@@ -85,9 +79,16 @@ public class Subscribe extends BaseEntity {
     private String voucherCode;
 
 
+    /**
+     * 예치 (잔액 증가)
+     */
     public void deposit(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("예치 금액은 0보다 커야 합니다.");
+        }
         this.balance = this.balance.add(amount);
     }
+
 
     public void changeExpired() {
         this.balance = BigDecimal.ZERO;
@@ -97,6 +98,7 @@ public class Subscribe extends BaseEntity {
     public boolean isActive() {
         return this.status == SubscribeStatus.ACTIVE;
     }
+
 
     public boolean isMatured() {
         return LocalDateTime.now().isAfter(this.expiredDate);

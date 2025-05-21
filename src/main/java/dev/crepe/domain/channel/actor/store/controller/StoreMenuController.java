@@ -1,7 +1,7 @@
 package dev.crepe.domain.channel.actor.store.controller;
 
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.SellerAuth;
 import dev.crepe.domain.channel.actor.store.model.dto.request.RegisterOrChangeMenuRequest;
 import dev.crepe.domain.channel.actor.store.model.dto.response.GetMenuDetailResponse;
