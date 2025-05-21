@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.account.model.entity;
 
+import dev.crepe.domain.admin.dto.request.RejectAddressRequest;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.account.exception.InsufficientBalanceException;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
@@ -62,6 +63,9 @@ public class Account extends BaseEntity {
     @Column(name="tag")
     private String tag;
 
+    @Column(name="reject_reason")
+    private String rejectReason;
+
     // 계좌 등록
     public void registerAddress(String address, String tag) {
         this.accountAddress = address;
@@ -76,7 +80,7 @@ public class Account extends BaseEntity {
 
     // 계좌 승인
     public void approveAddress() {
-        this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
+        this.addressRegistryStatus = AddressRegistryStatus.ACTIVE;
     }
 
     public void addNonAvailableBalance(BigDecimal amount) {
@@ -85,9 +89,19 @@ public class Account extends BaseEntity {
 
     public void unRegisterAddress() {
         this.addressRegistryStatus = AddressRegistryStatus.UNREGISTERED;
-
     }
 
+    public void adminUnRegisterAddress() {
+        this.addressRegistryStatus = AddressRegistryStatus.NOT_REGISTERED;
+        this.accountAddress = null;
+        this.tag = null;
+    }
+
+
+    public void rejectAddress(RejectAddressRequest reason) {
+        this.addressRegistryStatus = AddressRegistryStatus.REJECTED;
+        this.rejectReason = reason.getRejectReason();
+    }
 
     public void deductBalance(BigDecimal amount) {
         if (this.balance.compareTo(amount) < 0) {
@@ -116,7 +130,6 @@ public class Account extends BaseEntity {
             throw new InsufficientBalanceException();
         }
         this.balance = this.balance.subtract(amount);
-        //this.availableBalance = this.availableBalance.subtract(amount);
     }
 
     public void reduceNonAvailableBalance(BigDecimal amount) {
@@ -128,8 +141,6 @@ public class Account extends BaseEntity {
 
     public void addAmount(BigDecimal amount) {
         this.balance = this.balance.add(amount);
-       //this.availableBalance = this.availableBalance.add(amount);
-
     }
 
 }

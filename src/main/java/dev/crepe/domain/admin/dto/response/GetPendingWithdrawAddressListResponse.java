@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -14,9 +16,11 @@ import lombok.NoArgsConstructor;
 public class GetPendingWithdrawAddressListResponse {
     private Long id;
     private String depositor;
+    private String userType;
     private String currency;
     private String address;
     private String tag;
     private String addressRegistryStatus;
+    private LocalDateTime createdAt;
 
 }
