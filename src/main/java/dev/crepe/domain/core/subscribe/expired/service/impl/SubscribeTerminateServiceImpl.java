@@ -3,11 +3,13 @@ package dev.crepe.domain.core.subscribe.expired.service.impl;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.exception.*;
 import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
+import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,11 +34,11 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
     public String terminate(String userEmail, Long subscribeId) {
         // 가입 정보 조회
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(() -> new RuntimeException("상품 가입 정보를 찾을 수 없습니다."));
+                .orElseThrow(SubscribeNotFoundException::new);
 
         // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new IllegalStateException("이미 만료된 상품입니다.");
+            throw new AlreadyExpiredSubscribeException();
         }
 
 
@@ -45,7 +47,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("예치된 금액이 없습니다.");
+            throw new NoDepositBalanceException();
         }
 
         // 가입 개월 계산
@@ -55,7 +57,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate) ;
 
         if (totalMonths <= 0) {
-            throw new IllegalStateException("1개월 이상 사용해야 중도해지가 가능합니다.");
+            throw new TooEarlyToTerminateException();
         }
 
         // 이자 계산
@@ -68,7 +70,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentInterest(subscribe, interestRate);
             }
-            default -> throw new IllegalStateException("이자 계산이 지원되지 않는 상품 유형입니다.");
+            default -> throw new UnsupportedProductTypeException();
         }
 
         // 세후 이자 계산
@@ -79,7 +81,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         // 은행 자본금 계좌에서 이자 차감
         Account bankTokenAccount = accountRepository
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
-                .orElseThrow(() -> new RuntimeException("은행 자본금 계좌가 없습니다."));
+                .orElseThrow(BankAccountNotFoundException::new);
 
         bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
@@ -87,7 +89,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
         Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
                 subscribe.getUser().getEmail(), product.getBankToken().getId()
-        ).orElseThrow(() -> new RuntimeException("사용자의 토큰 계좌가 없습니다."));
+        ).orElseThrow(UserAccountNotFoundException::new);
 
 
         BigDecimal totalPayout = balance.add(postTaxInterest);
@@ -97,6 +99,8 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         // 상태 변경 (만기 처리)
         subscribe.changeExpired();
         subscribeRepository.save(subscribe);
+
+        saveTerminationHistory(subscribe, totalPayout );
 
         return "만기 완료";
     }
@@ -159,4 +163,14 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         return totalInterest;
     }
+
+    private void saveTerminationHistory(Subscribe subscribe, BigDecimal totalPayout) {
+        SubscribeHistory history = SubscribeHistory.builder()
+                .subscribe(subscribe)
+                .eventType(SubscribeHistoryType.TERMINATION)
+                .amount(totalPayout)
+                .build();
+        subscribeHistoryRepository.save(history);
+    }
+
 }
