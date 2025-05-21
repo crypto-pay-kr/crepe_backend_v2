@@ -1,5 +1,8 @@
 package dev.crepe.domain.bank.service;
 
+import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
+import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
+import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.product.model.dto.request.RegisterProductRequest;
 import dev.crepe.domain.core.product.model.dto.response.RegisterProductResponse;
@@ -11,6 +14,8 @@ import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.global.model.dto.ApiResponse;
 import org.springframework.http.ResponseEntity;
+
+import java.util.List;
 
 
 public interface BankService {
@@ -26,4 +31,9 @@ public interface BankService {
     ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String bankEmail);
 
 
+    List<GetAllBankResponse> getAllActiveBankList();
+
+    void changeBankStatus(ChangeBankStatusRequest request);
+
+    List<GetAllSuspendedBankResponse> getAllSuspendedBankList();
 }

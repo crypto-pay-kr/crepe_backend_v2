@@ -36,6 +36,8 @@ public class AdminAddressController {
     }
 
 
+
+
     @Operation(
             summary = "출금 계좌 승인",
             description = "accountId를 기반으로 출금 계좌를 승인 처리합니다. 이미 승인된 계좌는 예외 발생.",
@@ -48,4 +50,21 @@ public class AdminAddressController {
             @RequestParam("accountId") Long accountId) {
         return ResponseEntity.ok(adminAddressService.approveAddress(accountId));
     }
+
+    @Operation(
+            summary = "출금 계좌 반려",
+            description = "accountId를 기반으로 출금 계좌를 반려 처리합니다. 이미 반려된 계좌는 예외 발생.",
+            security = @SecurityRequirement(name = "bearer-jwt")
+    )
+    @AdminAuth
+    @PatchMapping("/disapprove")
+    public ResponseEntity<String> disapproveStoreAddress(
+            @Parameter(description = "반려할 계좌 ID", example = "12")
+            @RequestParam("accountId") Long accountId) {
+        return ResponseEntity.ok(adminAddressService.disapproveAddress(accountId));
+    }
+
+    //TODO : 관리자가 특정 은행 계좌 조회
+
+
 }

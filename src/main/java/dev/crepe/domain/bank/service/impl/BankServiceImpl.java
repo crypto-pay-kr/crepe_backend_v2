@@ -1,6 +1,9 @@
 package dev.crepe.domain.bank.service.impl;
 
 
+import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
+import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
+import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
 import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
@@ -9,6 +12,7 @@ import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.bank.model.entity.BankStatus;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.util.CheckAlreadyField;
@@ -16,9 +20,12 @@ import dev.crepe.domain.channel.actor.exception.LoginFailedException;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
 import dev.crepe.infra.s3.service.S3Service;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,8 +33,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -40,6 +48,7 @@ public class BankServiceImpl implements BankService {
     private final CheckAlreadyField checkAlreadyField;
     private final AuthServiceImpl authService;
     private final PasswordEncoder encoder;
+    private final BankTokenRepository bankTokenRepository;
 
     // 은행 회원가입
     @Override
@@ -129,7 +138,69 @@ public class BankServiceImpl implements BankService {
         return ResponseEntity.ok(null);
     }
 
-  
+    // 관리자 전체 은행 조회
+    @Override
+    public List<GetAllBankResponse> getAllActiveBankList() {
+        // ACTIVE 상태
+        List<Bank> banks = bankRepository.findByStatus(BankStatus.ACTIVE);
+
+        return banks.stream()
+                .map(bank -> {
+                    List<BankToken> bankTokens = bankTokenRepository.findByBankId(bank.getId());
+
+                    BigDecimal totalSupply = bankTokens.stream()
+                            .map(BankToken::getTotalSupply)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    return GetAllBankResponse.builder()
+                            .id(bank.getId())
+                            .name(bank.getName())
+                            .bankPhoneNum(bank.getBankPhoneNum())
+                            .totalSupply(totalSupply)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void changeBankStatus(ChangeBankStatusRequest request) {
+        Bank bank = bankRepository.findById(request.getBankId())
+                .orElseThrow(() -> new EntityNotFoundException("해당 은행을 찾을 수 없습니다. ID: " + request.getBankId()));
+
+        BankStatus currentStatus = bank.getStatus();
+        BankStatus newStatus = request.getBankStatus();
+
+        if (currentStatus == newStatus) {
+            throw new IllegalStateException("은행이 이미 " + newStatus + " 상태입니다.");
+        }
+
+        bank.changeStatus(newStatus);
+        bankRepository.save(bank);
+    }
+
+    @Override
+    public List<GetAllSuspendedBankResponse> getAllSuspendedBankList() {
+        List<Bank> banks = bankRepository.findByStatus(BankStatus.SUSPENDED);
+        return banks.stream()
+                .map(bank -> {
+                    List<BankToken> bankTokens = bankTokenRepository.findByBankId(bank.getId());
+
+                    BigDecimal totalSupply = bankTokens.stream()
+                            .map(BankToken::getTotalSupply)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    return GetAllSuspendedBankResponse.builder()
+                            .id(bank.getId())
+                            .name(bank.getName())
+                            .suspendedDate(bank.getSuspendedDate())
+                            .bankPhoneNum(bank.getBankPhoneNum())
+                            .totalSupply(totalSupply)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+
     @Override
     public Bank findBankInfoByEmail(String email) {
         return bankRepository.findByEmail(email)

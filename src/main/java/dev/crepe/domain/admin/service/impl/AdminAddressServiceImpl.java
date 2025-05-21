@@ -3,6 +3,7 @@ package dev.crepe.domain.admin.service.impl;
 
 import dev.crepe.domain.admin.dto.response.GetPendingWithdrawAddressListResponse;
 import dev.crepe.domain.admin.exception.AlreadyApprovedAddressException;
+import dev.crepe.domain.admin.exception.AlreadyDisapprovedAddressException;
 import dev.crepe.domain.admin.service.AdminAddressService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
@@ -49,12 +50,25 @@ public class AdminAddressServiceImpl implements AdminAddressService {
     @Transactional
     public String approveAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException());
+                .orElseThrow(AccountNotFoundException::new);
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE) {
             throw new AlreadyApprovedAddressException(account.getAccountAddress());
         }
         account.approveAddress();
+        return  account.getAccountAddress();
+    }
+
+    @Override
+    public String disapproveAddress(Long accountId) {
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(AccountNotFoundException::new);
+
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.SUSPENDED) {
+            throw new AlreadyDisapprovedAddressException(account.getAccountAddress());
+        }
+        account.disapproveAddress();
         return  account.getAccountAddress();
     }
 

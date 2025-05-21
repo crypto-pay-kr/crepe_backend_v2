@@ -73,7 +73,9 @@ public class Account extends BaseEntity {
     public void approveAddress() {
         this.addressRegistryStatus = addressRegistryStatus.ACTIVE;
     }
-
+    public void disapproveAddress() {
+        this.addressRegistryStatus = addressRegistryStatus.SUSPENDED;
+    }
     public void addNonAvailableBalance(BigDecimal amount) {
         this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
     }

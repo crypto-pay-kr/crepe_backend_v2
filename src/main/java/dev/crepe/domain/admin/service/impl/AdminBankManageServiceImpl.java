@@ -1,11 +1,18 @@
 package dev.crepe.domain.admin.service.impl;
 
+import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
+import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
 import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
+import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
+import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.core.product.repository.ProductRepository;
+import dev.crepe.domain.core.product.service.ProductService;
+import dev.crepe.domain.core.product.service.impl.ProductServiceImpl;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenService;
@@ -23,12 +30,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class AdminBankManageServiceImpl implements AdminBankManageService {
-
-
     private final TokenService tokenService;
     private final BankService bankService;
     private final BankTokenInfoService bankTokenInfoService;
-
+    private final ProductServiceImpl productService;
 
     // 은행 계정 생성
     @Override
@@ -94,5 +99,30 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     @Override
     public void rejectBankTokenRequest(RejectBankTokenRequest request, Long tokenHistoryId) {
         tokenService.rejectBankTokenRequest(request, tokenHistoryId);
+    }
+
+    @Override
+    public List<GetAllProductResponse> getAllBankProducts(Long bankId) {
+        return productService.getAllBankProducts(bankId);
+    }
+
+    @Override
+    public List<GetAllProductResponse> getSuspendedBankProducts(Long bankId) {
+        return productService.getSuspendedBankProducts(bankId);
+    }
+
+    @Override
+    public List<GetAllBankResponse> getAllActiveBankInfoList() {
+        return bankService.getAllActiveBankList();
+    }
+
+    @Override
+    public void changeBankStatus(ChangeBankStatusRequest request) {
+        bankService.changeBankStatus(request);
+    }
+
+    @Override
+    public List<GetAllSuspendedBankResponse> getAllSuspendedBankInfoList() {
+        return bankService.getAllSuspendedBankList();
     }
 }
