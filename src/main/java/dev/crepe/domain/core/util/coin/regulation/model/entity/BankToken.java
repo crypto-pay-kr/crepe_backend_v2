@@ -1,6 +1,9 @@
 package dev.crepe.domain.core.util.coin.regulation.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
+import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.global.base.BaseEntity;
@@ -54,7 +57,6 @@ public class BankToken extends BaseEntity {
     public void changeTotalSupply(BigDecimal totalSupply) {
         this.totalSupply = totalSupply;
     }
-
 
 
 }

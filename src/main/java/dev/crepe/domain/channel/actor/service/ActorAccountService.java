@@ -1,5 +1,6 @@
 package dev.crepe.domain.channel.actor.service;
 
+import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
@@ -22,4 +23,6 @@ public interface ActorAccountService {
 
     // 특정 코인 잔액 조회
     GetBalanceResponse getBalanceByCurrency(String email, String currency);
+
+    List<BankTokenAccountDto> getMyAccountsSubscription(String email);
 }
