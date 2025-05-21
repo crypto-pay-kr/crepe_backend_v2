@@ -17,6 +17,7 @@ import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -92,6 +93,11 @@ public class ActorAccountServiceImpl implements ActorAccountService {
                     );
                 })
                 .collect(Collectors.toList());
+    }
+  
+
+    public BigDecimal getTokenBalance(String email, String currency) {
+        return accountService.getTokenBalance(email, currency);
     }
   
     public void unRegisterAccount(String email, String currency) {

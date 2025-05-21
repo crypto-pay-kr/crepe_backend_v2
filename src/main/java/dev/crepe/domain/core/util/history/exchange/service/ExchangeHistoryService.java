@@ -9,5 +9,6 @@ public interface ExchangeHistoryService {
 
     GetTransactionHistoryResponse getExchangeHistory(ExchangeHistory ex, Account userAccount);
 
-
+    Slice<GetTransactionHistoryResponse> getExchangeHistoryList(
+            String email, String currency, int page, int size);
 }
