@@ -1,8 +1,8 @@
 package dev.crepe.domain.core.subscribe.expired;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
-import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.core.subscribe.expired.service.SubscribeExpiredService;
 import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
 import io.swagger.v3.oas.annotations.Operation;

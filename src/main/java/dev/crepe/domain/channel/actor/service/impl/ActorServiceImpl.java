@@ -1,10 +1,10 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.auth.jwt.AuthenticationToken;
-import dev.crepe.domain.auth.jwt.JwtTokenProvider;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
+import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
 import dev.crepe.domain.channel.actor.exception.*;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
@@ -13,25 +13,8 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
-import dev.crepe.domain.core.product.model.BankProductType;
-import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
-import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
-import dev.crepe.domain.core.product.model.dto.eligibility.IncomeLevel;
-import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
-import dev.crepe.domain.core.product.model.dto.interest.AgePreferentialRate;
-import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
-import dev.crepe.domain.core.product.model.entity.Product;
-import dev.crepe.domain.core.product.repository.ProductRepository;
-import dev.crepe.domain.core.subscribe.model.PreferentialRateModels;
-import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
-import dev.crepe.domain.core.subscribe.model.dto.request.SubscribeProductRequest;
-import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeProductResponse;
-import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfaction;
-import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
-import dev.crepe.domain.core.subscribe.repository.PreferentialConditionSatisfactionRepository;
-import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
-import dev.crepe.domain.core.subscribe.util.PreferentialRateUtils;
 import dev.crepe.global.model.dto.ApiResponse;
+import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
 import dev.crepe.infra.sms.model.SmsType;
 import dev.crepe.infra.sms.service.SmsManageService;
@@ -44,16 +27,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.time.DateTimeException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
 
 @Service
@@ -63,8 +38,7 @@ public class ActorServiceImpl  implements ActorService {
 
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final TokenRepository tokenRepository;
+    private final AuthServiceImpl authService;
     private final SmsManageService smsManageService;
     private final Random random = new Random();
 
@@ -72,7 +46,6 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
-
         Actor actor = actorRepository.findByEmail(request.getEmail())
                 .orElseThrow(LoginFailedException::new);
 
@@ -80,15 +53,8 @@ public class ActorServiceImpl  implements ActorService {
             throw new LoginFailedException();
         }
 
-        AuthenticationToken token;
-        token = jwtTokenProvider.createToken(actor.getEmail(),actor.getRole());
-
-
-        tokenRepository.findById(actor.getId())
-                .ifPresentOrElse(
-                        existingToken -> existingToken.updateTokens(token.getAccessToken(), token.getRefreshToken()),
-                        () -> tokenRepository.save(new JwtToken(actor.getId(),actor.getRole(), token.getAccessToken(), token.getRefreshToken()))
-                );
+        // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
+        AuthenticationToken token = authService.createAndSaveToken(actor.getEmail(), actor.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, actor);
         return ApiResponse.success(actor.getRole() + " 로그인 성공", tokenResponse);
@@ -183,19 +149,55 @@ public class ActorServiceImpl  implements ActorService {
                 .build();
     }
 
+    @Transactional
     @Override
-    public ResponseEntity<String> checkIncome(String userEmail) {
+    public GetFinancialSummaryResponse checkIncome(String userEmail) {
         Actor actor = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UserNotFoundException(userEmail));
         if (actor.getAnnualIncome() != null && actor.getTotalAsset() != null) {
-            return new ResponseEntity<>("이미 소득이 부여되었습니다", HttpStatus.BAD_REQUEST);
+            return GetFinancialSummaryResponse.builder()
+                    .userId(actor.getId())
+                    .annualIncome(actor.getAnnualIncome())
+                    .totalAsset(actor.getTotalAsset())
+                    .build();
         }
         GetFinancialSummaryResponse financialData = getActorAsset(actor.getId());
         actor.addAnnualIncome(financialData.getAnnualIncome());
         actor.addTotalAsset(financialData.getTotalAsset());
-        actorRepository.save(actor);
 
-        return new ResponseEntity<>("소득 정보가 성공적으로 조회되었습니다.", HttpStatus.OK);
+        return financialData;
+    }
+
+    @Transactional
+    @Override
+    public ResponseEntity<String> updateFromIdCard(String userEmail, IdCardOcrResponse idCardResponse) {
+        log.info("사용자 정보 업데이트 시작 - 이메일: {}", userEmail);
+
+        Actor actor = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음: {}", userEmail);
+                    return new EntityNotFoundException("사용자를 찾을 수 없습니다.");
+                });
+
+        log.info("기존 사용자 정보 - ID: {}, 이름: {}", actor.getId(), actor.getName());
+
+        // 논리 수정: equals가 아니라 !equals 또는 이름 검증 로직 변경
+        if (!actor.getName().equals(idCardResponse.getName())) {
+            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
+                    actor.getName(), idCardResponse.getName());
+            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
+        }
+
+
+        try {
+            actor.updateFromIdCard(idCardResponse);
+            actorRepository.save(actor); // 명시적 저장 (선택사항)
+            log.info("사용자 정보 업데이트 완료");
+            return new ResponseEntity<>("OCR 인증 성공", HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("업데이트 중 오류 발생: {}", e.getMessage(), e);
+            throw e;
+        }
     }
 
 

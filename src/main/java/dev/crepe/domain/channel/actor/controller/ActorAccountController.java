@@ -1,12 +1,12 @@
 package dev.crepe.domain.channel.actor.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
 import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
-import dev.crepe.domain.core.account.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -86,6 +87,7 @@ public class ActorAccountController {
     }
 
 
+
     @Operation(
             summary = "특정 종목 잔액 조회",
             description = "현재 로그인한 유저, 가맹점의 특정 코인 잔액을 조회합니다.",
@@ -93,10 +95,22 @@ public class ActorAccountController {
     )
     @ActorAuth
     @GetMapping("/balance/{currency}")
-    public ResponseEntity<GetBalanceResponse> getBalanceByCurrency(@PathVariable String currency,
-                                                                       AppAuthentication auth) {
+    public ResponseEntity<GetBalanceResponse> getBankTokenAccount(@PathVariable String currency,
+                                                                   AppAuthentication auth) {
         GetBalanceResponse response = actorAccountService.getBalanceByCurrency( currency,auth.getUserEmail());
         return ResponseEntity.ok(response);
+    }
+
+
+    @GetMapping("/account")
+    @ActorAuth
+    @Operation(
+            summary = "내 토큰 계좌 조회",
+            description = "현재 로그인한 사용자의 토큰 계좌, 가입 상품을 조회합니다.",
+            security = @SecurityRequirement(name = "bearer-jwt")
+    )
+    public List<BankTokenAccountDto> getMyAccountsWithSubscriptions(AppAuthentication auth) {
+        return actorAccountService.getMyAccountsSubscription(auth.getUserEmail());
     }
 
     @Operation(
@@ -113,4 +127,16 @@ public class ActorAccountController {
     }
 
 
+    @Operation(
+            summary = "특정 종목 잔액 조회",
+            description = "현재 로그인한 유저, 가맹점의 특정 코인 잔액을 조회합니다.",
+            security = @SecurityRequirement(name = "bearer-jwt"))
+     @ActorAuth
+    @GetMapping("/token/balance/{currency}")
+    public ResponseEntity<BigDecimal> getTokenBalance(@PathVariable String currency, AppAuthentication auth) {
+        BigDecimal balance = actorAccountService.getTokenBalance(auth.getUserEmail(), currency);
+        return ResponseEntity.ok(balance);
+    }
 }
+
+

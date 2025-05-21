@@ -1,6 +1,6 @@
 package dev.crepe.domain.core.deposit.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.core.deposit.model.dto.request.TokenDepositRequest;
 import dev.crepe.domain.core.deposit.service.TokenDepositService;
