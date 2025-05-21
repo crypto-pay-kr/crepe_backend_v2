@@ -17,7 +17,6 @@ import dev.crepe.domain.core.account.util.GenerateAccountAddress;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.util.SecurityUtil;
@@ -241,8 +240,16 @@ public class AccountServiceImpl implements AccountService {
         if (coin.isTag() && (request.getTag() == null || request.getTag().isBlank())) {
             throw new TagRequiredException(request.getCurrency());
         }
-
-        account.registerAddress(request.getAddress(), request.getTag());
+        // 등록된 계좌가 있을 경우 변경 시 해지 후 등록 하도록 상태 변경
+        if(account.getAddressRegistryStatus()==AddressRegistryStatus.REGISTERING) {
+            account.registerAddress(request.getAddress(), request.getTag());
+        }else if(account.getAddressRegistryStatus()==AddressRegistryStatus.ACTIVE||
+                account.getAddressRegistryStatus()==AddressRegistryStatus.UNREGISTERED_AND_REGISTERING ||
+        account.getAddressRegistryStatus()==AddressRegistryStatus.UNREGISTERED) {
+            account.reRegisterAddress(request.getAddress(), request.getTag());
+        }else{
+            throw new AccountNotFoundException("해당 계좌는 활성화 상태가 아닙니다.");
+        }
     }
 
     @Override
@@ -296,6 +303,32 @@ public class AccountServiceImpl implements AccountService {
                             .balance(BigDecimal.ZERO)
                             .build());
                 });
+    }
+
+
+    @Override
+    public BigDecimal getTokenBalance(String email, String currency) {
+        return accountRepository.findByActor_EmailAndBankToken_Currency(email, currency).stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
+
+    @Override
+    public void unRegisterAccount(String email, String currency) {
+        Account account = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
+                ? accountRepository.findByBank_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException(currency))
+                : accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
+                .orElseThrow(() -> new AccountNotFoundException(currency));
+        //계좌가 활성 상태이거나 해지 후 등록 중인 상태일 때만 해지 상태로 변경
+        if(account.getAddressRegistryStatus()!=AddressRegistryStatus.ACTIVE&&
+                account.getAddressRegistryStatus()!=AddressRegistryStatus.UNREGISTERED_AND_REGISTERING) {
+            throw new AccountNotFoundException("해당 계좌는 활성화 상태가 아닙니다.");
+        }
+        account.unRegisterAddress();
+        accountRepository.save(account);
     }
 
 }

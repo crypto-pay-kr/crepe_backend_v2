@@ -19,14 +19,16 @@ public class GetTokenHistoryResponse {
 
     private String bankName;
 
-    private Long tokenHistoryId;
     private Long bankTokenId;
+    private String tokenName;
+    private String currency;
     private String changeReason;
     private String rejectReason;
     private TokenRequestType requestType;
     private BankTokenStatus status;
     private LocalDateTime createdAt;
     private BigDecimal totalSupplyAmount;
+    private Long tokenHistoryId;
     private List<PortfolioDetail> portfolioDetails;
 
     @Getter

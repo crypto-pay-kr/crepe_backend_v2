@@ -3,8 +3,13 @@ package dev.crepe.domain.core.deposit.service.impl;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.deposit.exception.AlreadyDepositedException;
+import dev.crepe.domain.core.deposit.exception.ExceedMonthlyLimitException;
+import dev.crepe.domain.core.deposit.exception.SubscribeInactiveException;
 import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.exception.SubscribeNotFoundException;
+import dev.crepe.domain.core.subscribe.exception.UserAccountNotFoundException;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
@@ -30,13 +35,13 @@ public class TokenDepositServiceImpl implements TokenDepositService {
     public String depositToProduct(String userEmail, Long subscribeId, BigDecimal amount) {
         // 1. 상품이 있는지 확인
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(() -> new RuntimeException("가입 정보가 없습니다"));
+                .orElseThrow(SubscribeNotFoundException::new);
 
         Product product = subscribe.getProduct();
 
         // 2. 토큰 계좌 확인
         Account account = accountRepository.findByActor_EmailAndBankTokenId(userEmail, product.getBankToken().getId())
-                .orElseThrow(() -> new RuntimeException("사용자의 은행 토큰 계좌가 없습니다."));
+                .orElseThrow(UserAccountNotFoundException::new);
 
         if (account.getBalance().compareTo(amount) < 0) {
             throw new NotEnoughAmountException("잔액이 부족합니다");
@@ -84,14 +89,14 @@ public class TokenDepositServiceImpl implements TokenDepositService {
 
         // 2. 이미 예치한 경우 예외 처리
         if (subscribe.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-            throw new IllegalStateException("예금은 한 번만 예치할 수 있습니다.");
+            throw new AlreadyDepositedException();
         }
 
         // 5. 예치 최대 한도 체크 (예치 최대 한도 초과시 예외 처리)
         BigDecimal maxLimit = product.getMaxMonthlyPayment(); // 예금 예치 최대 한도
 
         if (maxLimit != null && amount.compareTo(maxLimit) > 0) {
-            throw new IllegalArgumentException("예금 최대 예치 한도를 초과했습니다");
+            throw new ExceedMonthlyLimitException();
         }
 
         // 6. 해당 bankToken 계좌에서 amount 차감
@@ -158,7 +163,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
             // 총액 계산
             BigDecimal totalAfterDeposit = depositedThisMonth.add(amount);
             if (totalAfterDeposit.compareTo(maxLimit) > 0) {
-                throw new IllegalArgumentException("월 최대 예치 한도를 초과했습니다");
+                throw new ExceedMonthlyLimitException();
             }
         }
     }
@@ -166,7 +171,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
     // 상품 가입 상태 검증
     private void validateActiveSubscribe(Subscribe subscribe) {
         if (!subscribe.isActive()) {
-            throw new IllegalStateException("예치 가능한 상태가 아닙니다. (현재 상태: " + subscribe.getStatus() + ")");
+            throw new SubscribeInactiveException(subscribe.getStatus().name());
         }
     }
 }

@@ -21,6 +21,7 @@ public class SubscribeResponseDto {
     private float baseInterestRate; // 기본 이자율
     private String appliedPreferentialRates; // 적용된 우대 금리 설명 (선택)
     private String productType;
+    private BigDecimal maxMonthlyPayment;
 
     public static SubscribeResponseDto from(Subscribe s) {
         return new SubscribeResponseDto(
@@ -33,7 +34,8 @@ public class SubscribeResponseDto {
                 s.getBalance(),
                 s.getInterestRate(),
                 s.getAppliedPreferentialRates(),
-                s.getProduct().getType().name()
+                s.getProduct().getType().name(),
+                s.getProduct().getMaxMonthlyPayment()
         );
     }
 }

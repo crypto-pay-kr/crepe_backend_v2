@@ -27,7 +27,7 @@ public class SecurityUtil {
         if (auth.getAuthorities() != null) {
             return auth.getAuthorities().stream()
                     .map(GrantedAuthority::getAuthority)
-                    .filter(role -> role.equals("BANK") || role.equals("USER"))
+                    .filter(role -> role.equals("BANK") || role.equals("USER") || role.equals("SELLER"))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("유효한 역할이 없습니다."));
         }
