@@ -74,6 +74,9 @@ public class Product extends BaseEntity {
     @Column(name="product_image")
     private String imageUrl;
 
+    @Column(name="product_guide_image")
+    private String guideFileUrl;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private BankProductStatus status;
