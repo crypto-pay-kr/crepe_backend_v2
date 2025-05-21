@@ -11,6 +11,7 @@ import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.model.entity.BankStatus;
 import dev.crepe.domain.bank.repository.BankRepository;
@@ -19,6 +20,9 @@ import dev.crepe.domain.bank.util.CheckAlreadyField;
 import dev.crepe.domain.channel.actor.exception.LoginFailedException;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
+import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
+import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
@@ -200,6 +204,32 @@ public class BankServiceImpl implements BankService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId) {
+        Bank bank = bankRepository.findById(bankId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 은행을 찾을 수 없습니다. ID: " + bankId));
+
+
+        List<Account> accounts = accountService.getAccountsByBankEmail(bank.getEmail());
+
+        if (accounts.isEmpty()) {
+            throw new AccountNotFoundException(bank.getName());
+        }
+
+        return accounts.stream()
+                .filter(a -> a.getCoin() != null) // 코인 정보가 없는 계좌는 제외
+                .map(a -> GetCoinAccountInfoResponse.builder()
+                        .bankName(a.getBank() != null ? a.getBank().getName() : null)
+                        .coinName(a.getCoin().getName())
+                        .currency(a.getCoin().getCurrency())
+                        .accountAddress(a.getAccountAddress())
+                        .tag(a.getTag())
+                        .balance(a.getBalance().toPlainString())
+                        .status(a.getAddressRegistryStatus())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public Bank findBankInfoByEmail(String email) {
@@ -207,8 +237,6 @@ public class BankServiceImpl implements BankService {
                 .orElseThrow(() -> new BankNotFoundException(email));
     }
 
-
- 
 
 }
 

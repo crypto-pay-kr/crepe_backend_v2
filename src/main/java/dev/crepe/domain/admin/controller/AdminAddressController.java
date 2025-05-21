@@ -64,7 +64,6 @@ public class AdminAddressController {
         return ResponseEntity.ok(adminAddressService.disapproveAddress(accountId));
     }
 
-    //TODO : 관리자가 특정 은행 계좌 조회
 
 
 }

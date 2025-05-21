@@ -7,6 +7,10 @@ import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
 import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.admin.service.AdminProductService;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
+import dev.crepe.domain.auth.role.BankAuth;
+import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
@@ -15,9 +19,11 @@ import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.auth.role.AdminAuth;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -136,5 +142,23 @@ public class AdminBankManageController {
         adminBankManageService.changeBankStatus(request);
         return ResponseEntity.ok("은행 상태 변경 성공");
     }
+
+    //TODO : 관리자가 특정 은행 계좌 조회
+    @Operation(
+            summary = "특정 은행 계좌 정보 조회",
+            description = "bankId를 기반으로 특정 은행 계좌를 조회",
+            security = @SecurityRequirement(name = "bearer-jwt")
+    )
+    @AdminAuth
+    @GetMapping("/account/{bankId}")
+    public ResponseEntity<List<GetCoinAccountInfoResponse>> getBankInfoDetailByAdmin(@PathVariable Long bankId) {
+        List<GetCoinAccountInfoResponse> res = adminBankManageService.getBankAccountByAdmin(bankId);
+        return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+
+
+
+
 
 }

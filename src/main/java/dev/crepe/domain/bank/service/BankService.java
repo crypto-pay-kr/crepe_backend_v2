@@ -3,6 +3,7 @@ package dev.crepe.domain.bank.service;
 import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
 import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.core.product.model.dto.request.RegisterProductRequest;
 import dev.crepe.domain.core.product.model.dto.response.RegisterProductResponse;
@@ -36,4 +37,6 @@ public interface BankService {
     void changeBankStatus(ChangeBankStatusRequest request);
 
     List<GetAllSuspendedBankResponse> getAllSuspendedBankList();
+
+    List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId);
 }

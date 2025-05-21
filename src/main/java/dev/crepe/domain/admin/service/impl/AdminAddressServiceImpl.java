@@ -39,7 +39,7 @@ public class AdminAddressServiceImpl implements AdminAddressService {
                                 ? account.getBank().getName()
                                 : account.getActor().getName()
                 )
-                .currency(account.getCoin().getCurrency())
+                .currency(account.getCoin() != null ? account.getCoin().getCurrency() : "Unknown")
                 .address(account.getAccountAddress())
                 .tag(account.getTag())
                 .addressRegistryStatus(account.getAddressRegistryStatus().name())

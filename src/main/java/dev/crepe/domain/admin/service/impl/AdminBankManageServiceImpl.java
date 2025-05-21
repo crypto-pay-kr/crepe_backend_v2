@@ -9,6 +9,8 @@ import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
+import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.service.ProductService;
@@ -125,4 +127,11 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     public List<GetAllSuspendedBankResponse> getAllSuspendedBankInfoList() {
         return bankService.getAllSuspendedBankList();
     }
+
+    @Override
+    public List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId) {
+        return bankService.getBankAccountByAdmin(bankId);
+    }
+
+
 }
