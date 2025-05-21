@@ -15,8 +15,6 @@ import java.util.List;
 @Schema(description = "은행 토큰 재생성 요청 DTO")
 public class ReCreateBankTokenRequest {
 
-    @Schema(description = "은행 이름", example = "우리은행")
-    private String bankName;
     @Schema(description = "변경 사유", example = "변경 사유")
     private String changeReason;
     @ArraySchema(schema = @Schema(description = "포트폴리오 코인 정보 리스트"))
