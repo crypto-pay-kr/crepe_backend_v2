@@ -21,6 +21,8 @@ public interface SubscribeRepository extends JpaRepository<Subscribe,Long> {
             LocalDateTime expiredBefore,
             SubscribeStatus status
     );
-  
+
+    List<Subscribe> findAllByUser_Email(String email);
+
     boolean existsByUserAndProduct(Actor user, Product product);
 }

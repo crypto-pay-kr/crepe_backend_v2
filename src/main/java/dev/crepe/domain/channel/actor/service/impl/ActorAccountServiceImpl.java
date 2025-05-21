@@ -45,6 +45,10 @@ public class ActorAccountServiceImpl implements ActorAccountService {
     @Override
     public BigDecimal getTokenBalance(String email, String currency) {
         return accountService.getTokenBalance(email, currency);
+
+    public void unRegisterAccount(String email, String currency) {
+        accountService.unRegisterAccount(email, currency);
+
     }
 
 }

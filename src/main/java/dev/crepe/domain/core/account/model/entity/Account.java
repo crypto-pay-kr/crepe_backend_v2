@@ -68,6 +68,11 @@ public class Account extends BaseEntity {
         this.tag = tag;
         this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;
     }
+    public void reRegisterAddress(String address, String tag) {
+        this.accountAddress = address;
+        this.tag = tag;
+        this.addressRegistryStatus = AddressRegistryStatus.UNREGISTERED_AND_REGISTERING;
+    }
 
     // 계좌 승인
     public void approveAddress() {
@@ -76,6 +81,11 @@ public class Account extends BaseEntity {
 
     public void addNonAvailableBalance(BigDecimal amount) {
         this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
+    }
+
+    public void unRegisterAddress() {
+        this.addressRegistryStatus = AddressRegistryStatus.UNREGISTERED;
+
     }
 
 

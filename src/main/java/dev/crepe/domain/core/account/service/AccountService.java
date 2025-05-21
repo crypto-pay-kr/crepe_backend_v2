@@ -45,4 +45,7 @@ public interface AccountService {
 
     BigDecimal getTokenBalance(String email, String currency);
 
+
+    void unRegisterAccount(String email, String currency);
+
 }

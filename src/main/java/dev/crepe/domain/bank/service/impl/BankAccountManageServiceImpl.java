@@ -71,6 +71,16 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
 
     }
 
+    // 은행 출금 계좌 해제
+    @Transactional
+    @Override
+    public void unRegisterBankAccount(String currency, String bankEmail) {
+
+        accountService.unRegisterAccount(bankEmail, currency);
+
+    }
+
+
 
     // 코인별 계좌 정보 조회
     @Transactional(readOnly = true)
@@ -106,7 +116,8 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
         // ACTIVE 상태의 계좌만 필터링하고 매핑
         return accounts.stream()
                 .filter(a -> a.getCoin() != null) // 코인 정보가 없는 계좌는 제외
-                .filter(a -> a.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE)
+                .filter(a -> a.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE
+                        || a.getAddressRegistryStatus() == AddressRegistryStatus.REGISTERING)
                 .map(a -> GetCoinAccountInfoResponse.builder()
                         .bankName(a.getBank() != null ? a.getBank().getName() : null)
                         .coinName(a.getCoin().getName())
@@ -114,6 +125,7 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
                         .accountAddress(a.getAccountAddress())
                         .tag(a.getTag())
                         .balance(a.getBalance().toPlainString())
+                        .status(a.getAddressRegistryStatus())
                         .build())
                 .collect(Collectors.toList());
     }
