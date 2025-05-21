@@ -3,6 +3,7 @@ package dev.crepe.domain.core.subscribe.expired.service.impl;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.exception.*;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfaction;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
@@ -37,11 +38,11 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
     public String expired(String userEmail, Long subscribeId) {
         // 가입 정보 조회
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(() -> new RuntimeException("상품 가입 정보를 찾을 수 없습니다."));
+                .orElseThrow(SubscribeNotFoundException::new);
 
         // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new IllegalStateException("이미 만료된 상품입니다.");
+            throw new AlreadyExpiredSubscribeException();
         }
 
         Product product = subscribe.getProduct();
@@ -50,12 +51,12 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("예치된 금액이 없습니다.");
+            throw new NoDepositBalanceException();
         }
 
         // 만기일 도달 여부 확인
         if (!subscribe.isMatured()) {
-            throw new IllegalStateException("아직 만기일이 도달하지 않았습니다. 만기일: " + subscribe.getExpiredDate().toLocalDate());
+            throw new TooEarlyToTerminateException();
         }
 
         // 우대금리 조건 충족 내역 조회
@@ -78,7 +79,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentCompoundInterest(subscribe, totalInterestRate);
             }
-            default -> throw new IllegalStateException("이자 계산이 지원되지 않는 상품 유형입니다.");
+            default -> throw new UnsupportedProductTypeException();
         }
 
         // 세후 이자 계산
@@ -89,13 +90,13 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
         Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
                 subscribe.getUser().getEmail(), product.getBankToken().getId()
-        ).orElseThrow(() -> new RuntimeException("사용자의 토큰 계좌가 없습니다."));
+        ).orElseThrow(UserAccountNotFoundException::new);
 
 
         // 은행 자본금 계좌에서 이자 차감
         Account bankTokenAccount = accountRepository
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
-                .orElseThrow(() -> new RuntimeException("은행 자본금 계좌가 없습니다."));
+                .orElseThrow(BankAccountNotFoundException::new);
 
         bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 

@@ -52,4 +52,8 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
   
     List<Account> findByBank_IdAndCoin_IdIn(Long BankId, List<Long> coinIds);
 
+    List<Account> findAllByActor_EmailAndBankToken_Id(String email, Long bankTokenId);
+
+
+
 }
