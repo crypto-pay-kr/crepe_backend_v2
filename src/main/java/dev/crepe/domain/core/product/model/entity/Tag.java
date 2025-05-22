@@ -3,10 +3,12 @@ package dev.crepe.domain.core.product.model.entity;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@Getter
 @Table(name = "tag")
 @NoArgsConstructor
 public class Tag extends BaseEntity {
