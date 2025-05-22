@@ -14,6 +14,9 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.test.context.TestPropertySource;
 
 import dev.crepe.domain.auth.UserRole;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.jwt.util.JwtAuthentication;
+import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 
 @SpringBootTest
 @TestPropertySource(properties = {
