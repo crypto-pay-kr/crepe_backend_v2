@@ -22,6 +22,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import dev.crepe.domain.auth.UserRole;
 import jakarta.servlet.ServletException;
+import dev.crepe.domain.auth.jwt.util.*;
 
 @SpringBootTest
 class JwtAuthenticationFilterTest {
