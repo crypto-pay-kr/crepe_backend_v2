@@ -70,6 +70,10 @@ public class Subscribe extends BaseEntity {
     @Column(name = "next_regular_deposit_date")
     private LocalDate nextRegularDepositDate;
 
+    // 중도해지 기준 세전 이자
+    @Column(name = "preTaxInterest")
+    private BigDecimal preTaxInterest;
+
     // 자유납입 목표 (적금 상품인 경우)
     @Enumerated(EnumType.STRING)
     @Column(name = "selected_free_deposit_rate")
@@ -83,6 +87,7 @@ public class Subscribe extends BaseEntity {
     // 상품권 코드 (상품권 상품인 경우)
     @Column(name = "voucher_code")
     private String voucherCode;
+
 
 
     public void deposit(BigDecimal amount) {
@@ -102,4 +107,7 @@ public class Subscribe extends BaseEntity {
         return LocalDateTime.now().isAfter(this.expiredDate);
     }
 
+    public void setPreTaxInterest(BigDecimal preTaxInterest) {
+        this.preTaxInterest = preTaxInterest;
+    }
 }

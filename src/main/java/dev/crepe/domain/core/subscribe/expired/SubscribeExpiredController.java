@@ -5,6 +5,7 @@ import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.core.subscribe.expired.service.SubscribeExpiredService;
 import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
+import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

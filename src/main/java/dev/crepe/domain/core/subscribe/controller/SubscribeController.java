@@ -1,8 +1,11 @@
 package dev.crepe.domain.core.subscribe.controller;
 
 import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.auth.role.UserAuth;
+import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
+import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
 import dev.crepe.domain.core.subscribe.service.SubscribeService;
 import dev.crepe.domain.core.util.history.subscribe.model.dto.SubscribeHistoryDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +26,7 @@ import java.util.List;
 public class SubscribeController {
 
     private final SubscribeService subscribeService;
+    private final SubscribeTerminateService subscribeTerminateService;
 
 
     @GetMapping("/my")
@@ -43,4 +47,12 @@ public class SubscribeController {
         return ResponseEntity.ok(subscribeService.getHistoryBySubscribe(subscribeId,auth.getUserEmail(),pageable));
     }
 
+
+    @GetMapping("/preview/{subscribeId}")
+    @UserAuth
+    @Operation(summary = "상품 중도 해지시 금액 조회", description = "해당 상품 중도 해지시 금액을 조회합니다.")
+    public ResponseEntity<?> terminate(@PathVariable Long subscribeId, AppAuthentication auth) {
+        TerminatePreviewDto result = subscribeTerminateService.calculateTerminationPreview(auth.getUserEmail(),subscribeId);
+        return ResponseEntity.ok(result);
+    }
 }
