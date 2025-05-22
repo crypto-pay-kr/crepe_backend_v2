@@ -1,14 +1,16 @@
 package dev.crepe.domain.admin.service.impl;
 
 
+import dev.crepe.domain.admin.dto.request.RejectAddressRequest;
 import dev.crepe.domain.admin.dto.response.GetPendingWithdrawAddressListResponse;
 import dev.crepe.domain.admin.exception.AlreadyApprovedAddressException;
-import dev.crepe.domain.admin.exception.AlreadyDisapprovedAddressException;
+import dev.crepe.domain.admin.exception.AlreadyRejectedAddressException;
 import dev.crepe.domain.admin.service.AdminAddressService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -25,12 +27,24 @@ public class AdminAddressServiceImpl implements AdminAddressService {
 
     private final AccountRepository accountRepository;
 
+    // 계좌 등록 요청 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(int page, int size, AddressRegistryStatus status) {
+    public Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(
+            int page,
+            int size,
+            List<AddressRegistryStatus> statuses,
+            Boolean isBankAccount
+    ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Account> accounts = accountRepository.findByAddressRegistryStatus(status, pageable);
+        Page<Account> accounts;
+
+        if (isBankAccount) {
+            accounts = accountRepository.findByActorIsNullAndAddressRegistryStatusInAndCoinIsNotNull(statuses, pageable);
+        } else {
+            accounts = accountRepository.findByActorIsNotNullAndAddressRegistryStatusInAndCoinIsNotNull(statuses, pageable);
+        }
 
         return accounts.map(account -> GetPendingWithdrawAddressListResponse.builder()
                 .id(account.getId())
@@ -39,13 +53,17 @@ public class AdminAddressServiceImpl implements AdminAddressService {
                                 ? account.getBank().getName()
                                 : account.getActor().getName()
                 )
-                .currency(account.getCoin() != null ? account.getCoin().getCurrency() : "Unknown")
+                .userType(isBankAccount ? "BANK" : account.getActor().getName())
+                .currency(account.getCoin().getCurrency())
                 .address(account.getAccountAddress())
                 .tag(account.getTag())
                 .addressRegistryStatus(account.getAddressRegistryStatus().name())
+                .createdAt(account.getUpdatedAt())
                 .build()
         );
     }
+
+    //계좌 승인
     @Override
     @Transactional
     public String approveAddress(Long accountId) {
@@ -59,18 +77,30 @@ public class AdminAddressServiceImpl implements AdminAddressService {
         return  account.getAccountAddress();
     }
 
+    //계좌 거절
     @Override
-    public String disapproveAddress(Long accountId) {
-
+    @Transactional
+    public void rejectAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(AccountNotFoundException::new);
+                .orElseThrow(() -> new AccountNotFoundException());
 
-        if (account.getAddressRegistryStatus() == AddressRegistryStatus.SUSPENDED) {
-            throw new AlreadyDisapprovedAddressException(account.getAccountAddress());
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.REJECTED) {
+            throw new AlreadyRejectedAddressException(account.getAccountAddress());
         }
-        account.disapproveAddress();
-        return  account.getAccountAddress();
+        account.adminRejectAddress();
     }
 
+    // 계좌 해지 요청 승인
+    @Override
+    @Transactional
+    public void unRegisterAddress(Long accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException());
+
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.NOT_REGISTERED) {
+            throw new AlreadyRejectedAddressException(account.getAccountAddress());
+        }
+        account.adminUnRegisterAddress();
+    }
 
 }

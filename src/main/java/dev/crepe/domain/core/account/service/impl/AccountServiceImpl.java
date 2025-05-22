@@ -240,15 +240,14 @@ public class AccountServiceImpl implements AccountService {
         if (coin.isTag() && (request.getTag() == null || request.getTag().isBlank())) {
             throw new TagRequiredException(request.getCurrency());
         }
+
         // 등록된 계좌가 있을 경우 변경 시 해지 후 등록 하도록 상태 변경
         if(account.getAddressRegistryStatus()==AddressRegistryStatus.REGISTERING) {
             account.registerAddress(request.getAddress(), request.getTag());
-        }else if(account.getAddressRegistryStatus()==AddressRegistryStatus.ACTIVE||
-                account.getAddressRegistryStatus()==AddressRegistryStatus.UNREGISTERED_AND_REGISTERING ||
-        account.getAddressRegistryStatus()==AddressRegistryStatus.UNREGISTERED) {
+        }else if(account.getAddressRegistryStatus()==AddressRegistryStatus.NOT_REGISTERED){
+            throw new AccountNotFoundException("해당 계좌는 미등록 상태입니다.");
+        } else{
             account.reRegisterAddress(request.getAddress(), request.getTag());
-        }else{
-            throw new AccountNotFoundException("해당 계좌는 활성화 상태가 아닙니다.");
         }
     }
 
@@ -330,6 +329,9 @@ public class AccountServiceImpl implements AccountService {
         account.unRegisterAddress();
         accountRepository.save(account);
     }
+
+
+
 
 }
 
