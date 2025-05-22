@@ -1,11 +1,10 @@
 package dev.crepe.domain.channel.actor.controller;
 
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorDepositService;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetDepositRequest;
-import dev.crepe.domain.core.transfer.service.DepositService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

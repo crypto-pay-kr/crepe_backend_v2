@@ -1,33 +1,45 @@
 package dev.crepe.domain.bank.service.impl;
 
+
+import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
+import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
+import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.auth.jwt.AuthenticationToken;
-import dev.crepe.domain.auth.jwt.JwtTokenProvider;
-import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
-import dev.crepe.domain.auth.jwt.repository.TokenRepository;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
 import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
+import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.bank.model.entity.BankStatus;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.util.CheckAlreadyField;
 import dev.crepe.domain.channel.actor.exception.LoginFailedException;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
-import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
+import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
 import dev.crepe.infra.s3.service.S3Service;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -38,9 +50,9 @@ public class BankServiceImpl implements BankService {
     private final S3Service s3Service;
     private final AccountService accountService;
     private final CheckAlreadyField checkAlreadyField;
-    private final JwtTokenProvider jwtTokenProvider;
-    private final TokenRepository tokenRepository;
+    private final AuthServiceImpl authService;
     private final PasswordEncoder encoder;
+    private final BankTokenRepository bankTokenRepository;
 
     // 은행 회원가입
     @Override
@@ -81,7 +93,6 @@ public class BankServiceImpl implements BankService {
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
-
         Bank bank = bankRepository.findByEmail(request.getEmail())
                 .orElseThrow(LoginFailedException::new);
 
@@ -89,20 +100,12 @@ public class BankServiceImpl implements BankService {
             throw new LoginFailedException();
         }
 
-        AuthenticationToken token;
-        token = jwtTokenProvider.createToken(bank.getEmail(),bank.getRole());
-
-
-        tokenRepository.findById(bank.getId())
-                .ifPresentOrElse(
-                        existingToken -> existingToken.updateTokens(token.getAccessToken(), token.getRefreshToken()),
-                        () -> tokenRepository.save(new JwtToken(bank.getId(),bank.getRole(), token.getAccessToken(), token.getRefreshToken()))
-                );
+        // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
+        AuthenticationToken token = authService.createAndSaveToken(bank.getEmail(), bank.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, bank);
         return ApiResponse.success(bank.getRole() + " 로그인 성공", tokenResponse);
     }
-
 
 
     // 은행 정보 조회
@@ -139,15 +142,101 @@ public class BankServiceImpl implements BankService {
         return ResponseEntity.ok(null);
     }
 
-  
+    // 관리자 전체 은행 조회
+    @Override
+    public List<GetAllBankResponse> getAllActiveBankList() {
+        // ACTIVE 상태
+        List<Bank> banks = bankRepository.findByStatus(BankStatus.ACTIVE);
+
+        return banks.stream()
+                .map(bank -> {
+                    List<BankToken> bankTokens = bankTokenRepository.findByBankId(bank.getId());
+
+                    BigDecimal totalSupply = bankTokens.stream()
+                            .map(BankToken::getTotalSupply)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    return GetAllBankResponse.builder()
+                            .id(bank.getId())
+                            .name(bank.getName())
+                            .bankPhoneNum(bank.getBankPhoneNum())
+                            .totalSupply(totalSupply)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void changeBankStatus(ChangeBankStatusRequest request) {
+        Bank bank = bankRepository.findById(request.getBankId())
+                .orElseThrow(() -> new EntityNotFoundException("해당 은행을 찾을 수 없습니다. ID: " + request.getBankId()));
+
+        BankStatus currentStatus = bank.getStatus();
+        BankStatus newStatus = request.getBankStatus();
+
+        if (currentStatus == newStatus) {
+            throw new IllegalStateException("은행이 이미 " + newStatus + " 상태입니다.");
+        }
+
+        bank.changeStatus(newStatus);
+        bankRepository.save(bank);
+    }
+
+    @Override
+    public List<GetAllSuspendedBankResponse> getAllSuspendedBankList() {
+        List<Bank> banks = bankRepository.findByStatus(BankStatus.SUSPENDED);
+        return banks.stream()
+                .map(bank -> {
+                    List<BankToken> bankTokens = bankTokenRepository.findByBankId(bank.getId());
+
+                    BigDecimal totalSupply = bankTokens.stream()
+                            .map(BankToken::getTotalSupply)
+                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                    return GetAllSuspendedBankResponse.builder()
+                            .id(bank.getId())
+                            .name(bank.getName())
+                            .suspendedDate(bank.getSuspendedDate())
+                            .bankPhoneNum(bank.getBankPhoneNum())
+                            .totalSupply(totalSupply)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId) {
+        Bank bank = bankRepository.findById(bankId)
+                .orElseThrow(() -> new EntityNotFoundException("해당 은행을 찾을 수 없습니다. ID: " + bankId));
+
+
+        List<Account> accounts = accountService.getAccountsByBankEmail(bank.getEmail());
+
+        if (accounts.isEmpty()) {
+            throw new AccountNotFoundException(bank.getName());
+        }
+
+        return accounts.stream()
+                .filter(a -> a.getCoin() != null) // 코인 정보가 없는 계좌는 제외
+                .map(a -> GetCoinAccountInfoResponse.builder()
+                        .bankName(a.getBank() != null ? a.getBank().getName() : null)
+                        .coinName(a.getCoin().getName())
+                        .currency(a.getCoin().getCurrency())
+                        .accountAddress(a.getAccountAddress())
+                        .tag(a.getTag())
+                        .balance(a.getBalance().toPlainString())
+                        .status(a.getAddressRegistryStatus())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+
     @Override
     public Bank findBankInfoByEmail(String email) {
         return bankRepository.findByEmail(email)
                 .orElseThrow(() -> new BankNotFoundException(email));
     }
 
-
- 
 
 }
 

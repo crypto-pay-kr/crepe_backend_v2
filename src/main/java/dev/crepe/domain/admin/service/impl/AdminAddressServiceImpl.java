@@ -68,7 +68,7 @@ public class AdminAddressServiceImpl implements AdminAddressService {
     @Transactional
     public String approveAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException());
+                .orElseThrow(AccountNotFoundException::new);
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE) {
             throw new AlreadyApprovedAddressException(account.getAccountAddress());

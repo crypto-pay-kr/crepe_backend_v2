@@ -1,6 +1,6 @@
 package dev.crepe.domain.channel.market.order.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.market.order.model.dto.request.CreateOrderRequest;
 import dev.crepe.domain.channel.market.order.model.dto.response.CreateOrderResponse;

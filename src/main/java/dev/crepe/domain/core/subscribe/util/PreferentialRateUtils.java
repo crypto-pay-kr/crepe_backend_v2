@@ -228,33 +228,28 @@ public class PreferentialRateUtils {
         }
     }
 
-    /**
-     * 주민등록번호 앞자리(생년월일)에서 나이 계산
-     * @param birthString 생년월일 문자열 (예: "980426", "020315")
-     * @return 만나이, 잘못된 형식의 경우 -1
-     */
     public int calculateAgeFromBirthString(String birthString) {
-        if (birthString == null || birthString.length() != 6) {
+        if (birthString == null) {
             return -1;
         }
 
         try {
-            // 생년월일 파싱
-            int year = Integer.parseInt(birthString.substring(0, 2));
-            int month = Integer.parseInt(birthString.substring(2, 4));
-            int day = Integer.parseInt(birthString.substring(4, 6));
+            LocalDate birthDate;
 
-            // 2000년대 vs 1900년대 판별
-            // 00~29: 2000년대, 30~99: 1900년대 (일반적인 기준)
-            int fullYear;
-            if (year <= 29) {
-                fullYear = 2000 + year;
-            } else {
-                fullYear = 1900 + year;
+            // YYYY-MM-DD 형식 처리
+            if (birthString.contains("-") && birthString.length() == 10) {
+                birthDate = LocalDate.parse(birthString);
             }
-
-            // LocalDate로 변환
-            LocalDate birthDate = LocalDate.of(fullYear, month, day);
+            // YYYYMMDD 형식 처리 (기존 로직)
+            else if (birthString.length() == 8) {
+                int year = Integer.parseInt(birthString.substring(0, 4));
+                int month = Integer.parseInt(birthString.substring(4, 6));
+                int day = Integer.parseInt(birthString.substring(6, 8));
+                birthDate = LocalDate.of(year, month, day);
+            }
+            else {
+                return -1;
+            }
 
             // 만나이 계산
             return Period.between(birthDate, LocalDate.now()).getYears();

@@ -71,8 +71,10 @@ public class ExchangeServiceImpl implements ExchangeService {
                 .toAmount(request.getTokenAmount())
                 .fromExchangeRate(request.getCoinRates().get(request.getFromCurrency()))
                 .toExchangeRate(result)
-                .afterBalanceFrom(accounts.getActorCoinAccount().getBalance())
-                .afterBalanceTo(accounts.getBankTokenAccount().getBalance())
+                .afterCoinBalanceFrom(accounts.getActorCoinAccount().getBalance())
+                .afterTokenBalanceFrom(accounts.getActorTokenAccount().getBalance())
+                .afterTokenBalanceTo(accounts.getBankTokenAccount().getBalance())
+                .afterCoinBalanceTo(accounts.getBankCoinAccount().getBalance())
                 .build();
 
         exchangeHistoryRepository.save(exchangeHistory);
@@ -120,8 +122,10 @@ public class ExchangeServiceImpl implements ExchangeService {
                 .toAmount(request.getCoinAmount())
                 .fromExchangeRate(result)
                 .toExchangeRate(request.getCoinRates().getOrDefault(request.getToCurrency(), BigDecimal.ZERO))
-                .afterBalanceFrom(accounts.getBankTokenAccount().getBalance())
-                .afterBalanceTo(accounts.getActorCoinAccount().getBalance())
+                .afterTokenBalanceFrom(accounts.getBankTokenAccount().getBalance())
+                .afterCoinBalanceFrom(accounts.getBankCoinAccount().getBalance())
+                .afterCoinBalanceTo(accounts.getActorCoinAccount().getBalance())
+                .afterTokenBalanceTo(accounts.getActorTokenAccount().getBalance())
                 .build();
 
         exchangeHistoryRepository.save(exchangeHistory);

@@ -7,6 +7,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,6 +41,14 @@ public class Bank extends BaseEntity {
     @Column(name="bank_code",nullable = false)
     private String bankCode;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private BankStatus status = BankStatus.ACTIVE;
+
+    @Column
+    private LocalDate suspendedDate;
+
     @OneToMany(mappedBy = "bank", cascade = CascadeType.ALL)
     private List<Product> products = new ArrayList<>();
 
@@ -51,4 +60,13 @@ public class Bank extends BaseEntity {
         this.bankPhoneNum=newPhone;
     }
 
+    public void changeStatus(BankStatus newStatus) {
+        if (newStatus == BankStatus.SUSPENDED) {
+            this.suspendedDate = LocalDate.now();
+        }
+        else if (newStatus == BankStatus.ACTIVE) {
+            this.suspendedDate = null;
+        }
+        this.status = newStatus;
+    }
 }

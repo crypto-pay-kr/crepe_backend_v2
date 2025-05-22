@@ -303,6 +303,17 @@ public class AccountServiceImpl implements AccountService {
                             .build());
                 });
     }
+
+
+    @Override
+    public BigDecimal getTokenBalance(String email, String currency) {
+        return accountRepository.findByActor_EmailAndBankToken_Currency(email, currency).stream()
+                .map(Account::getBalance)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+
+
     @Override
     public void unRegisterAccount(String email, String currency) {
         Account account = "BANK".equalsIgnoreCase(SecurityUtil.getRoleByEmail(email))
@@ -318,6 +329,7 @@ public class AccountServiceImpl implements AccountService {
         account.unRegisterAddress();
         accountRepository.save(account);
     }
+
 
 
 

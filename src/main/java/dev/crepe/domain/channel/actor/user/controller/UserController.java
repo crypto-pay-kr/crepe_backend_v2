@@ -1,8 +1,7 @@
 package dev.crepe.domain.channel.actor.user.controller;
 
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
-import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.actor.user.model.dto.ChangeNicknameRequest;
 import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;

@@ -20,7 +20,7 @@ import java.util.List;
 @AllArgsConstructor
 @Getter
 @Entity
-@Table(name = "bank_product")
+@Table(name = "product")
 public class Product extends BaseEntity {
 
     @Id
@@ -73,6 +73,9 @@ public class Product extends BaseEntity {
 
     @Column(name="product_image")
     private String imageUrl;
+
+    @Column(name="product_guide_image")
+    private String guideFileUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
