@@ -1,12 +1,11 @@
 package dev.crepe.domain.channel.actor.controller;
 
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorExchangeService;
 import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
-import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

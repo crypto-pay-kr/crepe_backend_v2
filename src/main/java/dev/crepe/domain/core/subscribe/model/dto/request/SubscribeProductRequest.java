@@ -19,9 +19,6 @@ public class SubscribeProductRequest {
     @Schema(description = "초기 납입액 (예치금액 우대금리 계산용)", example = "1000000")
     private BigDecimal initialDepositAmount;
 
-    @Schema(description = "정기 납입액 (적금용)", example = "500000")
-    private BigDecimal regularDepositAmount;
-
     @Schema(description = "선택한 자유납입 우대금리 목표",
             example = "LEVEL2",
             allowableValues = {"NONE", "LEVEL1", "LEVEL2", "LEVEL3"})

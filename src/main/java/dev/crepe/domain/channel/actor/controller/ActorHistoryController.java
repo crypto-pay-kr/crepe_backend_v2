@@ -1,6 +1,6 @@
 package dev.crepe.domain.channel.actor.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.service.ActorHistoryService;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/history")
 @AllArgsConstructor
-@Tag(name = "history API", description = "거래 내역 API")
+@Tag(name = "history API", description = "거래 및 환전 내역 API")
 public class ActorHistoryController {
 
     private final ActorHistoryService actorHistoryService;
@@ -38,4 +38,27 @@ public class ActorHistoryController {
                 auth.getUserEmail(), currency, page, size);
         return ResponseEntity.ok(response);
     }
+
+
+
+    @Operation(
+            summary = " 환전 내역 조회",
+            description = "유저, 가맹점의 환전 내역을 조회합니다.",
+            security = @SecurityRequirement(name = "bearer-jwt")
+    )
+    @ActorAuth
+    @GetMapping("/token")
+    public ResponseEntity<Slice<GetTransactionHistoryResponse>> getExchangeHistory(
+            AppAuthentication auth,
+            @RequestParam("currency") String currency,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        Slice<GetTransactionHistoryResponse> response = actorHistoryService.getTokenHistory(
+                auth.getUserEmail(), currency, page, size
+        );
+        return ResponseEntity.ok(response);
+    }
+
+
 }

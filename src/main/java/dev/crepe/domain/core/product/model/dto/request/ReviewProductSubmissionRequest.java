@@ -8,12 +8,12 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class ReviewProductSubmissionRequest {
-    private String productId;
+    private Long productId;
     private BankProductStatus status;
     private String description;
 
     @Builder
-    public ReviewProductSubmissionRequest(String productId, BankProductStatus status, String description) {
+    public ReviewProductSubmissionRequest(Long productId, BankProductStatus status, String description) {
         this.productId = productId;
         this.status = status;
         this.description = description;

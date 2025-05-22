@@ -42,10 +42,16 @@ public class ExchangeHistory extends BaseEntity {
     @Column(name = "to_amount", precision = 20, scale = 8)
     private BigDecimal toAmount;
 
-    @Column(name = "after_balance_from", precision = 20, scale = 8)
-    private BigDecimal afterBalanceFrom;
+    @Column(name = "after_token_balance_from", precision = 20, scale = 8)
+    private BigDecimal afterTokenBalanceFrom;
 
-    @Column(name = "after_balance_to", precision = 20, scale = 8)
-    private BigDecimal afterBalanceTo;
+    @Column(name = "after_token_balance_to", precision = 20, scale = 8)
+    private BigDecimal afterTokenBalanceTo;
+
+    @Column(name = "after_coin_balance_from", precision = 20, scale = 8)
+    private BigDecimal afterCoinBalanceFrom;
+
+    @Column(name = "after_coin_balance_to", precision = 20, scale = 8)
+    private BigDecimal afterCoinBalanceTo;
 
 }

@@ -10,7 +10,4 @@ import java.util.List;
 public interface AdminService {
 
     ApiResponse<TokenResponse> adminLogin(LoginRequest request);
-
-
-
 }

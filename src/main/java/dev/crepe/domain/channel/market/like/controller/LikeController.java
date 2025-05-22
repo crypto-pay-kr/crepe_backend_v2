@@ -1,7 +1,6 @@
 package dev.crepe.domain.channel.market.like.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
-import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.market.like.service.impl.LikeServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
@@ -10,7 +9,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController

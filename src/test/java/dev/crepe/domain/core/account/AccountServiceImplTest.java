@@ -348,7 +348,7 @@ class AccountServiceImplTest {
 
             // then
             assertEquals("new_address", account.getAccountAddress());
-            assertEquals(AddressRegistryStatus.REGISTERING, account.getAddressRegistryStatus());
+            assertEquals(AddressRegistryStatus.UNREGISTERED_AND_REGISTERING, account.getAddressRegistryStatus());
         }
     }
 

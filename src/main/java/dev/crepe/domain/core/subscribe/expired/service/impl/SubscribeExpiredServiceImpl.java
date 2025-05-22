@@ -2,7 +2,11 @@ package dev.crepe.domain.core.subscribe.expired.service.impl;
 
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.product.model.BankProductType;
+import dev.crepe.domain.core.product.model.dto.interest.DepositPreferentialRate;
+import dev.crepe.domain.core.product.model.dto.interest.FreeDepositCountPreferentialRate;
 import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.exception.*;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfaction;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
@@ -37,11 +41,11 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
     public String expired(String userEmail, Long subscribeId) {
         // 가입 정보 조회
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(() -> new RuntimeException("상품 가입 정보를 찾을 수 없습니다."));
+                .orElseThrow(SubscribeNotFoundException::new);
 
         // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new IllegalStateException("이미 만료된 상품입니다.");
+            throw new AlreadyExpiredSubscribeException();
         }
 
         Product product = subscribe.getProduct();
@@ -50,52 +54,72 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("예치된 금액이 없습니다.");
+            throw new NoDepositBalanceException();
         }
 
         // 만기일 도달 여부 확인
         if (!subscribe.isMatured()) {
-            throw new IllegalStateException("아직 만기일이 도달하지 않았습니다. 만기일: " + subscribe.getExpiredDate().toLocalDate());
+            throw new TooEarlyToTerminateException();
+        };
+
+
+        // 기본 금리
+        BigDecimal baseInterestRate = new BigDecimal(Float.toString(product.getBaseInterestRate()));
+        BigDecimal baseRate = baseInterestRate.divide(BigDecimal.valueOf(100), 10, RoundingMode.DOWN); // 소수점자리로 변환
+        BigDecimal preTaxInterest;
+
+
+        switch (product.getType()) {
+            case SAVING -> preTaxInterest = balance.multiply(baseRate);
+            case INSTALLMENT -> {
+                preTaxInterest = calculateInstallmentCompoundInterest(subscribe, baseRate);
+            }
+            default -> throw new UnsupportedProductTypeException();
         }
 
         // 우대금리 조건 충족 내역 조회
         List<PreferentialConditionSatisfaction> satisfiedConditions =
                 preferentialConditionSatisfactionRepository.findBySubscribe_IdAndIsSatisfiedTrue(subscribe.getId());
 
+        // 예치금액별 우대금리
+        BigDecimal amountForTier = subscribe.getBalance(); // 예금/적금 공통
+        BigDecimal depositPreferentialRate = DepositPreferentialRate.getRateFor(amountForTier); //우대 조건에 따라 우대 금리 분류
+
+        // 자유 납입 횟수 달성
+        BigDecimal freeDepositRate = BigDecimal.ZERO;
+        if (product.getType() == BankProductType.INSTALLMENT) {
+            freeDepositRate = calculateFreeDepositRate(subscribe).getRate();
+        }
+
         // 우대 금리 총합 계산
         BigDecimal additionalRate = satisfiedConditions.stream()
                 .map(cond -> BigDecimal.valueOf(cond.getCondition().getRate()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .add(depositPreferentialRate)
+                .add(freeDepositRate);
 
-        // 기본 + 우대 금리 합산
-        BigDecimal baseInterestRate = new BigDecimal(Float.toString(product.getBaseInterestRate()));
-        BigDecimal totalInterestRate = baseInterestRate.add(additionalRate).divide(BigDecimal.valueOf(100), 10, RoundingMode.DOWN);
-        BigDecimal preTaxInterest;
+        BigDecimal preferentialRate = additionalRate.divide(BigDecimal.valueOf(100), 10, RoundingMode.DOWN);
 
+        // 우대 금리 이자
+        BigDecimal preferentialInterest = (balance.add(preTaxInterest)).multiply(preferentialRate).setScale(10, RoundingMode.DOWN);
+        BigDecimal totalInterest = preTaxInterest.add(preferentialInterest);
 
-        switch (product.getType()) {
-            case SAVING -> preTaxInterest = balance.multiply(totalInterestRate);
-            case INSTALLMENT -> {
-                preTaxInterest = calculateInstallmentCompoundInterest(subscribe, totalInterestRate);
-            }
-            default -> throw new IllegalStateException("이자 계산이 지원되지 않는 상품 유형입니다.");
-        }
 
         // 세후 이자 계산
         BigDecimal taxRate = BigDecimal.valueOf(0.154);
-        BigDecimal postTaxInterest = preTaxInterest.multiply(BigDecimal.ONE.subtract(taxRate));
+        BigDecimal postTaxInterest = totalInterest.multiply(BigDecimal.ONE.subtract(taxRate));
 
 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
         Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
                 subscribe.getUser().getEmail(), product.getBankToken().getId()
-        ).orElseThrow(() -> new RuntimeException("사용자의 토큰 계좌가 없습니다."));
+        ).orElseThrow(UserAccountNotFoundException::new);
 
 
         // 은행 자본금 계좌에서 이자 차감
         Account bankTokenAccount = accountRepository
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
-                .orElseThrow(() -> new RuntimeException("은행 자본금 계좌가 없습니다."));
+                .orElseThrow(BankAccountNotFoundException::new);
 
         bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
@@ -225,6 +249,42 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         return totalInterest;
     }
+
+    // 월 입금 횟수 계산
+    private FreeDepositCountPreferentialRate calculateFreeDepositRate(Subscribe subscribe) {
+        LocalDate startDate = subscribe.getSubscribeDate().toLocalDate();
+        LocalDate endDate = subscribe.getExpiredDate().toLocalDate();
+
+        int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate);
+
+        int minMonthlyDepositCount = Integer.MAX_VALUE;
+
+        for (int i = 0; i < totalMonths; i++) {
+            LocalDate monthStart = startDate.plusMonths(i).withDayOfMonth(1);
+            LocalDate monthEnd = monthStart.withDayOfMonth(monthStart.lengthOfMonth());
+
+            LocalDateTime startOfMonth = monthStart.atStartOfDay();
+            LocalDateTime endOfMonth = monthEnd.atTime(23, 59, 59);
+
+            // 월별 자유 납입 횟수
+            int depositCount = subscribeHistoryRepository.countMonthlyDepositEvents(
+                    subscribe,
+                    SubscribeHistoryType.DEPOSIT,
+                    startOfMonth,
+                    endOfMonth
+            );
+
+            // 가장 낮은 횟수 저장
+            minMonthlyDepositCount = Math.min(minMonthlyDepositCount, depositCount);
+        }
+
+        // 가장 낮은 월 납입 횟수를 기준으로 우대금리 등급 결정
+        if (minMonthlyDepositCount >= 10) return FreeDepositCountPreferentialRate.LEVEL3;
+        if (minMonthlyDepositCount >= 5) return FreeDepositCountPreferentialRate.LEVEL2;
+        if (minMonthlyDepositCount >= 3) return FreeDepositCountPreferentialRate.LEVEL1;
+        return FreeDepositCountPreferentialRate.NONE;
+    }
+
 
 }
 

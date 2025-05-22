@@ -13,5 +13,8 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     List<Product> findByBank(Bank bank);
 
     Optional<Product> findByIdAndBank(Long id, Bank bank);
+
+    List<Product> findByBankId(Long bankId);
+
   
 }
