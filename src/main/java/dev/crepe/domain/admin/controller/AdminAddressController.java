@@ -34,8 +34,9 @@ public class AdminAddressController {
     public ResponseEntity<Page<GetPendingWithdrawAddressListResponse>> getPendingWithdrawAddressList(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam List<AddressRegistryStatus> statuses) {
-        return ResponseEntity.ok(adminAddressService.getPendingAddressList(page, size, statuses));
+            @RequestParam List<AddressRegistryStatus> statuses,
+            @RequestParam Boolean isBankAccount) {
+        return ResponseEntity.ok(adminAddressService.getPendingAddressList(page, size, statuses,isBankAccount));
     }
 
 
@@ -55,9 +56,8 @@ public class AdminAddressController {
     @Operation(summary = "출금 계좌 요청 거절", description = "관리자가 은행계좌를 요청을 거절합니다")
     @AdminAuth
     @PatchMapping("/reject/{accountId}")
-    public ResponseEntity<String> rejectAddressRequest(@PathVariable Long accountId,
-                                                         @RequestBody  RejectAddressRequest reason) {
-        adminAddressService.rejectAddress(accountId,reason);
+    public ResponseEntity<String> rejectAddressRequest(@PathVariable Long accountId) {
+        adminAddressService.rejectAddress(accountId);
         return ResponseEntity.ok("코인 등록 요청이 거절되었습니다.");
     }
 

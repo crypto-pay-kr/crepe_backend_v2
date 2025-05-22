@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface AdminAddressService {
 
-    Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(int page, int size, List<AddressRegistryStatus> status);
+    Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(int page, int size, List<AddressRegistryStatus> status, Boolean isBankAccount);
     String approveAddress(Long accountId);
-    void rejectAddress(Long accountId, RejectAddressRequest reason);
+    void rejectAddress(Long accountId);
     void unRegisterAddress(Long accountId);
 }

@@ -246,7 +246,7 @@ public class AccountServiceImpl implements AccountService {
             account.registerAddress(request.getAddress(), request.getTag());
         }else if(account.getAddressRegistryStatus()==AddressRegistryStatus.NOT_REGISTERED){
             throw new AccountNotFoundException("해당 계좌는 미등록 상태입니다.");
-        }else{
+        } else{
             account.reRegisterAddress(request.getAddress(), request.getTag());
         }
     }

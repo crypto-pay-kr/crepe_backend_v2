@@ -27,12 +27,24 @@ public class AdminAddressServiceImpl implements AdminAddressService {
 
     private final AccountRepository accountRepository;
 
+    // 계좌 등록 요청 목록 조회
     @Override
     @Transactional(readOnly = true)
-    public Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(int page, int size, List<AddressRegistryStatus> statuses) {
+    public Page<GetPendingWithdrawAddressListResponse> getPendingAddressList(
+            int page,
+            int size,
+            List<AddressRegistryStatus> statuses,
+            Boolean isBankAccount
+    ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
-        Page<Account> accounts = accountRepository.findByAddressRegistryStatusIn(statuses, pageable);
+        Page<Account> accounts;
+
+        if (isBankAccount) {
+            accounts = accountRepository.findByActorIsNullAndAddressRegistryStatusInAndCoinIsNotNull(statuses, pageable);
+        } else {
+            accounts = accountRepository.findByActorIsNotNullAndAddressRegistryStatusInAndCoinIsNotNull(statuses, pageable);
+        }
 
         return accounts.map(account -> GetPendingWithdrawAddressListResponse.builder()
                 .id(account.getId())
@@ -41,15 +53,17 @@ public class AdminAddressServiceImpl implements AdminAddressService {
                                 ? account.getBank().getName()
                                 : account.getActor().getName()
                 )
-                .userType(account.getActor() == null ? "BANK" : account.getActor().getRole().name())
+                .userType(isBankAccount ? "BANK" : account.getActor().getName())
                 .currency(account.getCoin().getCurrency())
                 .address(account.getAccountAddress())
                 .tag(account.getTag())
                 .addressRegistryStatus(account.getAddressRegistryStatus().name())
-                .createdAt(account.getCreatedAt())
+                .createdAt(account.getUpdatedAt())
                 .build()
         );
     }
+
+    //계좌 승인
     @Override
     @Transactional
     public String approveAddress(Long accountId) {
@@ -63,26 +77,27 @@ public class AdminAddressServiceImpl implements AdminAddressService {
         return  account.getAccountAddress();
     }
 
+    //계좌 거절
     @Override
     @Transactional
-    public void rejectAddress(Long accountId, RejectAddressRequest reason) {
+    public void rejectAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException());
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.REJECTED) {
             throw new AlreadyRejectedAddressException(account.getAccountAddress());
         }
-        account.rejectAddress(reason);
+        account.adminRejectAddress();
     }
 
-
+    // 계좌 해지 요청 승인
     @Override
     @Transactional
     public void unRegisterAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException());
 
-        if (account.getAddressRegistryStatus() == AddressRegistryStatus.UNREGISTERED) {
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.NOT_REGISTERED) {
             throw new AlreadyRejectedAddressException(account.getAccountAddress());
         }
         account.adminUnRegisterAddress();

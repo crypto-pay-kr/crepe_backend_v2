@@ -63,45 +63,47 @@ public class Account extends BaseEntity {
     @Column(name="tag")
     private String tag;
 
-    @Column(name="reject_reason")
-    private String rejectReason;
-
-    // 계좌 등록
+    // 유저 - 계좌 등록
     public void registerAddress(String address, String tag) {
         this.accountAddress = address;
         this.tag = tag;
         this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;
     }
+
+    // 유저 - 계좌 해제 요청 후 계좌 등록 요청
     public void reRegisterAddress(String address, String tag) {
         this.accountAddress = address;
         this.tag = tag;
         this.addressRegistryStatus = AddressRegistryStatus.UNREGISTERED_AND_REGISTERING;
     }
 
-    // 계좌 승인
-    public void approveAddress() {
-        this.addressRegistryStatus = AddressRegistryStatus.ACTIVE;
-    }
-
-    public void addNonAvailableBalance(BigDecimal amount) {
-        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
-    }
-
+    // 유저 - 계좌 해지 요청
     public void unRegisterAddress() {
         this.addressRegistryStatus = AddressRegistryStatus.UNREGISTERED;
     }
 
+    // 어드민 - 계좌 승인
+    public void approveAddress() {
+        this.addressRegistryStatus = AddressRegistryStatus.ACTIVE;
+    }
+
+    // 어드민 - 계좌 해지
     public void adminUnRegisterAddress() {
         this.addressRegistryStatus = AddressRegistryStatus.NOT_REGISTERED;
         this.accountAddress = null;
         this.tag = null;
     }
 
-
-    public void rejectAddress(RejectAddressRequest reason) {
+    // 어드민 - 계좌 등록 요청 거절
+    public void adminRejectAddress() {
         this.addressRegistryStatus = AddressRegistryStatus.REJECTED;
-        this.rejectReason = reason.getRejectReason();
     }
+
+
+    public void addNonAvailableBalance(BigDecimal amount) {
+        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
+    }
+
 
     public void deductBalance(BigDecimal amount) {
         if (this.balance.compareTo(amount) < 0) {
@@ -110,20 +112,6 @@ public class Account extends BaseEntity {
         this.balance = this.balance.subtract(amount);
     }
 
-    // 계좌 등록 대기중
-    public void pendingAddress() { this.addressRegistryStatus = AddressRegistryStatus.REGISTERING;}
-
-
-    public void allocateBudget(BigDecimal amount) {
-        if (nonAvailableBalance.compareTo(amount) < 0) {
-            throw new InsufficientBalanceException();
-        }
-        this.nonAvailableBalance = this.nonAvailableBalance.subtract(amount);
-    }
-
-   public void releaseBudget(BigDecimal amount) {
-        this.nonAvailableBalance = this.nonAvailableBalance.add(amount);
-    }
 
     public void reduceAmount(BigDecimal amount) {
         if (balance.compareTo(amount) < 0) {
