@@ -3,7 +3,6 @@ package dev.crepe.domain.core.product.model.dto.eligibility;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.Collections;
 import java.util.List;
 
 @Getter

@@ -27,7 +27,7 @@ public class RegisterProductRequest {
    @Schema(description = "가입 자격 조건")
    private EligibilityCriteriaDto eligibilityCriteria;
 
-   @Schema(description = "상품 예산 (총 한도)", example = "10000000000")
+   @Schema(description = "상품 예산 (총 한도)", example = "100000")
    private BigDecimal budget;
 
    @Schema(description = "기본 금리 (%)", example = "3.5")

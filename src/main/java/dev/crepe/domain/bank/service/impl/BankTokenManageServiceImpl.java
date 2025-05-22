@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BankTokenManageServiceImpl implements BankTokenManageService {
 
-
     private final BankService bankService;
     private final AccountService accountService;
     private final UpbitExchangeService upbitExchangeService;

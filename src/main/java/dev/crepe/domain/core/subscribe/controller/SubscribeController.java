@@ -1,7 +1,6 @@
 package dev.crepe.domain.core.subscribe.controller;
 
-import dev.crepe.domain.auth.jwt.AppAuthentication;
-import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
@@ -32,7 +31,7 @@ public class SubscribeController {
     @GetMapping("/my")
     @UserAuth
     @Operation(summary = "가입한 상품 조회", description = "가입한 상품 목록을 조회합니다.")
-    public ResponseEntity<List<SubscribeResponseDto>> getSubscribes( AppAuthentication auth) {
+    public ResponseEntity<List<SubscribeResponseDto>> getSubscribes(AppAuthentication auth) {
         return ResponseEntity.ok(subscribeService.getUserSubscribes(auth.getUserEmail()));
     }
 

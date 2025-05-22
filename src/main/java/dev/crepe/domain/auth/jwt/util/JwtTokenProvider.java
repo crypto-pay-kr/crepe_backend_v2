@@ -1,4 +1,4 @@
-package dev.crepe.domain.auth.jwt;
+package dev.crepe.domain.auth.jwt.util;
 
 import dev.crepe.domain.auth.UserRole;
 import io.jsonwebtoken.*;

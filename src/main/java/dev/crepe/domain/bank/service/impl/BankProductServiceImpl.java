@@ -2,6 +2,8 @@ package dev.crepe.domain.bank.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.crepe.domain.bank.exception.BankNotFoundException;
+import dev.crepe.domain.bank.model.dto.response.GetAllProductResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankProductService;
@@ -25,6 +27,7 @@ import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.repository.TagRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import dev.crepe.infra.s3.exception.InvalidFileTypeException;
 import dev.crepe.infra.s3.service.S3Service;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -49,7 +52,7 @@ public class BankProductServiceImpl implements BankProductService {
     private final TagRepository tagRepository;
 
     @Override
-    public RegisterProductResponse registerProduct(String email, MultipartFile productImage, RegisterProductRequest request) {
+    public RegisterProductResponse registerProduct(String email, MultipartFile productImage, MultipartFile guideFile, RegisterProductRequest request) {
         Bank bank = bankRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("은행 계정을 찾을 수 없습니다: " + email));
 
@@ -74,6 +77,12 @@ public class BankProductServiceImpl implements BankProductService {
 
         String productImageUrl = s3Service.uploadFile(productImage, "product-images");
 
+        String contentType = guideFile.getContentType();
+        if (contentType == null || !contentType.equals("application/pdf")) {
+            throw new InvalidFileTypeException();
+        }
+        String guideFileUrl = s3Service.uploadFile(guideFile, "product-guides");
+
         EligibilityCriteria eligibilityCriteria = buildEligibilityCriteria(request.getEligibilityCriteria());
         String joinConditionJson = convertEligibilityCriteriaToString(eligibilityCriteria);
 
@@ -94,6 +103,7 @@ public class BankProductServiceImpl implements BankProductService {
                 .maxMonthlyPayment(request.getMaxMonthlyPayment())
                 .maxParticipants(request.getMaxParticipants())
                 .imageUrl(productImageUrl)
+                .guideFileUrl(guideFileUrl)
                 .build();
 
         if (request.getTagNames() != null && !request.getTagNames().isEmpty()) {
@@ -234,5 +244,34 @@ public class BankProductServiceImpl implements BankProductService {
         }
 
         return tags;
+    }
+
+    @Override
+    public List<GetAllProductResponse> findAllProductsByBankEmail(String email) {
+        Bank bank = bankRepository.findByEmail(email)
+                .orElseThrow(() -> new BankNotFoundException(email));
+
+        List<Product> products = productRepository.findByBank(bank);
+
+        return products.stream()
+                .map(product -> GetAllProductResponse.builder()
+                        .id(product.getId())
+                        .productName(product.getProductName())
+                        .type(product.getType().name())
+                        .status(product.getStatus())
+                        .description(product.getDescription())
+                        .budget(product.getBudget())
+                        .startDate(product.getStartDate())
+                        .endDate(product.getEndDate())
+                        .baseInterestRate(product.getBaseInterestRate())
+                        .maxMonthlyPayment(product.getMaxMonthlyPayment())
+                        .maxParticipants(product.getMaxParticipants())
+                        .imageUrl(product.getImageUrl())
+                        .guideFileUrl(product.getGuideFileUrl())
+                        .tags(product.getProductTags().stream()
+                                .map(productTag -> productTag.getTag().getName()) // 태그 이름 매핑
+                                .toList())
+                        .build())
+                .toList();
     }
 }

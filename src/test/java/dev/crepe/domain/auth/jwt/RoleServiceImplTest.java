@@ -16,7 +16,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.auth.jwt.JwtAuthentication;
+import dev.crepe.domain.auth.jwt.util.*;
 import dev.crepe.domain.auth.role.service.impl.RoleServiceImpl;
 
 @ExtendWith(MockitoExtension.class)
