@@ -30,6 +30,20 @@ public interface SubscribeHistoryRepository extends JpaRepository<SubscribeHisto
             @Param("end") LocalDateTime end
     );
 
+    @Query("""
+    SELECT COUNT(sh)
+    FROM SubscribeHistory sh
+    WHERE sh.subscribe = :subscribe
+      AND sh.eventType = :eventType
+      AND sh.createdAt BETWEEN :start AND :end
+""")
+    int countMonthlyDepositEvents(
+            @Param("subscribe") Subscribe subscribe,
+            @Param("eventType") SubscribeHistoryType eventType,
+            @Param("start") LocalDateTime start,
+            @Param("end") LocalDateTime end
+    );
+
     Slice<SubscribeHistory> findAllBySubscribe_IdOrderByCreatedAtDesc(Long subscribeId, Pageable pageable);
 
 }
