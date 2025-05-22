@@ -60,7 +60,7 @@ class JwtAuthenticationFilterTest {
         when(jwtTokenProvider.getAuthentication(token)).thenReturn(mockAuthentication);
         
         // when
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
         
         // then
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
@@ -76,7 +76,7 @@ class JwtAuthenticationFilterTest {
         when(jwtTokenProvider.resolveToken(request)).thenReturn(null);
         
         // when
-        jwtAuthenticationFilter.doFilterInternal(request, response, filterChain);
+        jwtAuthenticationFilter.doFilter(request, response, filterChain);
         
         // then
         assertNull(SecurityContextHolder.getContext().getAuthentication());
