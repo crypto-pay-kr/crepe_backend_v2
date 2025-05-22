@@ -335,7 +335,7 @@ class AccountServiceImplTest {
             Account account = Account.builder()
                     .coin(createCoin(1L, "Bitcoin", "BTC", false))
                     .accountAddress("old_address")
-                    .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
+                    .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
                     .build();
 
             when(accountRepository.findByActor_EmailAndCoin_Currency(email, "BTC"))
