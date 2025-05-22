@@ -7,6 +7,7 @@ import dev.crepe.domain.channel.actor.store.exception.MenuNotFoundException;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.channel.market.order.exception.ExchangePriceNotMatchException;
 import dev.crepe.domain.channel.market.order.exception.OrderNotFoundException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -110,13 +112,28 @@ public class OrderServiceImpl implements OrderService {
         Actor user = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new UserNotFoundException(userEmail));
 
+        System.out.println("주문자의 이메일 " + request.getUserEmail());
+
         Actor store = actorRepository.findById(request.getStoreId())
                 .orElseThrow(() -> new StoreNotFoundException(request.getStoreId()));
 
+        System.out.println("가맹점의 이메일 " + store.getEmail());
+
         upbitExchangeService.validateRateWithinThreshold(request.getExchangeRate(),request.getCurrency(),BigDecimal.valueOf(1));
 
+        Map<Long, Menu> menuMap = request.getOrderDetails().stream()
+                .map(detail -> menuRepository.findById(detail.getMenuId())
+                        .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId())))
+                .collect(Collectors.toMap(Menu::getId, menu -> menu));
+
+
+        int totalPrice = request.getOrderDetails().stream()
+                .mapToInt(detail -> menuMap.get(detail.getMenuId()).getPrice() * detail.getMenuCount())
+                .sum();
+
+
         Order orders = Order.builder()
-                .totalPrice(calculateTotalPrice(request))
+                .totalPrice(totalPrice)
                 .status(OrderStatus.WAITING)
                 .type(OrderType.TAKE_OUT)
                 .currency(request.getCurrency())
@@ -131,8 +148,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(detail -> OrderDetail.builder()
                         .menuCount(detail.getMenuCount())
                         .order(orders)
-                        .menu(menuRepository.findById(detail.getMenuId())
-                                .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId())))
+                        .menu(menuMap.get(detail.getMenuId()))
                         .build())
                 .collect(Collectors.toList());
 
@@ -148,14 +164,5 @@ public class OrderServiceImpl implements OrderService {
 
 //******************************************** 주문 생성 end **********************************************/
 
-
-
-    private int calculateTotalPrice(CreateOrderRequest request) {
-        return request.getOrderDetails().stream()
-                .mapToInt(detail -> menuRepository.findById(detail.getMenuId())
-                        .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId()))
-                        .getPrice() * detail.getMenuCount())
-                .sum();
-    }
 
 }

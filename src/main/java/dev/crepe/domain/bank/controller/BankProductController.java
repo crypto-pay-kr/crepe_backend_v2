@@ -47,4 +47,13 @@ public class BankProductController {
         return ResponseEntity.ok(productList);
     }
 
+    @Operation(summary = "은행 등록 상품 단일 조회")
+    @GetMapping("/product/{id}")
+    @BankAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<GetAllProductResponse> getProductById(AppAuthentication auth, @PathVariable Long id) {
+        GetAllProductResponse product = bankProductService.findProductByIdAndBankEmail(auth.getUserEmail(), id);
+        return ResponseEntity.ok(product);
+    }
+
 }

@@ -41,6 +41,8 @@ public class PayServiceImpl implements PayService {
         Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getUser().getEmail(), order.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(order.getUser().getEmail()));
 
+        System.out.println("유저 계좌: " + order.getStore().getEmail());
+
         Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getStore().getEmail(), order.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(order.getStore().getEmail()));
 

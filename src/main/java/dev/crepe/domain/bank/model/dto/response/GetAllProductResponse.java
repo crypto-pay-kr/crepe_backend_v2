@@ -1,6 +1,7 @@
 package dev.crepe.domain.bank.model.dto.response;
 
 import dev.crepe.domain.core.product.model.BankProductStatus;
+import dev.crepe.domain.core.product.model.dto.response.GetPreferentialConditionResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -27,4 +28,6 @@ public class GetAllProductResponse {
     private String imageUrl;
     private String guideFileUrl;
     private List<String> tags;
+    private List<GetPreferentialConditionResponse> preferentialConditions;
+    private String joinConditions;
 }
