@@ -103,13 +103,15 @@ public class AdminBankManageController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary="상품 발행 요청 조회",description = "관리자가 은행이 발행 요청한 상품을 조회")
+    @Operation(summary="상품 발행 요청 조회",description = "관리자가 특정 은행의 발행 상품을 조회")
     @AdminAuth
     @GetMapping("/product/{bankId}")
     public ResponseEntity<List<GetAllProductResponse>> getAllProductList(@PathVariable Long bankId) {
         List<GetAllProductResponse> response = adminBankManageService.getAllBankProducts(bankId);
         return ResponseEntity.ok(response);
     }
+
+
 
     @Operation(summary="판매정지 상품 요청 조회",description = "관리자가 특정은행의 판매정지 상품 조회")
     @AdminAuth
