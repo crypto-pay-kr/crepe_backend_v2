@@ -13,4 +13,6 @@ public interface BankProductService {
 
     List<GetAllProductResponse> findAllProductsByBankEmail(String email);
 
+    GetAllProductResponse findProductByIdAndBankEmail(String email, Long id);
+
 }
