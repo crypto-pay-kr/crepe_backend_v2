@@ -1,9 +1,11 @@
 package dev.crepe.domain.bank.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.response.GetAllProductResponse;
+import dev.crepe.domain.core.product.model.dto.response.GetPreferentialConditionResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankProductService;
@@ -38,6 +40,7 @@ import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 @Slf4j
@@ -254,24 +257,108 @@ public class BankProductServiceImpl implements BankProductService {
         List<Product> products = productRepository.findByBank(bank);
 
         return products.stream()
-                .map(product -> GetAllProductResponse.builder()
-                        .id(product.getId())
-                        .productName(product.getProductName())
-                        .type(product.getType().name())
-                        .status(product.getStatus())
-                        .description(product.getDescription())
-                        .budget(product.getBudget())
-                        .startDate(product.getStartDate())
-                        .endDate(product.getEndDate())
-                        .baseInterestRate(product.getBaseInterestRate())
-                        .maxMonthlyPayment(product.getMaxMonthlyPayment())
-                        .maxParticipants(product.getMaxParticipants())
-                        .imageUrl(product.getImageUrl())
-                        .guideFileUrl(product.getGuideFileUrl())
-                        .tags(product.getProductTags().stream()
-                                .map(productTag -> productTag.getTag().getName()) // 태그 이름 매핑
-                                .toList())
-                        .build())
+                .map(product -> {
+                    ObjectMapper objectMapper = new ObjectMapper();
+                    List<String> parsedJoinConditions = new ArrayList<>();
+
+                    try {
+                        // JSON 문자열을 Map으로 변환
+                        Map<String, Object> joinConditionMap = objectMapper.readValue(product.getJoinCondition(), new TypeReference<>() {});
+
+                        // Map의 값을 배열 형태로 변환
+                        joinConditionMap.forEach((key, value) -> {
+                            if (value instanceof List) {
+                                parsedJoinConditions.add(key + ": " + value);
+                            } else {
+                                parsedJoinConditions.add(key + ": " + value.toString());
+                            }
+                        });
+                    } catch (JsonProcessingException e) {
+                        log.warn("JSON 파싱 오류: {}", e.getMessage());
+                    }
+
+                    return GetAllProductResponse.builder()
+                            .id(product.getId())
+                            .productName(product.getProductName())
+                            .type(product.getType().name())
+                            .status(product.getStatus())
+                            .description(product.getDescription())
+                            .budget(product.getBudget())
+                            .startDate(product.getStartDate())
+                            .endDate(product.getEndDate())
+                            .baseInterestRate(product.getBaseInterestRate())
+                            .maxMonthlyPayment(product.getMaxMonthlyPayment())
+                            .maxParticipants(product.getMaxParticipants())
+                            .imageUrl(product.getImageUrl())
+                            .guideFileUrl(product.getGuideFileUrl())
+                            .tags(product.getProductTags().stream()
+                                    .map(productTag -> productTag.getTag().getName())
+                                    .toList())
+                            .preferentialConditions(
+                                    product.getPreferentialConditions().stream()
+                                            .map(cond -> GetPreferentialConditionResponse.builder()
+                                                    .title(cond.getTitle())
+                                                    .description(cond.getDescription())
+                                                    .rate(cond.getRate())
+                                                    .build())
+                                            .toList())
+                            .joinConditions(parsedJoinConditions.toString()) // 배열 형태로 변환된 값
+                            .build();
+                })
                 .toList();
+    }
+
+
+    @Override
+    public GetAllProductResponse findProductByIdAndBankEmail(String email, Long productId) {
+        Bank bank = bankRepository.findByEmail(email)
+                .orElseThrow(() -> new BankNotFoundException(email));
+
+        Product product = productRepository.findByIdAndBank(productId, bank)
+                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        List<String> parsedJoinConditions = new ArrayList<>();
+
+        try {
+            Map<String, Object> joinConditionMap = objectMapper.readValue(product.getJoinCondition(), new TypeReference<>() {});
+            joinConditionMap.forEach((key, value) -> {
+                if (value instanceof List) {
+                    parsedJoinConditions.add(key + ": " + value);
+                } else {
+                    parsedJoinConditions.add(key + ": " + value.toString());
+                }
+            });
+        } catch (JsonProcessingException e) {
+            log.warn("JSON 파싱 오류: {}", e.getMessage());
+        }
+
+        return GetAllProductResponse.builder()
+                .id(product.getId())
+                .productName(product.getProductName())
+                .type(product.getType().name())
+                .status(product.getStatus())
+                .description(product.getDescription())
+                .budget(product.getBudget())
+                .startDate(product.getStartDate())
+                .endDate(product.getEndDate())
+                .baseInterestRate(product.getBaseInterestRate())
+                .maxMonthlyPayment(product.getMaxMonthlyPayment())
+                .maxParticipants(product.getMaxParticipants())
+                .imageUrl(product.getImageUrl())
+                .guideFileUrl(product.getGuideFileUrl())
+                .tags(product.getProductTags().stream()
+                        .map(productTag -> productTag.getTag().getName())
+                        .toList())
+                .preferentialConditions(
+                        product.getPreferentialConditions().stream()
+                                .map(cond -> GetPreferentialConditionResponse.builder()
+                                        .title(cond.getTitle())
+                                        .description(cond.getDescription())
+                                        .rate(cond.getRate())
+                                        .build())
+                                .toList())
+                .joinConditions(parsedJoinConditions.toString())
+                .build();
     }
 }

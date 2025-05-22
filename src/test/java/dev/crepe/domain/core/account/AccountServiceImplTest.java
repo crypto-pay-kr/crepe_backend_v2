@@ -321,24 +321,23 @@ class AccountServiceImplTest {
             assertEquals("ACTIVE", response.getAddressRegistryStatus());
         }
     }
-
     @Test
-    @DisplayName("계좌 주소 재등록 테스트")
-    void reRegisterAddress() {
+    @DisplayName("계좌 주소 재등록 테스트 - 등록 중 상태")
+    void reRegisterAddress_RegisteringStatus() {
         // given
         String email = "user@example.com";
         GetAddressRequest request = new GetAddressRequest("BTC", "new_address", null);
-        
+
         try (MockedStatic<SecurityUtil> mockedSecurityUtil = mockStatic(SecurityUtil.class)) {
             mockedSecurityUtil.when(() -> SecurityUtil.getRoleByEmail(email))
                     .thenReturn("ACTOR");
-            
+
             Account account = Account.builder()
                     .coin(createCoin(1L, "Bitcoin", "BTC", false))
                     .accountAddress("old_address")
-                    .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
+                    .addressRegistryStatus(AddressRegistryStatus.REGISTERING)
                     .build();
-            
+
             when(accountRepository.findByActor_EmailAndCoin_Currency(email, "BTC"))
                     .thenReturn(Optional.of(account));
             when(coinRepository.findByCurrency("BTC"))
