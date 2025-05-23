@@ -1,8 +1,11 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
+import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
 import dev.crepe.domain.channel.actor.service.ActorAccountService;
+import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
@@ -14,6 +17,7 @@ import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -94,7 +98,6 @@ public class ActorAccountServiceImpl implements ActorAccountService {
                 })
                 .collect(Collectors.toList());
     }
-  
 
     public BigDecimal getTokenBalance(String email, String currency) {
         return accountService.getTokenBalance(email, currency);
@@ -105,4 +108,13 @@ public class ActorAccountServiceImpl implements ActorAccountService {
 
     }
 
+    @Override
+    public void holdActorAccount(Account account) {
+
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
+            throw new AlreadyHoldAddressException(account.getAccountAddress());
+        }
+        accountService.holdAccount(account);
+
+    }
 }

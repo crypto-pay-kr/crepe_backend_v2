@@ -83,6 +83,7 @@ public class AdminBankManageController {
         return ResponseEntity.ok("토큰 발행 요청이 반려되었습니다.");
     }
 
+
     // 상품 승인 or 거절
     @Operation(summary = "은행 상품 활성화", description = "관리자가 특정 은행 상품을 승인, 거절 합니다")
     @AdminAuth
@@ -158,6 +159,13 @@ public class AdminBankManageController {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(summary = "은행 출금 계좌 정지", description = "관리자가 특정 은행 계좌를 정지시킵니다")
+    @AdminAuth
+    @PatchMapping("/hold/{accountId}")
+    public ResponseEntity<String> holdAddressRequest(@PathVariable Long accountId){
+        adminBankManageService.holdBankAddress(accountId);
+        return ResponseEntity.ok("계좌가 정지되었습니다.");
+    }
 
 
 

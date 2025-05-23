@@ -4,12 +4,17 @@ package dev.crepe.domain.admin.service.impl;
 import dev.crepe.domain.admin.dto.request.RejectAddressRequest;
 import dev.crepe.domain.admin.dto.response.GetPendingWithdrawAddressListResponse;
 import dev.crepe.domain.admin.exception.AlreadyApprovedAddressException;
+import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
 import dev.crepe.domain.admin.exception.AlreadyRejectedAddressException;
 import dev.crepe.domain.admin.service.AdminAddressService;
+import dev.crepe.domain.bank.service.BankAccountManageService;
+import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.exception.NotActorAccountOwnerException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -26,6 +31,7 @@ import java.util.List;
 public class AdminAddressServiceImpl implements AdminAddressService {
 
     private final AccountRepository accountRepository;
+    private final AccountService accountService;
 
     // 계좌 등록 요청 목록 조회
     @Override
@@ -103,4 +109,18 @@ public class AdminAddressServiceImpl implements AdminAddressService {
         account.adminUnRegisterAddress();
     }
 
+
+    // 일반 유저 계좌 정지 (코인 + 토큰)
+    @Override
+    public void holdActorAddress(Long accountId) {
+
+        Account account = accountService.getAccountById(accountId);
+        // 소유주가 Actor인지 검증
+        if (account.getActor() == null) {
+            throw new NotActorAccountOwnerException();
+        }
+
+        accountService.holdAccount(account);
+
+    }
 }

@@ -28,6 +28,8 @@ public interface AccountService {
     List<GetBalanceResponse> getBalanceList(String userEmail);
     GetBalanceResponse getBalanceByCurrency(String userEmail, String currency);
 
+    Account getAccountById(Long accountId);
+
     void submitAccountRegistrationRequest(GetAddressRequest request, String email);
     GetAddressResponse getAddressByCurrency(String currency, String email);
     void reRegisterAddress(String email, GetAddressRequest request);
@@ -47,5 +49,9 @@ public interface AccountService {
 
 
     void unRegisterAccount(String email, String currency);
+
+    void holdAccount(Account account);
+
+    void validateAccountNotHold(Account account);
 
 }
