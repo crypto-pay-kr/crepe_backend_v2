@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.BankAuth;
+import dev.crepe.domain.bank.model.dto.request.ChangeBankCIRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.service.BankService;
@@ -20,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -117,6 +119,17 @@ public class BankController {
         bankService.changePhone(request, auth.getUserEmail());
         return ResponseEntity.ok("담당자 연결 번호 변경 성공");
     }
+
+
+    @Operation(summary = "은행 CI 이미지 변경", description = "은행의 CI 이미지를 변경합니다.")
+    @PatchMapping("/change/ci")
+    @BankAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<String> changeBankCI(@Valid @RequestParam("ciImage") MultipartFile ciImage, AppAuthentication auth) {
+        bankService.changeBankCI(ciImage, auth.getUserEmail());
+        return ResponseEntity.ok("은행 CI 이미지 변경 성공");
+    }
+
 
 
 

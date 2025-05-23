@@ -98,6 +98,7 @@ public class BankProductServiceImpl implements BankProductService {
                 .type(request.getType())
                 .status(BankProductStatus.WAITING)
                 .description(request.getDescription())
+                .rejectionReason(null)
                 .budget(budget)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
@@ -283,6 +284,7 @@ public class BankProductServiceImpl implements BankProductService {
                             .type(product.getType().name())
                             .status(product.getStatus())
                             .description(product.getDescription())
+                            .rejectReason(product.getRejectionReason())
                             .budget(product.getBudget())
                             .startDate(product.getStartDate())
                             .endDate(product.getEndDate())
@@ -339,6 +341,7 @@ public class BankProductServiceImpl implements BankProductService {
                 .type(product.getType().name())
                 .status(product.getStatus())
                 .description(product.getDescription())
+                .rejectReason(product.getRejectionReason())
                 .budget(product.getBudget())
                 .startDate(product.getStartDate())
                 .endDate(product.getEndDate())
@@ -360,5 +363,44 @@ public class BankProductServiceImpl implements BankProductService {
                                 .toList())
                 .joinConditions(parsedJoinConditions.toString())
                 .build();
+    }
+
+    @Override
+    public List<GetAllProductResponse> findSuspendedProductsByBankEmail(String email) {
+        Bank bank = bankRepository.findByEmail(email)
+                .orElseThrow(() -> new BankNotFoundException(email));
+
+        List<Product> suspendedProducts = productRepository.findByBankAndStatus(bank, BankProductStatus.SUSPENDED);
+
+        return suspendedProducts.stream()
+                .map(product -> GetAllProductResponse.builder()
+                        .id(product.getId())
+                        .productName(product.getProductName())
+                        .type(product.getType().name())
+                        .status(product.getStatus())
+                        .description(product.getDescription())
+                        .rejectReason(product.getRejectionReason())
+                        .budget(product.getBudget())
+                        .startDate(product.getStartDate())
+                        .endDate(product.getEndDate())
+                        .baseInterestRate(product.getBaseInterestRate())
+                        .maxMonthlyPayment(product.getMaxMonthlyPayment())
+                        .maxParticipants(product.getMaxParticipants())
+                        .imageUrl(product.getImageUrl())
+                        .guideFileUrl(product.getGuideFileUrl())
+                        .tags(product.getProductTags().stream()
+                                .map(productTag -> productTag.getTag().getName())
+                                .toList())
+                        .preferentialConditions(
+                                product.getPreferentialConditions().stream()
+                                        .map(cond -> GetPreferentialConditionResponse.builder()
+                                                .title(cond.getTitle())
+                                                .description(cond.getDescription())
+                                                .rate(cond.getRate())
+                                                .build())
+                                        .toList())
+                        .joinConditions(product.getJoinCondition())
+                        .build())
+                .toList();
     }
 }

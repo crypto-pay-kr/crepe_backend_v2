@@ -31,6 +31,7 @@ public interface BankService {
 
     ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String bankEmail);
 
+    void changeBankCI(MultipartFile ciImage, String email);
 
     List<GetAllBankResponse> getAllActiveBankList();
 
