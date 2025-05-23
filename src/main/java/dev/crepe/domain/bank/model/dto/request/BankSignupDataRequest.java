@@ -41,4 +41,8 @@ public class BankSignupDataRequest {
     @NotBlank(message = "은행 코드는 필수 입력값입니다.")
     @Schema(description = "은행 코드", example = "BANK123")
     private String bankCode;
+
+    @NotBlank(message = "은행 관리자 이름은 필수입니다.")
+    @Schema(description = "이름", example = "밥찬진")
+    private String managerName;
 }

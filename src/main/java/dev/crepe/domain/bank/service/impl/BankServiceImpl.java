@@ -78,6 +78,7 @@ public class BankServiceImpl implements BankService {
                 .name(request.getBankSignupDataRequest().getName())
                 .imageUrl(bankImageUrl)
                 .bankCode(request.getBankSignupDataRequest().getBankCode())
+                .managerName(request.getBankSignupDataRequest().getManagerName())
                 .role(UserRole.BANK)
                 .build();
 
