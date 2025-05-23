@@ -19,9 +19,11 @@ public class GetAllProductResponse {
     private String productName;      // 상품 이름
     private String bankName;         // 주관은행
     private BigDecimal totalBudget; // 혜택 자본금
-    private Integer totalParticipants; // 총 예치인원
-    private BankProductStatus status; // 상품 상태
-    private Float minInterestRate;   // 최소이율
-    private Float maxInterestRate;   // 최대이율
+    private Integer totalParticipants;
+    private BankProductStatus status;
+    private Float minInterestRate;
+    private Float maxInterestRate;
+    private String imageUrl;
+    private String guideFile;
 
 }

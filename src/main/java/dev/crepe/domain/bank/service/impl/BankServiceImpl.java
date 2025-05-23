@@ -175,6 +175,7 @@ public class BankServiceImpl implements BankService {
                             .id(bank.getId())
                             .name(bank.getName())
                             .bankPhoneNum(bank.getBankPhoneNum())
+                            .imageUrl(bank.getImageUrl())
                             .totalSupply(totalSupply)
                             .build();
                 })
