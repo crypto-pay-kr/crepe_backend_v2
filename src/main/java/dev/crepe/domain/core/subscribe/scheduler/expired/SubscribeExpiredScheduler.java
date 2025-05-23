@@ -1,7 +1,7 @@
-package dev.crepe.domain.core.subscribe.expired;
+package dev.crepe.domain.core.subscribe.scheduler.expired;
 
 import dev.crepe.domain.core.product.model.BankProductType;
-import dev.crepe.domain.core.subscribe.expired.service.SubscribeExpiredService;
+import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeExpiredService;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;

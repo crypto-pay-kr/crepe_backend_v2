@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.product.repository;
 
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.entity.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -15,6 +16,8 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
     Optional<Product> findByIdAndBank(Long id, Bank bank);
 
     List<Product> findByBankId(Long bankId);
+
+    List<Product> findByBankAndStatus(Bank bank, BankProductStatus status);
 
   
 }

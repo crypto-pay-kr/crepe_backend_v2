@@ -1,21 +1,17 @@
 package dev.crepe.domain.admin.dto.response;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class GetAllBankResponse {
+public class PreferentialConditionDto {
     private Long id;
-    private String name;
-    private String bankPhoneNum;
-    private String imageUrl;
-    private BigDecimal totalSupply;
+    private String title;
+    private Float rate;
+    private String description;
 }

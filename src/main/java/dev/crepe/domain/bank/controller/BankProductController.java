@@ -56,4 +56,17 @@ public class BankProductController {
         return ResponseEntity.ok(product);
     }
 
+    @Operation(summary = "판매 중지된 상품 목록 조회")
+    @GetMapping("/products/suspended")
+    @BankAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<List<GetAllProductResponse>> getSuspendedProducts(AppAuthentication auth) {
+        List<GetAllProductResponse> suspendedProducts = bankProductService.findSuspendedProductsByBankEmail(auth.getUserEmail());
+        return ResponseEntity.ok(suspendedProducts);
+    }
+
+
+
+
+
 }

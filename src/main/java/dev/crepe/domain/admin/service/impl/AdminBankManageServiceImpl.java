@@ -2,10 +2,7 @@ package dev.crepe.domain.admin.service.impl;
 
 import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
-import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
-import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
-import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
-import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
+import dev.crepe.domain.admin.dto.response.*;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
@@ -153,5 +150,10 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
         accountService.holdAccount(account);
     }
+
+    public GetProductDetailResponse getBankProductDetail(Long bankId, Long productId) {
+        return productService.getProductDetail(bankId,productId);
+    }
+
 
 }

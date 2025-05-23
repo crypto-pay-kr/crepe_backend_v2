@@ -19,6 +19,7 @@ public class GetAllProductResponse {
     private String type;
     private BankProductStatus status;
     private String description;
+    private String rejectReason;
     private BigDecimal budget;
     private LocalDate startDate;
     private LocalDate endDate;
