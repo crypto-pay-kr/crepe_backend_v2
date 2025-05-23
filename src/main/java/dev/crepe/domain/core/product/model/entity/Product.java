@@ -128,6 +128,8 @@ public class Product extends BaseEntity {
             this.rejectionReason = null;
         } else if (status == BankProductStatus.REJECTED) {
             this.rejectionReason = reason;
+        } else if( status == BankProductStatus.SUSPENDED) {
+            this.rejectionReason = reason;
         }
     }
 }
