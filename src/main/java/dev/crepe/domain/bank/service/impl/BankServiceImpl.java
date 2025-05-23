@@ -36,6 +36,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -141,6 +142,20 @@ public class BankServiceImpl implements BankService {
 
         return ResponseEntity.ok(null);
     }
+
+    @Override
+    @Transactional
+    public void changeBankCI(MultipartFile ciImage, String bankEmail) {
+        Bank bank = findBankInfoByEmail(bankEmail);
+
+        // S3에 이미지 업로드
+        String newImageUrl = s3Service.uploadFile(ciImage, "bank-images");
+
+        // 이미지 URL 업데이트
+        bank.changeCiImageUrl(newImageUrl);
+        bankRepository.save(bank);
+    }
+
 
     // 관리자 전체 은행 조회
     @Override

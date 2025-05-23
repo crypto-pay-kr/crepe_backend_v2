@@ -35,6 +35,10 @@ public class Bank extends BaseEntity {
     @Column(name = "bank_phone_num",nullable = false)
     private String bankPhoneNum;
 
+    @Column(name = "manager_name",nullable = false)
+    private String managerName;
+
+
     @Column(nullable = false)
     private String imageUrl;
 
@@ -58,6 +62,10 @@ public class Bank extends BaseEntity {
 
     public void changePhoneNum(String newPhone) {
         this.bankPhoneNum=newPhone;
+    }
+
+    public void changeCiImageUrl(String newImageUrl) {
+        this.imageUrl = newImageUrl;
     }
 
     public void changeStatus(BankStatus newStatus) {
