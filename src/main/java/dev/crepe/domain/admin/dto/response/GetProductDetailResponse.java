@@ -23,6 +23,8 @@ public class GetProductDetailResponse {
     private Integer maxParticipants;
     private BigDecimal maxMonthlyPayment;
     private List<PreferentialConditionDto> rateConditions;
+    private String guideFile;
+    private String imageUrl;
     private BigDecimal budget;
     private List<String> tags;
     private LocalDate startDate;

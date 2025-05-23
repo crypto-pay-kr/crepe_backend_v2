@@ -67,6 +67,8 @@ public class ProductServiceImpl implements ProductService {
                 .maxParticipants(product.getMaxParticipants())
                 .maxMonthlyPayment(product.getMaxMonthlyPayment())
                 .rateConditions(convertToRateConditionDtos(product.getPreferentialConditions()))
+                .guideFile(product.getGuideFileUrl())
+                .imageUrl(product.getImageUrl())
                 .budget(product.getBudget())
                 .tags(extractTags(product.getProductTags()))
                 .startDate(product.getStartDate())
@@ -101,6 +103,8 @@ public class ProductServiceImpl implements ProductService {
                 .bankName(product.getBank().getName())
                 .totalBudget(product.getBudget())
                 .status(product.getStatus())
+                .imageUrl(product.getImageUrl())
+                .guideFile(product.getGuideFileUrl())
                 .totalParticipants(product.getMaxParticipants())
                 .minInterestRate(product.getBaseInterestRate())
                 .maxInterestRate(maxInterestRate)
@@ -163,7 +167,6 @@ public class ProductServiceImpl implements ProductService {
                     .allAges(criteria.isAllAges())
                     .build();
         } catch (JsonProcessingException e) {
-            // 에러 처리
             return JoinConditionDto.builder()
                     .ageGroups(List.of("정보 없음"))
                     .occupations(List.of("정보 없음"))

@@ -5,9 +5,6 @@ import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
 import dev.crepe.domain.admin.dto.response.*;
 import dev.crepe.domain.admin.service.AdminProductService;
-import dev.crepe.domain.auth.jwt.util.AppAuthentication;
-import dev.crepe.domain.auth.role.BankAuth;
-import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
@@ -164,9 +161,5 @@ public class AdminBankManageController {
         return ResponseEntity.ok(response);
     }
 
-
-
-
-
-
+    
 }

@@ -16,5 +16,6 @@ public class GetAllBankResponse {
     private Long id;
     private String name;
     private String bankPhoneNum;
+    private String imageUrl;
     private BigDecimal totalSupply;
 }
