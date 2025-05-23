@@ -3,9 +3,7 @@ package dev.crepe.domain.admin.controller;
 
 import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
-import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
-import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
-import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
+import dev.crepe.domain.admin.dto.response.*;
 import dev.crepe.domain.admin.service.AdminProductService;
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.BankAuth;
@@ -14,7 +12,6 @@ import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
-import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.auth.role.AdminAuth;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
@@ -156,6 +153,15 @@ public class AdminBankManageController {
     public ResponseEntity<List<GetCoinAccountInfoResponse>> getBankInfoDetailByAdmin(@PathVariable Long bankId) {
         List<GetCoinAccountInfoResponse> res = adminBankManageService.getBankAccountByAdmin(bankId);
         return new ResponseEntity<>(res, HttpStatus.OK);
+    }
+
+
+    @Operation(summary="상품 상세 조회 api",description = "관리자가 특정 상품 정보를 상세조회")
+    @AdminAuth
+    @GetMapping("/{bankId}/product/{productId}")
+    public ResponseEntity<GetProductDetailResponse> getProductDetail(@PathVariable Long bankId, @PathVariable Long productId) {
+        GetProductDetailResponse response = adminBankManageService.getBankProductDetail(bankId,productId);
+        return ResponseEntity.ok(response);
     }
 
 
