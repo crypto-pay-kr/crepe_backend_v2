@@ -67,7 +67,7 @@ public class Subscribe extends BaseEntity {
 
     @Column(name = "regular_deposit_amount")
     private BigDecimal regularDepositAmount;
-  
+
     // 다음 정기납입 예정일 (적금 상품인 경우)
     @Column(name = "next_regular_deposit_date")
     private LocalDate nextRegularDepositDate;
@@ -121,4 +121,10 @@ public class Subscribe extends BaseEntity {
     public void setPreTaxInterest(BigDecimal preTaxInterest) {
         this.preTaxInterest = preTaxInterest;
     }
+
+    public void setAppliedPreferentialRates(String json) {
+        this.appliedPreferentialRates = json;
+    }
+
+
 }

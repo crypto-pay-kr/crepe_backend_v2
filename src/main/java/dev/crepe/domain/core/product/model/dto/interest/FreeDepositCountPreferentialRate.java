@@ -19,4 +19,11 @@ public enum FreeDepositCountPreferentialRate {
     private final String name;
     private final String description;
     private final BigDecimal rate;  // 우대금리 (%)
+
+    public static FreeDepositCountPreferentialRate matchByDepositCount(int count) {
+        if (count >= 10) return LEVEL3;
+        if (count >= 5) return LEVEL2;
+        if (count >= 3) return LEVEL1;
+        return NONE;
+    }
 }
