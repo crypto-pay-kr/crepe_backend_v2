@@ -1,4 +1,4 @@
-package dev.crepe.domain.core.subscribe.expired.service;
+package dev.crepe.domain.core.subscribe.scheduler.expired.service;
 
 // 만기 해지
 public interface SubscribeExpiredService {

@@ -1,6 +1,11 @@
 package dev.crepe.domain.core.subscribe.service.impl;
 
+import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.exception.AlreadyExpiredSubscribeException;
+import dev.crepe.domain.core.subscribe.exception.TooEarlyToTerminateException;
+import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
+import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.subscribe.service.SubscribeService;
@@ -15,6 +20,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -47,5 +56,8 @@ public class SubscribeServiceImpl implements SubscribeService {
 
         return slice.map(SubscribeHistoryDto::from);
     }
+
+
+
 
 }

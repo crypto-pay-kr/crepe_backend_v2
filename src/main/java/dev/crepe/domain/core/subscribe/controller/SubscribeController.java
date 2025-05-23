@@ -2,7 +2,7 @@ package dev.crepe.domain.core.subscribe.controller;
 
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
-import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
+import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
 import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
 import dev.crepe.domain.core.subscribe.service.SubscribeService;
@@ -51,7 +51,7 @@ public class SubscribeController {
     @UserAuth
     @Operation(summary = "상품 중도 해지시 금액 조회", description = "해당 상품 중도 해지시 금액을 조회합니다.")
     public ResponseEntity<?> terminate(@PathVariable Long subscribeId, AppAuthentication auth) {
-        TerminatePreviewDto result = subscribeTerminateService.calculateTerminationPreview(auth.getUserEmail(),subscribeId);
+        TerminatePreviewDto result = subscribeTerminateService.TerminationPreview(auth.getUserEmail(),subscribeId);
         return ResponseEntity.ok(result);
     }
 }
