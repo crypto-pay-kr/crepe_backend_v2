@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.Optional;
+
 /**
  * 예치금액별 우대금리 enum
  */
@@ -21,14 +23,14 @@ public enum DepositPreferentialRate {
     private final BigDecimal min;
     private final BigDecimal max;
 
-    public static BigDecimal getRateFor(BigDecimal amount) {
+    public static Optional<DepositPreferentialRate> getTier(BigDecimal amount) {
         for (DepositPreferentialRate tier : values()) {
             boolean minOk = amount.compareTo(tier.min) >= 0;
             boolean maxOk = tier.max == null || amount.compareTo(tier.max) < 0;
             if (minOk && maxOk) {
-                return tier.rate;
+                return Optional.of(tier);
             }
         }
-        return BigDecimal.ZERO;
+        return Optional.empty();
     }
 }

@@ -1,10 +1,10 @@
-package dev.crepe.domain.core.subscribe.expired.service.impl;
+package dev.crepe.domain.core.subscribe.scheduler.expired.service.impl;
 
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.exception.*;
-import dev.crepe.domain.core.subscribe.expired.service.SubscribeTerminateService;
+import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
@@ -176,7 +176,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
     }
 
     // 중도 해지시 값 조회
-    public TerminatePreviewDto calculateTerminationPreview(String userEmail, Long subscribeId) {
+    public TerminatePreviewDto TerminationPreview(String userEmail, Long subscribeId) {
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
                 .orElseThrow(SubscribeNotFoundException::new);
 

@@ -1,18 +1,27 @@
-package dev.crepe.domain.core.subscribe.expired.service.impl;
+package dev.crepe.domain.core.subscribe.scheduler.expired.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.interest.DepositPreferentialRate;
 import dev.crepe.domain.core.product.model.dto.interest.FreeDepositCountPreferentialRate;
+import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.exception.*;
+import dev.crepe.domain.core.subscribe.model.PotentialType;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
+import dev.crepe.domain.core.subscribe.model.dto.response.PreferentialRateInfo;
+import dev.crepe.domain.core.subscribe.model.entity.PotentialPreferentialCondition;
 import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfaction;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.subscribe.repository.PotentialPreferentialConditionRepository;
+import dev.crepe.domain.core.subscribe.repository.PreferentialConditionRepository;
 import dev.crepe.domain.core.subscribe.repository.PreferentialConditionSatisfactionRepository;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
-import dev.crepe.domain.core.subscribe.expired.service.SubscribeExpiredService;
+import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeExpiredService;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +33,10 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 
 @Service
@@ -33,8 +45,10 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
     private final AccountRepository accountRepository;
     private final PreferentialConditionSatisfactionRepository preferentialConditionSatisfactionRepository;
+    private final PreferentialConditionRepository preferentialConditionRepository;
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
 
 
     @Transactional
@@ -70,33 +84,28 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
 
         switch (product.getType()) {
-            case SAVING -> preTaxInterest = balance.multiply(baseRate);
+            case SAVING -> {
+                preTaxInterest = balance.multiply(baseRate);
+            }
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentCompoundInterest(subscribe, baseRate);
             }
             default -> throw new UnsupportedProductTypeException();
         }
 
+        // 우대금리 조건 평가 및 저장
+        evaluateConfirmedPreferentialConditions(subscribe, subscribe.getUser());
+
         // 우대금리 조건 충족 내역 조회
         List<PreferentialConditionSatisfaction> satisfiedConditions =
                 preferentialConditionSatisfactionRepository.findBySubscribe_IdAndIsSatisfiedTrue(subscribe.getId());
 
-        // 예치금액별 우대금리
-        BigDecimal amountForTier = subscribe.getBalance(); // 예금/적금 공통
-        BigDecimal depositPreferentialRate = DepositPreferentialRate.getRateFor(amountForTier); //우대 조건에 따라 우대 금리 분류
-
-        // 자유 납입 횟수 달성
-        BigDecimal freeDepositRate = BigDecimal.ZERO;
-        if (product.getType() == BankProductType.INSTALLMENT) {
-            freeDepositRate = calculateFreeDepositRate(subscribe).getRate();
-        }
-
         // 우대 금리 총합 계산
         BigDecimal additionalRate = satisfiedConditions.stream()
                 .map(cond -> BigDecimal.valueOf(cond.getCondition().getRate()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add)
-                .add(depositPreferentialRate)
-                .add(freeDepositRate);
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+
 
         BigDecimal preferentialRate = additionalRate.divide(BigDecimal.valueOf(100), 10, RoundingMode.DOWN);
 
@@ -108,6 +117,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         // 세후 이자 계산
         BigDecimal taxRate = BigDecimal.valueOf(0.154);
         BigDecimal postTaxInterest = totalInterest.multiply(BigDecimal.ONE.subtract(taxRate));
+
 
 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
@@ -126,6 +136,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         BigDecimal totalPayout = balance.add(postTaxInterest);
         userTokenAccount.addAmount(totalPayout);
+
 
         // 상태 변경 (만기 처리)
         subscribe.changeExpired();
@@ -283,6 +294,76 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         if (minMonthlyDepositCount >= 5) return FreeDepositCountPreferentialRate.LEVEL2;
         if (minMonthlyDepositCount >= 3) return FreeDepositCountPreferentialRate.LEVEL1;
         return FreeDepositCountPreferentialRate.NONE;
+    }
+
+
+    public void evaluateConfirmedPreferentialConditions(Subscribe subscribe, Actor user)  {
+        List<PreferentialRateInfo> confirmed = new ArrayList<>();
+
+        for (PotentialPreferentialCondition potential : potentialPreferentialConditionRepository.findBySubscribe(subscribe)) {
+            PreferentialInterestCondition condition = potential.getCondition();
+            PotentialType type = potential.getPotentialType();
+
+            // 예치금 기준 우대 조건 확인 (예/적금)
+            switch (type) {
+                case ACCUMULATE_DEPOSIT -> {
+                    DepositPreferentialRate tier = DepositPreferentialRate.getTier(subscribe.getBalance()).orElse(null);
+                    if (tier != null && tier.getName().equals(condition.getTitle())) {
+                        confirmed.add(new PreferentialRateInfo(
+                                tier.getRate(), tier.getDescription(), tier.getName(), "CONFIRMED"
+                        ));
+                    }
+                    System.out.println("📌 비교 title: " + tier.getName() + " vs " + condition.getTitle());
+
+                }
+
+
+                // 자유 납입 횟수 기준 우대 조건 확인 (적금)
+                case FREE_DEPOSIT_COUNT -> {
+                    if (subscribe.getProduct().getType() == BankProductType.INSTALLMENT) {
+                        FreeDepositCountPreferentialRate tier = calculateFreeDepositRate(subscribe);
+                        if (tier != null && tier.getName().equals(condition.getTitle())) {
+                            confirmed.add(new PreferentialRateInfo(
+                                    tier.getRate(), tier.getDescription(), tier.getName(), "CONFIRMED"
+                            ));
+                        }
+                        System.out.println("📌 비교 title: " + tier.getName() + " vs " + condition.getTitle());
+                    }
+                }
+
+            }
+        }
+
+        // PreferentialRates 컬럼에 저장
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String json = mapper.writeValueAsString(Map.of(
+                    "confirmedCount", confirmed.size(),
+                    "confirmed", confirmed
+            ));
+            subscribe.setAppliedPreferentialRates(json);
+        } catch (JsonProcessingException e) {
+            subscribe.setAppliedPreferentialRates("{}");
+        }
+
+
+        // 확정 조건 저장
+        for (PreferentialRateInfo info : confirmed) {
+            Optional<PreferentialInterestCondition> optional = preferentialConditionRepository.findByProductAndTitle(subscribe.getProduct(),info.getTitle());
+
+            // 조건이 없을 경우
+            if (optional.isEmpty()) {
+                continue;
+            }
+
+            PreferentialInterestCondition condition = optional.get();
+            PreferentialConditionSatisfaction record = PreferentialConditionSatisfaction.createImmediateSatisfaction(
+                    user, subscribe, condition
+            );
+            preferentialConditionSatisfactionRepository.save(record);
+        }
+
+
     }
 
 
