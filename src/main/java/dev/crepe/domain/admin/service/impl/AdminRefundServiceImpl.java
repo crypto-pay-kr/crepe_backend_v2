@@ -14,7 +14,7 @@ public class AdminRefundServiceImpl implements AdminRefundService {
 
     @Override
     @Transactional
-    public void approveRefund(Long payId, String storeEmail) {
-        payService.refundForOrder(payId, storeEmail);
+    public void approveRefund(Long payId, Long id) {
+        payService.refundForOrder(payId, id);
     }
 }

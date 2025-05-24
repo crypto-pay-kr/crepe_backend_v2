@@ -137,7 +137,7 @@ public class PayServiceImpl implements PayService {
 
 
     @Transactional
-    public void refundForOrder(Long payId, String email) {
+    public void refundForOrder(Long payId, Long id) {
         // 1. 결제 내역 조회
         PayHistory payHistory = payHistoryRepository.findById(payId)
                 .orElseThrow(PayHistoryNotFoundException::new);
@@ -156,8 +156,8 @@ public class PayServiceImpl implements PayService {
         for (TransactionHistory tx : txList) {
             if (tx.getType() != TransactionType.PAY) continue;
 
-            String actorEmail = tx.getAccount().getActor().getEmail();
-            if (actorEmail.equals(email)) {
+            Long actorId = tx.getAccount().getActor().getId();
+            if (actorId==id) {
                 userTx = tx;
             } else {
                 storeTx = tx;

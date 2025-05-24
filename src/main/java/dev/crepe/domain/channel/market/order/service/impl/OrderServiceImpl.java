@@ -24,6 +24,8 @@ import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.NotSingleObjectException;
 import dev.crepe.global.error.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -165,4 +167,8 @@ public class OrderServiceImpl implements OrderService {
 //******************************************** 주문 생성 end **********************************************/
 
 
+    @Override
+    public Page<Order> getOrdersByUserId(Long userId, Pageable pageable) {
+        return orderRepository.findByUserId(userId,pageable);
+    }
 }

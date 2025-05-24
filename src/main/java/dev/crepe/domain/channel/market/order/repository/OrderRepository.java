@@ -2,6 +2,8 @@ package dev.crepe.domain.channel.market.order.repository;
 
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -18,4 +20,5 @@ public interface OrderRepository extends JpaRepository<Order, String> {
 
     Optional<Order> findByIdAndStoreId(String orderId, Long storeId);
 
+    Page<Order> findByUserId(Long userId, Pageable pageable);
 }
