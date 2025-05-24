@@ -12,4 +12,5 @@ public interface AdminAddressService {
     String approveAddress(Long accountId);
     void rejectAddress(Long accountId);
     void unRegisterAddress(Long accountId);
+    void holdActorAddress(Long accountId);
 }

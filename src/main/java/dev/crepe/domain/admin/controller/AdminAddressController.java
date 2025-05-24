@@ -40,8 +40,6 @@ public class AdminAddressController {
     }
 
 
-
-
     @Operation(
             summary = "출금 계좌 승인",
             description = "accountId를 기반으로 출금 계좌를 승인 처리합니다. 이미 승인된 계좌는 예외 발생.",
@@ -69,6 +67,14 @@ public class AdminAddressController {
     public ResponseEntity<String> unRegisterRequest(@PathVariable Long accountId){
         adminAddressService.unRegisterAddress(accountId);
         return ResponseEntity.ok("코인 등록 요청이 거절되었습니다.");
+    }
+
+    @Operation(summary = "출금 계좌 정지", description = "관리자가 특정 계좌를 정지시킵니다")
+    @AdminAuth
+    @PatchMapping("/hold/{accountId}")
+    public ResponseEntity<String> holdAddressRequest(@PathVariable Long accountId){
+        adminAddressService.holdActorAddress(accountId);
+        return ResponseEntity.ok("계좌가 정지되었습니다.");
     }
 
 }

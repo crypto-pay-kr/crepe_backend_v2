@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.account.repository;
 
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
@@ -22,11 +23,13 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByBankToken_CurrencyAndActorIsNull(String currency);
     Optional<Account> findByBank_EmailAndCoin_Currency(String email, String currency);
     List<Account> findByActor_Email(String email);
+    List<Account> findByActor_Id(Long id);
+    Page<Account> findByActor_Id(Long id, Pageable pageable);
     List<Account> findByBank_Email(String email);
     Page<Account> findByActorIsNotNullAndAddressRegistryStatusInAndCoinIsNotNull(List<AddressRegistryStatus> status, Pageable pageable);
     Page<Account> findByActorIsNullAndAddressRegistryStatusInAndCoinIsNotNull(List<AddressRegistryStatus> status, Pageable pageable);
     Optional<Account> findByActor_EmailAndBankTokenId(String email, Long bankTokenId);
-
+    boolean existsByActorAndBankToken(Actor actor, BankToken bankToken);
     Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(
             Bank bank,
             BankToken bankToken,
