@@ -55,6 +55,7 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
         // 응답 생성
         return bankTokens.stream()
                 .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+                .sorted((h1, h2) -> h2.getCreatedAt().compareTo(h1.getCreatedAt()))
                 .map(tokenHistory -> {
                     List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
                             .stream()

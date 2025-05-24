@@ -36,9 +36,6 @@ public class RegisterProductRequest {
    @Schema(description = "최대 월 납입액", example = "1000000")
    private BigDecimal maxMonthlyPayment;
 
-   @Schema(description = "최대 참여자 수", example = "1000")
-   private Integer maxParticipants;
-
    @Schema(description = "우대 금리 조건")
    private PreferentialRateConditionDto preferentialRateCondition;
 
