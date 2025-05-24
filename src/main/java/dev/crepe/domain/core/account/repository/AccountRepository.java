@@ -58,4 +58,10 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
 
 
+    // 1. BankToken이 연결된 모든 계좌 조회
+    List<Account> findByBankTokenIdIsNotNullAndBankIdIsNotNull();
+
+    // 2. 특정 이메일을 가진 유저의 BankToken 계좌 조회
+    List<Account> findByActor_EmailAndBankTokenIdIsNotNull(String email);
+
 }

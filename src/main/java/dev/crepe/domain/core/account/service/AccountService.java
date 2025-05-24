@@ -5,6 +5,7 @@ import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
@@ -53,5 +54,7 @@ public interface AccountService {
     void holdAccount(Account account);
 
     void validateAccountNotHold(Account account);
+
+    List<GetBankTokenInfoResponse> getBankTokensInfo(String email);
 
 }

@@ -28,7 +28,7 @@ public interface SubscribeRepository extends JpaRepository<Subscribe,Long> {
 
     List<Subscribe> findAllByUser_Email(String email);
 
-
+    List<Subscribe> findByUser_Email(String email);
     boolean existsByUserAndProduct(Actor user, Product product);
 
     Integer countByProductIdAndStatus(Long productId, SubscribeStatus subscribeStatus);

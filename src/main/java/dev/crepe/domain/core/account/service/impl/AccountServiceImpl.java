@@ -11,10 +11,14 @@ import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.account.util.GenerateAccountAddress;
+import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
@@ -40,6 +44,7 @@ public class AccountServiceImpl implements AccountService {
     private final CoinRepository coinRepository;
     private final BankTokenRepository bankTokenRepository;
     private final ActorRepository actorRepository;
+    private final SubscribeRepository subscribeRepository;
 
     @Override
     @Transactional
@@ -150,12 +155,70 @@ public class AccountServiceImpl implements AccountService {
         return accounts.stream()
                 .filter(account -> account.getCoin() != null)
                 .map(account -> GetBalanceResponse.builder()
+                        .coinImageUrl(account.getCoin().getCoinImage())
                         .coinName(account.getCoin().getName())
                         .currency(account.getCoin().getCurrency())
                         .balance(account.getBalance())
                         .build())
                 .toList();
     }
+
+    @Override
+    public List<GetBankTokenInfoResponse> getBankTokensInfo(String email) {
+        // 1. 전체 BankToken과 연결된 모든 계좌 조회
+        List<Account> allTokenAccounts = accountRepository.findByBankTokenIdIsNotNullAndBankIdIsNotNull();
+
+        // 2. 유저의 BankToken 계좌 조회
+        List<Account> userTokenAccounts = accountRepository.findByActor_EmailAndBankTokenIdIsNotNull(email);
+
+        // 3. 유저 계좌 정보를 Map으로 변환 (bankTokenId → balance)
+        Map<Long, BigDecimal> userBalances = userTokenAccounts.stream()
+                .collect(Collectors.toMap(
+                        acc -> acc.getBankToken().getId(),
+                        Account::getBalance
+                ));
+
+        // 4. 전체 토큰 계좌 정보를 Map으로 변환 (bankTokenId → Account)
+        Map<Long, Account> tokenAccountMap = allTokenAccounts.stream()
+                .collect(Collectors.toMap(
+                        acc -> acc.getBankToken().getId(),
+                        acc -> acc
+                ));
+
+        // 5. 유저가 가입한 상품 정보 조회
+        List<Subscribe> userSubscribes = subscribeRepository.findByUser_Email(email);
+        Map<Long, List<GetBankTokenInfoResponse.GetProductResponse>> subscribedProducts = userSubscribes.stream()
+                .collect(Collectors.groupingBy(
+                        sub -> sub.getProduct().getBankToken().getId(),
+                        Collectors.mapping(sub -> GetBankTokenInfoResponse.GetProductResponse.builder()
+                                .subscribeId(sub.getId())
+                                .name(sub.getProduct().getProductName())
+                                .balance(sub.getBalance())
+                                .build(), Collectors.toList())
+                ));
+
+        // 5. 결과 생성
+        return tokenAccountMap.entrySet().stream()
+                .map(entry -> {
+                    Long tokenId = entry.getKey();
+                    Account account = entry.getValue();
+                    String name = account.getBankToken().getName();
+                    BigDecimal balance = userBalances.getOrDefault(tokenId, BigDecimal.ZERO);
+                    List<GetBankTokenInfoResponse.GetProductResponse> product = subscribedProducts.get(tokenId);
+
+                    return GetBankTokenInfoResponse.builder()
+                            .bankImageUrl(account.getBankToken().getBank().getImageUrl())
+                            .currency(account.getBankToken().getCurrency())
+                            .name(name)
+                            .balance(balance)
+                            .product(product)
+                            .build();
+                })
+                .toList();
+    }
+
+
+
 
     @Override
     public GetBalanceResponse getBalanceByCurrency(String email, String currency) {
