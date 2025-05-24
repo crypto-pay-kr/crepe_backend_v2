@@ -77,11 +77,10 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
             throw new IllegalStateException("이미 가입한 상품입니다.");
         }
 
-
+        Integer subscribeNum = subscribeRepository.countByProductIdAndStatus(request.getProductId(), SubscribeStatus.ACTIVE);
 
         if (product.getMaxParticipants() != null) {
-            Integer currentSubscribeCount = product.getSubscribeCount();
-            if (currentSubscribeCount != null && currentSubscribeCount >= product.getMaxParticipants()) {
+            if (subscribeNum != null && subscribeNum >= product.getMaxParticipants()) {
                 throw new IllegalStateException("상품의 최대 가입자 수를 초과했습니다. (최대: " + product.getMaxParticipants() + "명)");
             }
         }

@@ -61,6 +61,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public GetProductDetailResponse getProductDetail(Long bankId, Long productId) {
         Product product = productRepository.findById(productId).orElseThrow(EntityNotFoundException::new);
+        Integer subscribeCount = subscribeRepository.countByProductIdAndStatus(productId, SubscribeStatus.ACTIVE);
 
         return GetProductDetailResponse.builder()
                 .productName(product.getProductName())
@@ -70,7 +71,7 @@ public class ProductServiceImpl implements ProductService {
                 .maxParticipants(product.getMaxParticipants())
                 .maxMonthlyPayment(product.getMaxMonthlyPayment())
                 .rateConditions(convertToRateConditionDtos(product.getPreferentialConditions()))
-                .subscribeCount(product.getSubscribeCount())
+                .subscribeCount(subscribeCount)
                 .guideFile(product.getGuideFileUrl())
                 .imageUrl(product.getImageUrl())
                 .budget(product.getBudget())

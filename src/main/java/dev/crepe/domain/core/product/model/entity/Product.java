@@ -88,9 +88,6 @@ public class Product extends BaseEntity {
     private String rejectionReason;
 
 
-    @Formula("(SELECT COUNT(*) FROM subscribe s WHERE s.product_id = id AND s.status = 'ACTIVE')")
-    private Integer subscribeCount;
-
     // 우대 금리, 조건
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PreferentialInterestCondition> preferentialConditions = new ArrayList<>();
