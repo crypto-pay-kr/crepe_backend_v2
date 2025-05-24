@@ -414,4 +414,11 @@ public class BankProductServiceImpl implements BankProductService {
                         .build())
                 .toList();
     }
+
+    @Override
+    public List<String> getAllProductsTags() {
+        return tagRepository.findAll().stream()
+                .map(Tag::getName)
+                .toList();
+    }
 }
