@@ -3,6 +3,7 @@ package dev.crepe.domain.channel.actor.controller;
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
+import dev.crepe.domain.channel.actor.model.dto.response.GetAllBalanceResponse;
 import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
@@ -75,14 +76,15 @@ public class ActorAccountController {
 
 
     @Operation(
-            summary = "잔액 조회",
+            summary = "코인 및 토큰 잔액 조회",
             description = "현재 로그인한 유저, 가맹점의 전체 잔액 목록을 조회합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
     @ActorAuth
     @GetMapping("/balance")
-    public ResponseEntity<List<GetBalanceResponse>> getBalanceList(AppAuthentication auth) {
-        List<GetBalanceResponse> balanceList = actorAccountService.getBalanceList(auth.getUserEmail());
+    public ResponseEntity<GetAllBalanceResponse> getBalanceList(AppAuthentication auth) {
+
+        GetAllBalanceResponse balanceList = actorAccountService.getAllBalance(auth.getUserEmail());
         return ResponseEntity.ok(balanceList);
     }
 

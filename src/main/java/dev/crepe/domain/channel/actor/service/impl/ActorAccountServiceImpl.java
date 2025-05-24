@@ -3,12 +3,14 @@ package dev.crepe.domain.channel.actor.service.impl;
 import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
+import dev.crepe.domain.channel.actor.model.dto.response.GetAllBalanceResponse;
 import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
@@ -99,10 +101,12 @@ public class ActorAccountServiceImpl implements ActorAccountService {
                 .collect(Collectors.toList());
     }
 
+    @Override
     public BigDecimal getTokenBalance(String email, String currency) {
         return accountService.getTokenBalance(email, currency);
     }
-  
+
+    @Override
     public void unRegisterAccount(String email, String currency) {
         accountService.unRegisterAccount(email, currency);
 
@@ -117,4 +121,14 @@ public class ActorAccountServiceImpl implements ActorAccountService {
         accountService.holdAccount(account);
 
     }
+
+    @Override
+    public GetAllBalanceResponse getAllBalance(String email) {
+        List<GetBalanceResponse> balanceList = accountService.getBalanceList(email);
+        List<GetBankTokenInfoResponse> bankTokenAccounts = accountService.getBankTokensInfo(email);
+
+        return new GetAllBalanceResponse(balanceList, bankTokenAccounts);
+    }
+
+
 }
