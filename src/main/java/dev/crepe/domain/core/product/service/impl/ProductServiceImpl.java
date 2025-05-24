@@ -16,6 +16,9 @@ import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.product.model.entity.ProductTag;
 import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.service.ProductService;
+import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
+    private final SubscribeRepository subscribeRepository;
     private final ObjectMapper objectMapper;
 
     @Override
@@ -56,8 +60,8 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public GetProductDetailResponse getProductDetail(Long bankId, Long productId) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+        Product product = productRepository.findById(productId).orElseThrow(EntityNotFoundException::new);
+        Integer subscribeCount = subscribeRepository.countByProductIdAndStatus(productId, SubscribeStatus.ACTIVE);
 
         return GetProductDetailResponse.builder()
                 .productName(product.getProductName())
@@ -67,6 +71,7 @@ public class ProductServiceImpl implements ProductService {
                 .maxParticipants(product.getMaxParticipants())
                 .maxMonthlyPayment(product.getMaxMonthlyPayment())
                 .rateConditions(convertToRateConditionDtos(product.getPreferentialConditions()))
+                .subscribeCount(subscribeCount)
                 .guideFile(product.getGuideFileUrl())
                 .imageUrl(product.getImageUrl())
                 .budget(product.getBudget())
@@ -82,6 +87,7 @@ public class ProductServiceImpl implements ProductService {
 
         return products.stream()
                 .filter(product -> includeStatus == (product.getStatus() == BankProductStatus.SUSPENDED))
+                .sorted((p1,p2) -> p2.getCreatedAt().compareTo(p1.getCreatedAt()))
                 .map(this::mapToProductResponse)
                 .collect(Collectors.toList());
     }

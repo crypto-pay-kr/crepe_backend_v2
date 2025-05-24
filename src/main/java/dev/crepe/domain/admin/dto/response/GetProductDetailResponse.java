@@ -27,6 +27,7 @@ public class GetProductDetailResponse {
     private String imageUrl;
     private BigDecimal budget;
     private List<String> tags;
+    private Integer subscribeCount;
     private LocalDate startDate;
     private LocalDate endDate;
 }

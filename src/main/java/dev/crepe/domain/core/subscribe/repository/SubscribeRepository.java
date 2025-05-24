@@ -30,4 +30,6 @@ public interface SubscribeRepository extends JpaRepository<Subscribe,Long> {
 
 
     boolean existsByUserAndProduct(Actor user, Product product);
+
+    Integer countByProductIdAndStatus(Long productId, SubscribeStatus subscribeStatus);
 }
