@@ -59,9 +59,10 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
     @Override
     public void changeBankAccount(CreateBankAccountRequest request, String bankEmail) {
 
-        String managerName = request.getManagerName();
-        if (managerName == null || managerName.isEmpty()) {
-            throw new BankNameMismatchException("null", "provided");
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
+
+        if (!request.getManagerName().equals(bank.getManagerName())) {
+            throw new BankManagerNameMismatchException(request.getManagerName(), bank.getManagerName());
         }
 
         GetAddressRequest getAddressRequest = request.getGetAddressRequest();
