@@ -20,6 +20,7 @@ public interface AdminBankManageService {
 
     void rejectBankTokenRequest(RejectBankTokenRequest request, Long tokenHistoryId);
 
+
     List<GetAllProductResponse> getAllBankProducts(Long bankId);
 
     List<GetAllProductResponse> getSuspendedBankProducts(Long bankId);
@@ -32,5 +33,8 @@ public interface AdminBankManageService {
 
     List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId);
 
+    void holdBankAddress(Long accountId);
+
     GetProductDetailResponse getBankProductDetail(Long bankId, Long productId);
+
 }

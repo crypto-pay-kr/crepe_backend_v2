@@ -53,7 +53,7 @@ public class Account extends BaseEntity {
 
     @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(name="address_status")
+    @Column(name = "address_status", length = 50, nullable = false)
     private AddressRegistryStatus addressRegistryStatus= AddressRegistryStatus.NOT_REGISTERED;
 
     @Builder.Default
@@ -99,6 +99,8 @@ public class Account extends BaseEntity {
         this.addressRegistryStatus = AddressRegistryStatus.REJECTED;
     }
 
+    // 어드민 - 계좌 정지
+    public void adminHoldAddress() { this.addressRegistryStatus = AddressRegistryStatus.HOLD; }
 
     public void addNonAvailableBalance(BigDecimal amount) {
         this.nonAvailableBalance = this.nonAvailableBalance.add(amount);

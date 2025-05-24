@@ -130,4 +130,13 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void holdBankAccount(Account account) {
+
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
+            throw new IllegalStateException("Bank account is already on hold.");
+        }
+        accountService.holdAccount(account);
+    }
 }
