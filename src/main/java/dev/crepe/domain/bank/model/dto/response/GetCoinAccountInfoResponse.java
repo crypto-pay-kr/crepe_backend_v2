@@ -16,6 +16,7 @@ public class GetCoinAccountInfoResponse {
 
 
     private String bankName;
+    private String managerName;
     private String coinName;
     private String currency;
     private String accountAddress;
