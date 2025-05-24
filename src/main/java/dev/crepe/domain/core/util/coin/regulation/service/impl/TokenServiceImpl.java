@@ -51,7 +51,6 @@ public class TokenServiceImpl implements TokenService {
         bankToken.changeTotalSupply(tokenHistory.getTotalSupplyAmount());
 
         bankTokenInfoService.saveBankToken(bankToken);
-        createTokenAccountsForAllUsers(bankToken);
     }
 
     @Override
@@ -65,20 +64,5 @@ public class TokenServiceImpl implements TokenService {
     }
 
 
-    private void createTokenAccountsForAllUsers(BankToken token) {
-        List<Actor> users = actorRepository.findByDataStatusTrue();
-
-        for (Actor user : users) {
-            boolean exists = accountRepository.existsByActorAndBankToken(user, token);
-            if (exists) continue;
-
-            Account account = Account.builder()
-                    .actor(user)
-                    .bankToken(token)
-                    .build();
-
-            accountRepository.save(account);
-        }
-    }
 
 }
