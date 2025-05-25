@@ -4,6 +4,7 @@ import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
 import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
+import dev.crepe.domain.core.product.model.dto.response.GetOnsaleProductListReponse;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
 import org.springframework.http.ResponseEntity;
 
@@ -16,4 +17,7 @@ public interface ProductService {
     List<GetAllProductResponse> getSuspendedBankProducts(Long bankId);
 
     GetProductDetailResponse getProductDetail(Long bankId, Long productId);
+
+    List<GetOnsaleProductListReponse> getOnSaleProducts();
+
 }

@@ -1,6 +1,8 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
+import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorSubscribeService;
@@ -11,9 +13,11 @@ import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
 import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
 import dev.crepe.domain.core.product.model.dto.eligibility.IncomeLevel;
 import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
+import dev.crepe.domain.core.product.model.dto.response.GetOnsaleProductListReponse;
 import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.product.repository.ProductRepository;
+import dev.crepe.domain.core.product.service.ProductService;
 import dev.crepe.domain.core.subscribe.model.PotentialType;
 import dev.crepe.domain.core.subscribe.model.PreferentialRateModels;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
@@ -43,6 +47,7 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class ActorSubscribeServiceImpl implements ActorSubscribeService {
+
     private final ActorRepository actorRepository;
     private final ProductRepository productRepository;
     private final SubscribeRepository subscribeRepository;
@@ -50,6 +55,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     private final PreferentialRateUtils preferentialRateUtils;
     private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
     private final PreferentialConditionSatisfactionService satisfactionService;
+    private final ProductService productService;
 
     // 상품 구독
     @Override
@@ -446,6 +452,29 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
 
         return "0";
     }
+
+    @Override
+    public List<GetOnsaleProductListReponse> getAllBankProducts(String userEmail) {
+
+        Actor user = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
+
+        // 판매 중인 상품 목록 조회
+        return productService.getOnSaleProducts();
+    }
+
+
+    @Override
+    public GetProductDetailResponse getProductById(Long productId, String userEmail) {
+
+        Actor user = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException(userEmail));
+
+        Product product = productRepository.findById(productId).orElseThrow(EntityNotFoundException::new);
+
+        return productService.getProductDetail(product.getBank().getId(), productId);
+    }
+
 
 
 }
