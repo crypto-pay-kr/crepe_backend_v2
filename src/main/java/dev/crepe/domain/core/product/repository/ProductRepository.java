@@ -19,4 +19,6 @@ public interface ProductRepository extends JpaRepository<Product,Long> {
 
     List<Product> findByBankAndStatus(Bank bank, BankProductStatus status);
 
+    List<Product> findByStatus(BankProductStatus status);
+
 }

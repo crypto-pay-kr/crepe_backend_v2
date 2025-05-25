@@ -16,6 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class GetProductDetailResponse {
+    private Long id;
     private String productName;
     private BankProductType type;
     private Float baseInterestRate;

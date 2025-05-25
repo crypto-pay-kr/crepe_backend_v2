@@ -3,6 +3,7 @@ package dev.crepe.domain.bank.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
 import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.response.GetAllProductResponse;
 import dev.crepe.domain.core.product.model.dto.response.GetPreferentialConditionResponse;
@@ -414,6 +415,8 @@ public class BankProductServiceImpl implements BankProductService {
                         .build())
                 .toList();
     }
+
+
 
     @Override
     public List<String> getAllProductsTags() {

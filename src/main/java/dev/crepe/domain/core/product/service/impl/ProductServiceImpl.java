@@ -10,6 +10,7 @@ import dev.crepe.domain.admin.dto.response.PreferentialConditionDto;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
+import dev.crepe.domain.core.product.model.dto.response.GetOnsaleProductListReponse;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
 import dev.crepe.domain.core.product.model.entity.PreferentialInterestCondition;
 import dev.crepe.domain.core.product.model.entity.Product;
@@ -24,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,6 +82,58 @@ public class ProductServiceImpl implements ProductService {
                 .endDate(product.getEndDate())
                 .build();
     }
+
+    @Override
+    public List<GetOnsaleProductListReponse> getOnSaleProducts() {
+        // 판매 중인 상품 조회
+        List<Product> products = productRepository.findByStatus(BankProductStatus.APPROVED);
+
+        return products.stream()
+                .map(product -> {
+                    // 현재 참여자 수 계산
+                    int currentParticipants = subscribeRepository.countByProductIdAndStatus(product.getId(), SubscribeStatus.ACTIVE);
+
+                    // 남은 자본금 수량 계산
+                    BigDecimal usedBudget = subscribeRepository.sumAmountByProductId(product.getId());
+                    BigDecimal remainingBudget = product.getBudget().subtract(usedBudget != null ? usedBudget : BigDecimal.ZERO);
+
+                    // 마감 기한
+                    String deadline = product.getEndDate() != null ? product.getEndDate().toString() : null;
+
+                    // 응답 객체 생성
+                    return GetOnsaleProductListReponse.builder()
+                            .id(product.getId())
+                            .type(product.getType())
+                            .productName(product.getProductName())
+                            .bankName(product.getBank().getName())
+                            .totalBudget(product.getBudget())
+                            .remainingBudget(remainingBudget)
+                            .totalParticipants(product.getMaxParticipants())
+                            .currentParticipants(currentParticipants)
+                            .status(product.getStatus())
+                            .minInterestRate(product.getBaseInterestRate())
+                            .maxInterestRate(calculateMaxInterestRate(product))
+                            .imageUrl(product.getImageUrl())
+                            .guideFile(product.getGuideFileUrl())
+                            .deadline(deadline)
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
+    // 최대 금리 계산
+    private Float calculateMaxInterestRate(Product product) {
+        float maxInterestRate = product.getBaseInterestRate();
+        if (product.getPreferentialConditions() != null && !product.getPreferentialConditions().isEmpty()) {
+            float maxAdditionalRate = product.getPreferentialConditions().stream()
+                    .map(PreferentialInterestCondition::getRate)
+                    .max(Comparator.naturalOrder())
+                    .orElse(0f);
+            maxInterestRate += maxAdditionalRate;
+        }
+        return maxInterestRate;
+    }
+
 
 
     private List<GetAllProductResponse> getBankProductsByStatus(Long bankId, boolean includeStatus) {
