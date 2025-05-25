@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.util.history.business.model.entity;
 
 import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
@@ -23,6 +24,10 @@ public class TransactionHistory extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "coin_id", nullable = false)
+    private Coin coin;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "account_id", nullable = false)
