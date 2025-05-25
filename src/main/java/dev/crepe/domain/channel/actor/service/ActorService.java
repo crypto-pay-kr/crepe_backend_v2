@@ -10,6 +10,8 @@ import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
+
 
 public interface ActorService {
 
@@ -27,4 +29,7 @@ public interface ActorService {
     ResponseEntity<Void> addOccupationName(AddOccupationRequest request, String userEmail);
     GetFinancialSummaryResponse checkIncome(String userEmail);
     ResponseEntity<String> updateFromIdCard(String userEmail,IdCardOcrResponse idCardResponse);
+
+    // role 역할별 수 세기
+    Map<String, Long> getRoleCounts();
 }

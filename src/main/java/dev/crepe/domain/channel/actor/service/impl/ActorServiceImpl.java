@@ -6,6 +6,7 @@ import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
 import dev.crepe.domain.channel.actor.exception.*;
+import dev.crepe.domain.channel.actor.model.RoleCountProjection;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
@@ -28,7 +29,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -198,6 +202,13 @@ public class ActorServiceImpl  implements ActorService {
             log.error("업데이트 중 오류 발생: {}", e.getMessage(), e);
             throw e;
         }
+    }
+
+    // 역할별 counts
+    public Map<String, Long> getRoleCounts() {
+        List<RoleCountProjection> counts = actorRepository.countActorsByRole();
+        return counts.stream()
+                .collect(Collectors.toMap(RoleCountProjection::getRole, RoleCountProjection::getCount));
     }
 
 

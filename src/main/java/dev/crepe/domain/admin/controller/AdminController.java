@@ -5,15 +5,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.admin.service.AdminService;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
+import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +23,8 @@ public class AdminController {
 
     private final AdminService adminService;
     private final NaverCaptchaService captchaService;
+    private final ActorService actorService;
+
     @PostMapping("/login")
     @Operation(summary = "관리자 로그인", description = "관리자 로그인")
     public ResponseEntity<?> adminLogin(@Valid @RequestBody LoginRequest request) {
@@ -62,4 +62,9 @@ public class AdminController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+
+
+
+
 }
