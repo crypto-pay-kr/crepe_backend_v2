@@ -1,11 +1,16 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
+import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
+import dev.crepe.domain.channel.actor.model.dto.response.GetAllBalanceResponse;
 import dev.crepe.domain.channel.actor.service.ActorAccountService;
+import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
@@ -14,6 +19,7 @@ import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -94,15 +100,35 @@ public class ActorAccountServiceImpl implements ActorAccountService {
                 })
                 .collect(Collectors.toList());
     }
-  
 
+    @Override
     public BigDecimal getTokenBalance(String email, String currency) {
         return accountService.getTokenBalance(email, currency);
     }
-  
+
+    @Override
     public void unRegisterAccount(String email, String currency) {
         accountService.unRegisterAccount(email, currency);
 
     }
+
+    @Override
+    public void holdActorAccount(Account account) {
+
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
+            throw new AlreadyHoldAddressException(account.getAccountAddress());
+        }
+        accountService.holdAccount(account);
+
+    }
+
+    @Override
+    public GetAllBalanceResponse getAllBalance(String email) {
+        List<GetBalanceResponse> balanceList = accountService.getBalanceList(email);
+        List<GetBankTokenInfoResponse> bankTokenAccounts = accountService.getBankTokensInfo(email);
+
+        return new GetAllBalanceResponse(balanceList, bankTokenAccounts);
+    }
+
 
 }

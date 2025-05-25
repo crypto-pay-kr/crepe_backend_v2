@@ -4,16 +4,21 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.exception.AccountOnHoldException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
 import dev.crepe.domain.core.account.exception.TagRequiredException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.account.util.GenerateAccountAddress;
+import dev.crepe.domain.core.product.model.entity.Product;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
@@ -39,6 +44,7 @@ public class AccountServiceImpl implements AccountService {
     private final CoinRepository coinRepository;
     private final BankTokenRepository bankTokenRepository;
     private final ActorRepository actorRepository;
+    private final SubscribeRepository subscribeRepository;
 
     @Override
     @Transactional
@@ -100,6 +106,8 @@ public class AccountServiceImpl implements AccountService {
         Account existingAccount = accountRepository.findByBankAndBankToken(bankToken.getBank(), bankToken)
                 .orElseThrow(() -> new AccountNotFoundException("해당 BankToken에 연결된 계좌를 찾을 수 없습니다."));
 
+        validateAccountNotHold(existingAccount);
+
         Account updatedAccount = Account.builder()
                 .id(existingAccount.getId()) // 기존 ID 유지
                 .bank(existingAccount.getBank())
@@ -147,12 +155,70 @@ public class AccountServiceImpl implements AccountService {
         return accounts.stream()
                 .filter(account -> account.getCoin() != null)
                 .map(account -> GetBalanceResponse.builder()
+                        .coinImageUrl(account.getCoin().getCoinImage())
                         .coinName(account.getCoin().getName())
                         .currency(account.getCoin().getCurrency())
                         .balance(account.getBalance())
                         .build())
                 .toList();
     }
+
+    @Override
+    public List<GetBankTokenInfoResponse> getBankTokensInfo(String email) {
+        // 1. 전체 BankToken과 연결된 모든 계좌 조회
+        List<Account> allTokenAccounts = accountRepository.findByBankTokenIdIsNotNullAndBankIdIsNotNull();
+
+        // 2. 유저의 BankToken 계좌 조회
+        List<Account> userTokenAccounts = accountRepository.findByActor_EmailAndBankTokenIdIsNotNull(email);
+
+        // 3. 유저 계좌 정보를 Map으로 변환 (bankTokenId → balance)
+        Map<Long, BigDecimal> userBalances = userTokenAccounts.stream()
+                .collect(Collectors.toMap(
+                        acc -> acc.getBankToken().getId(),
+                        Account::getBalance
+                ));
+
+        // 4. 전체 토큰 계좌 정보를 Map으로 변환 (bankTokenId → Account)
+        Map<Long, Account> tokenAccountMap = allTokenAccounts.stream()
+                .collect(Collectors.toMap(
+                        acc -> acc.getBankToken().getId(),
+                        acc -> acc
+                ));
+
+        // 5. 유저가 가입한 상품 정보 조회
+        List<Subscribe> userSubscribes = subscribeRepository.findByUser_Email(email);
+        Map<Long, List<GetBankTokenInfoResponse.GetProductResponse>> subscribedProducts = userSubscribes.stream()
+                .collect(Collectors.groupingBy(
+                        sub -> sub.getProduct().getBankToken().getId(),
+                        Collectors.mapping(sub -> GetBankTokenInfoResponse.GetProductResponse.builder()
+                                .subscribeId(sub.getId())
+                                .name(sub.getProduct().getProductName())
+                                .balance(sub.getBalance())
+                                .build(), Collectors.toList())
+                ));
+
+        // 5. 결과 생성
+        return tokenAccountMap.entrySet().stream()
+                .map(entry -> {
+                    Long tokenId = entry.getKey();
+                    Account account = entry.getValue();
+                    String name = account.getBankToken().getName();
+                    BigDecimal balance = userBalances.getOrDefault(tokenId, BigDecimal.ZERO);
+                    List<GetBankTokenInfoResponse.GetProductResponse> product = subscribedProducts.get(tokenId);
+
+                    return GetBankTokenInfoResponse.builder()
+                            .bankImageUrl(account.getBankToken().getBank().getImageUrl())
+                            .currency(account.getBankToken().getCurrency())
+                            .name(name)
+                            .balance(balance)
+                            .product(product)
+                            .build();
+                })
+                .toList();
+    }
+
+
+
 
     @Override
     public GetBalanceResponse getBalanceByCurrency(String email, String currency) {
@@ -170,6 +236,12 @@ public class AccountServiceImpl implements AccountService {
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Account getAccountById(Long accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("Account not found for ID: " + accountId));
+    }
 
     @Transactional
     @Override
@@ -181,6 +253,9 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(AccountNotFoundException::new)
                 : accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(AccountNotFoundException::new);
+
+        // HOLD 상태 계좌 확인
+        validateAccountNotHold(account);
 
         // 2. 코인 정보 조회
         Coin coin = coinRepository.findByCurrency(request.getCurrency());
@@ -236,6 +311,9 @@ public class AccountServiceImpl implements AccountService {
                 : accountRepository.findByActor_EmailAndCoin_Currency(email, request.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(request.getCurrency()));
 
+        // HOLD 상태 계좌 확인
+        validateAccountNotHold(account);
+
         Coin coin = coinRepository.findByCurrency(request.getCurrency());
         if (coin.isTag() && (request.getTag() == null || request.getTag().isBlank())) {
             throw new TagRequiredException(request.getCurrency());
@@ -266,6 +344,8 @@ public class AccountServiceImpl implements AccountService {
     }
 
 
+
+
     @Override
     public Account findBankTokenAccount(Long bankId, BankToken bankToken) {
         return accountRepository.findByBankIdAndBankTokenAndActorIsNull(bankId, bankToken)
@@ -289,19 +369,26 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public Account getOrCreateTokenAccount(String email, String tokenCurrency) {
-        return accountRepository.findByActor_EmailAndBankToken_Currency(email, tokenCurrency)
-                .orElseGet(() -> {
-                    BankToken token = bankTokenRepository.findByCurrency(tokenCurrency)
-                            .orElseThrow(() -> new IllegalArgumentException("토큰 없음"));
-                    Actor actor = actorRepository.findByEmail(email)
-                            .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
 
-                    return accountRepository.save(Account.builder()
-                            .actor(actor)
-                            .bankToken(token)
-                            .balance(BigDecimal.ZERO)
-                            .build());
-                });
+        // 계좌 조회
+        Optional<Account> existingAccount = accountRepository.findByActor_EmailAndBankToken_Currency(email, tokenCurrency);
+
+        // HOLD 상태 계좌 확인
+        existingAccount.ifPresent(this::validateAccountNotHold);
+
+        // 계좌가 없으면 새로 생성
+        return existingAccount.orElseGet(() -> {
+            BankToken token = bankTokenRepository.findByCurrency(tokenCurrency)
+                    .orElseThrow(() -> new IllegalArgumentException("토큰 없음"));
+            Actor actor = actorRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalArgumentException("사용자 없음"));
+
+            return accountRepository.save(Account.builder()
+                    .actor(actor)
+                    .bankToken(token)
+                    .balance(BigDecimal.ZERO)
+                    .build());
+        });
     }
 
 
@@ -321,6 +408,10 @@ public class AccountServiceImpl implements AccountService {
                 .orElseThrow(() -> new AccountNotFoundException(currency))
                 : accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
                 .orElseThrow(() -> new AccountNotFoundException(currency));
+
+        // HOLD 상태 계좌 확인
+        validateAccountNotHold(account);
+
         //계좌가 활성 상태이거나 해지 후 등록 중인 상태일 때만 해지 상태로 변경
         if(account.getAddressRegistryStatus()!=AddressRegistryStatus.ACTIVE&&
                 account.getAddressRegistryStatus()!=AddressRegistryStatus.UNREGISTERED_AND_REGISTERING) {
@@ -330,8 +421,21 @@ public class AccountServiceImpl implements AccountService {
         accountRepository.save(account);
     }
 
+    @Override
+    @Transactional
+    public void holdAccount(Account account) {
 
+        account.adminHoldAddress();
+        accountRepository.save(account);
 
+    }
 
+    // 정지상태 계좌 확인
+    @Override
+    public void validateAccountNotHold(Account account) {
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
+            throw new AccountOnHoldException();
+        }
+    }
 }
 

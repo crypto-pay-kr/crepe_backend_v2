@@ -17,4 +17,6 @@ public interface BankProductService {
 
     List<GetAllProductResponse> findSuspendedProductsByBankEmail(String email);
 
+    List<String> getAllProductsTags();
+
 }

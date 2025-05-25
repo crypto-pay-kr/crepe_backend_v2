@@ -1,5 +1,7 @@
 package dev.crepe.domain.bank.service.impl;
 
+import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
+import dev.crepe.domain.bank.exception.BankManagerNameMismatchException;
 import dev.crepe.domain.bank.exception.BankNameMismatchException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
@@ -36,8 +38,8 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
         // 조회한 bankName과 요청의 bankName 비교
-        if (!request.getBankName().equals(bank.getName())) {
-            throw new BankNameMismatchException(request.getBankName(), bank.getName());
+        if (!request.getManagerName().equals(bank.getManagerName())) {
+            throw new BankManagerNameMismatchException(request.getManagerName(), bank.getManagerName());
         }
 
         // Address 요청 정보 확인
@@ -57,9 +59,10 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
     @Override
     public void changeBankAccount(CreateBankAccountRequest request, String bankEmail) {
 
-        String bankName = request.getBankName();
-        if (bankName == null || bankName.isEmpty()) {
-            throw new BankNameMismatchException("null", "provided");
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
+
+        if (!request.getManagerName().equals(bank.getManagerName())) {
+            throw new BankManagerNameMismatchException(request.getManagerName(), bank.getManagerName());
         }
 
         GetAddressRequest getAddressRequest = request.getGetAddressRequest();
@@ -120,6 +123,7 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
                         || a.getAddressRegistryStatus() == AddressRegistryStatus.REGISTERING)
                 .map(a -> GetCoinAccountInfoResponse.builder()
                         .bankName(a.getBank() != null ? a.getBank().getName() : null)
+                        .managerName(a.getBank() != null ? a.getBank().getManagerName() : null)
                         .coinName(a.getCoin().getName())
                         .currency(a.getCoin().getCurrency())
                         .accountAddress(a.getAccountAddress())
@@ -130,4 +134,13 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void holdBankAccount(Account account) {
+
+        if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
+            throw new AlreadyHoldAddressException(account.getAccountAddress());
+        }
+        accountService.holdAccount(account);
+    }
 }

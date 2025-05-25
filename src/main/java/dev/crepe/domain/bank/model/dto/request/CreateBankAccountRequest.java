@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateBankAccountRequest {
-    private String bankName;
+    private String managerName;
     private GetAddressRequest getAddressRequest;
 }

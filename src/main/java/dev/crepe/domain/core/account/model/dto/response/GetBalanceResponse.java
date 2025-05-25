@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 @Schema(description = "잔액 응답 DTO")
 public class GetBalanceResponse {
 
+    private String coinImageUrl;
     private String coinName;
     private String currency;
     private BigDecimal balance;

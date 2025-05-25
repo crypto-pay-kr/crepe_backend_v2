@@ -20,10 +20,8 @@ import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.dto.request.SubscribeProductRequest;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeProductResponse;
 import dev.crepe.domain.core.subscribe.model.entity.PotentialPreferentialCondition;
-import dev.crepe.domain.core.subscribe.model.entity.PreferentialConditionSatisfaction;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.PotentialPreferentialConditionRepository;
-import dev.crepe.domain.core.subscribe.repository.PreferentialConditionSatisfactionRepository;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.subscribe.service.PreferentialConditionSatisfactionService;
 import dev.crepe.domain.core.subscribe.util.PreferentialRateUtils;
@@ -67,9 +65,24 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
             throw new IllegalStateException("Product is not available for subscription");
         }
 
-        // 이미 가입한 상품인지 확인
+        LocalDate today = LocalDate.now();
+        if (product.getStartDate() != null && today.isBefore(product.getStartDate())) {
+            throw new IllegalStateException("아직 가입 시작일이 되지 않았습니다. (가입 시작일: " + product.getStartDate() + ")");
+        }
+        if (product.getEndDate() != null && today.isAfter(product.getEndDate())) {
+            throw new IllegalStateException("가입 기간이 만료되었습니다. (가입 종료일: " + product.getEndDate() + ")");
+        }
+
         if (subscribeRepository.existsByUserAndProduct(user, product)) {
             throw new IllegalStateException("이미 가입한 상품입니다.");
+        }
+
+        Integer subscribeNum = subscribeRepository.countByProductIdAndStatus(request.getProductId(), SubscribeStatus.ACTIVE);
+
+        if (product.getMaxParticipants() != null) {
+            if (subscribeNum != null && subscribeNum >= product.getMaxParticipants()) {
+                throw new IllegalStateException("상품의 최대 가입자 수를 초과했습니다. (최대: " + product.getMaxParticipants() + "명)");
+            }
         }
 
         checkEligibility(user, product);

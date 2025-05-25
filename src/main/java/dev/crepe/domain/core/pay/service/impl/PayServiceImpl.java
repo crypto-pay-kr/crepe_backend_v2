@@ -6,6 +6,7 @@ import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.pay.exception.AlreadyRefundException;
 import dev.crepe.domain.core.pay.exception.StoreAlreadySettledException;
 import dev.crepe.domain.core.util.history.pay.execption.PayHistoryNotFoundException;
@@ -29,6 +30,7 @@ import java.math.RoundingMode;
 @RequiredArgsConstructor
 public class PayServiceImpl implements PayService {
 
+    private final AccountService accountService;
    private final AccountRepository accountRepository;
    private final TransactionHistoryRepository transactionHistoryRepository;
    private final PayHistoryRepository payHistoryRepository;
@@ -45,6 +47,9 @@ public class PayServiceImpl implements PayService {
 
         Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getStore().getEmail(), order.getCurrency())
                 .orElseThrow(() -> new AccountNotFoundException(order.getStore().getEmail()));
+
+        accountService.validateAccountNotHold(userAccount);
+        accountService.validateAccountNotHold(storeAccount);
 
         // 2. 결제할 총 금액 계산 (원화 가격 / 코인 환율 = 코인 수량), 소수점 최대 8자리까지 반올림
         BigDecimal totalAmount = BigDecimal.valueOf(order.getTotalPrice())
@@ -132,7 +137,7 @@ public class PayServiceImpl implements PayService {
 
 
     @Transactional
-    public void refundForOrder(Long payId, String email) {
+    public void refundForOrder(Long payId, Long id) {
         // 1. 결제 내역 조회
         PayHistory payHistory = payHistoryRepository.findById(payId)
                 .orElseThrow(PayHistoryNotFoundException::new);
@@ -151,8 +156,8 @@ public class PayServiceImpl implements PayService {
         for (TransactionHistory tx : txList) {
             if (tx.getType() != TransactionType.PAY) continue;
 
-            String actorEmail = tx.getAccount().getActor().getEmail();
-            if (actorEmail.equals(email)) {
+            Long actorId = tx.getAccount().getActor().getId();
+            if (actorId==id) {
                 userTx = tx;
             } else {
                 storeTx = tx;

@@ -47,8 +47,19 @@ public class BankProductController {
         return ResponseEntity.ok(productList);
     }
 
+
+    @Operation(summary = "모든 태그 조회", description = "등록된 모든 태그를 조회합니다.")
+    @GetMapping("/products/tags")
+    @BankAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<List<String>> getAllTags(AppAuthentication auth) {
+        List<String> tags = bankProductService.getAllProductsTags();
+        return ResponseEntity.ok(tags);
+    }
+
+
     @Operation(summary = "은행 등록 상품 단일 조회")
-    @GetMapping("/product/{id}")
+    @GetMapping("/products/{id}")
     @BankAuth
     @SecurityRequirement(name = "bearer-jwt")
     public ResponseEntity<GetAllProductResponse> getProductById(AppAuthentication auth, @PathVariable Long id) {

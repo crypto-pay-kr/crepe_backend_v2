@@ -78,6 +78,7 @@ public class BankServiceImpl implements BankService {
                 .name(request.getBankSignupDataRequest().getName())
                 .imageUrl(bankImageUrl)
                 .bankCode(request.getBankSignupDataRequest().getBankCode())
+                .managerName(request.getBankSignupDataRequest().getManagerName())
                 .role(UserRole.BANK)
                 .build();
 
@@ -175,6 +176,7 @@ public class BankServiceImpl implements BankService {
                             .id(bank.getId())
                             .name(bank.getName())
                             .bankPhoneNum(bank.getBankPhoneNum())
+                            .imageUrl(bank.getImageUrl())
                             .totalSupply(totalSupply)
                             .build();
                 })

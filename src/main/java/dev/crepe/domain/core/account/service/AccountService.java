@@ -5,6 +5,7 @@ import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
@@ -28,6 +29,8 @@ public interface AccountService {
     List<GetBalanceResponse> getBalanceList(String userEmail);
     GetBalanceResponse getBalanceByCurrency(String userEmail, String currency);
 
+    Account getAccountById(Long accountId);
+
     void submitAccountRegistrationRequest(GetAddressRequest request, String email);
     GetAddressResponse getAddressByCurrency(String currency, String email);
     void reRegisterAddress(String email, GetAddressRequest request);
@@ -47,5 +50,11 @@ public interface AccountService {
 
 
     void unRegisterAccount(String email, String currency);
+
+    void holdAccount(Account account);
+
+    void validateAccountNotHold(Account account);
+
+    List<GetBankTokenInfoResponse> getBankTokensInfo(String email);
 
 }

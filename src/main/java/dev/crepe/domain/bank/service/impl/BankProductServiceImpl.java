@@ -53,6 +53,7 @@ public class BankProductServiceImpl implements BankProductService {
     private final S3Service s3Service;
     private final ProductRepository productRepository;
     private final TagRepository tagRepository;
+    private final MaxParticipantsCalculatorService maxParticipantsCalculatorService;
 
     @Override
     public RegisterProductResponse registerProduct(String email, MultipartFile productImage, MultipartFile guideFile, RegisterProductRequest request) {
@@ -89,6 +90,15 @@ public class BankProductServiceImpl implements BankProductService {
         EligibilityCriteria eligibilityCriteria = buildEligibilityCriteria(request.getEligibilityCriteria());
         String joinConditionJson = convertEligibilityCriteriaToString(eligibilityCriteria);
 
+        // 자동계산
+        Integer calculatedMaxParticipants = maxParticipantsCalculatorService.calculateMaxParticipants(
+                request.getType(),
+                budget,
+                request.getMaxMonthlyPayment(),
+                request.getBaseRate().floatValue(),
+                request.getStartDate(),
+                request.getEndDate()
+        );
 
         // 상품 엔티티 생성
         Product product = Product.builder()
@@ -105,10 +115,11 @@ public class BankProductServiceImpl implements BankProductService {
                 .joinCondition(joinConditionJson)
                 .baseInterestRate(request.getBaseRate().floatValue())
                 .maxMonthlyPayment(request.getMaxMonthlyPayment())
-                .maxParticipants(request.getMaxParticipants())
+                .maxParticipants(calculatedMaxParticipants)
                 .imageUrl(productImageUrl)
                 .guideFileUrl(guideFileUrl)
                 .build();
+
 
         if (request.getTagNames() != null && !request.getTagNames().isEmpty()) {
             List<Tag> tags = getOrCreateTags(request.getTagNames());
@@ -401,6 +412,13 @@ public class BankProductServiceImpl implements BankProductService {
                                         .toList())
                         .joinConditions(product.getJoinCondition())
                         .build())
+                .toList();
+    }
+
+    @Override
+    public List<String> getAllProductsTags() {
+        return tagRepository.findAll().stream()
+                .map(Tag::getName)
                 .toList();
     }
 }

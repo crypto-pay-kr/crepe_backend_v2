@@ -2,6 +2,11 @@ package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
 
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.domain.channel.actor.service.ActorService;
+import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
@@ -13,7 +18,7 @@ import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -23,7 +28,8 @@ public class TokenServiceImpl implements TokenService {
     private final AccountService accountService;
     private final PortfolioHistoryService portfolioHistoryService;
     private final BankTokenInfoService bankTokenInfoService;
-
+    private final AccountRepository accountRepository;
+    private final ActorRepository actorRepository;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -56,5 +62,7 @@ public class TokenServiceImpl implements TokenService {
         // 토큰 발행 상태 변경
         portfolioHistoryService.updateTokenHistoryStatus(request, tokenHistory.getId(), BankTokenStatus.REJECTED);
     }
+
+
 
 }

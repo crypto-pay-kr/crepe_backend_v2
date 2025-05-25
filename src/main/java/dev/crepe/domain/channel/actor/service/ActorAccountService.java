@@ -1,9 +1,11 @@
 package dev.crepe.domain.channel.actor.service;
 
 import dev.crepe.domain.channel.actor.model.dto.response.BankTokenAccountDto;
+import dev.crepe.domain.channel.actor.model.dto.response.GetAllBalanceResponse;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.account.model.entity.Account;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,5 +38,12 @@ public interface ActorAccountService {
     //계좌 등록 해제
     void unRegisterAccount(String email, String currency);
 
+
+    // 계좌 정지
+    void holdActorAccount(Account account);
+
+
+    //토큰및 코인 계좌 조회
+    GetAllBalanceResponse getAllBalance(String email);
 
 }

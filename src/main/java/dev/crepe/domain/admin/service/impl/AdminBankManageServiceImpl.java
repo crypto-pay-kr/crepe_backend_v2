@@ -2,16 +2,19 @@ package dev.crepe.domain.admin.service.impl;
 
 import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
-import dev.crepe.domain.admin.dto.response.GetAllBankResponse;
-import dev.crepe.domain.admin.dto.response.GetAllBankTokenResponse;
-import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
-import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
+import dev.crepe.domain.admin.dto.response.*;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.core.account.exception.AccountNotFoundException;
+import dev.crepe.domain.core.account.exception.NotActorAccountOwnerException;
+import dev.crepe.domain.core.account.exception.NotBankAccountException;
+import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.service.ProductService;
 import dev.crepe.domain.core.product.service.impl.ProductServiceImpl;
@@ -36,6 +39,8 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     private final BankService bankService;
     private final BankTokenInfoService bankTokenInfoService;
     private final ProductServiceImpl productService;
+    private final AccountService accountService;
+    private final AccountRepository accountRepository;
 
     // 은행 계정 생성
     @Override
@@ -58,6 +63,7 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
         // 응답 생성
         return bankTokens.stream()
                 .flatMap(bankToken -> bankToken.getTokenHistories().stream())
+                .sorted((h1, h2) -> h2.getCreatedAt().compareTo(h1.getCreatedAt()))
                 .map(tokenHistory -> {
                     List<GetAllBankTokenResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
                             .stream()
@@ -131,6 +137,23 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     @Override
     public List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId) {
         return bankService.getBankAccountByAdmin(bankId);
+    }
+
+    @Override
+    public void holdBankAddress(Long accountId) {
+
+        Account account = accountService.getAccountById(accountId);
+
+        // 소유주가 Bank인지 검증
+        if (account.getBank() == null) {
+            throw new NotBankAccountException();
+        }
+
+        accountService.holdAccount(account);
+    }
+
+    public GetProductDetailResponse getBankProductDetail(Long bankId, Long productId) {
+        return productService.getProductDetail(bankId,productId);
     }
 
 
