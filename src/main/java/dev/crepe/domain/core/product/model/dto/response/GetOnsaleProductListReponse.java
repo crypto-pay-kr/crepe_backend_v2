@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Getter
 @Builder
@@ -25,6 +26,7 @@ public class GetOnsaleProductListReponse {
     private Float minInterestRate;
     private Float maxInterestRate;
     private String imageUrl;
+    private List<String> tags;
     private String guideFile;
     private String deadline; // 마감 기한 (ISO 8601 형식의 문자열로 가정)
 
