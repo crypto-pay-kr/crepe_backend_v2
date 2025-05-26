@@ -171,4 +171,9 @@ public class OrderServiceImpl implements OrderService {
     public Page<Order> getOrdersByUserId(Long userId, Pageable pageable) {
         return orderRepository.findByUserId(userId,pageable);
     }
+
+    @Override
+    public Page<Order> getOrdersByUserEmail(String userEmail, Pageable pageable) {
+        return orderRepository.findByUserEmail(userEmail,pageable);
+    }
 }
