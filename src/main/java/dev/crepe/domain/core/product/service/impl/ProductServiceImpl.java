@@ -114,6 +114,7 @@ public class ProductServiceImpl implements ProductService {
                             .minInterestRate(product.getBaseInterestRate())
                             .maxInterestRate(calculateMaxInterestRate(product))
                             .imageUrl(product.getImageUrl())
+                            .tags(extractTags(product.getProductTags()))
                             .guideFile(product.getGuideFileUrl())
                             .deadline(deadline)
                             .build();
