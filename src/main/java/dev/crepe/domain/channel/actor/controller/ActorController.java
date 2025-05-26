@@ -161,7 +161,7 @@ public class ActorController {
     //******************************************** 회원 정보 수정 end ********************************************/
 
     // 직업 입력 받기
-    @Operation(summary = "휴대폰 인증, 직업 등록", description = "상품 가입 전 휴대폰 인증 및 직업 등록")
+    @Operation(summary = "직업 등록", description = "상품 가입 전 직업 등록")
     @PostMapping("/add/occupation")
     @ActorAuth
     @SecurityRequirement(name = "bearer-jwt")

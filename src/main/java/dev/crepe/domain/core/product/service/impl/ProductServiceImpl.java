@@ -1,14 +1,20 @@
 package dev.crepe.domain.core.product.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.admin.dto.request.ChangeProductSaleRequest;
 import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
 import dev.crepe.domain.admin.dto.response.JoinConditionDto;
 import dev.crepe.domain.admin.dto.response.PreferentialConditionDto;
+import dev.crepe.domain.channel.actor.model.dto.request.ActorEligibilityRequest;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.product.model.BankProductStatus;
+import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
 import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
+import dev.crepe.domain.core.product.model.dto.eligibility.IncomeLevel;
+import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
 import dev.crepe.domain.core.product.model.dto.request.ReviewProductSubmissionRequest;
 import dev.crepe.domain.core.product.model.dto.response.GetOnsaleProductListReponse;
 import dev.crepe.domain.core.product.model.dto.response.ReviewProductSubmissionResponse;
@@ -25,9 +31,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -236,4 +246,29 @@ public class ProductServiceImpl implements ProductService {
                     .build();
         }
     }
+    @Override
+    public boolean checkEligibility(Long productId, ActorEligibilityRequest actorEligibilityRequest) {
+        // Product 조회
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new EntityNotFoundException("Product를 찾을 수 없습니다."));
+
+        // JoinCondition 파싱
+        EligibilityCriteria criteria;
+        try {
+            criteria = objectMapper.readValue(product.getJoinCondition(), EligibilityCriteria.class);
+        } catch (IOException e) {
+            throw new IllegalStateException("상품 가입 조건을 확인할 수 없습니다.");
+        }
+
+        // 조건 비교
+        boolean ageMatch = criteria.getAgeGroups().contains(actorEligibilityRequest.getAgeGroup());
+        boolean occupationMatch = criteria.getOccupations().contains(Occupation.ALL_OCCUPATIONS) ||
+                criteria.getOccupations().contains(actorEligibilityRequest.getOccupation());
+        boolean incomeMatch = criteria.getIncomeLevels().contains(IncomeLevel.NO_LIMIT) ||
+                criteria.getIncomeLevels().contains(actorEligibilityRequest.getIncomeLevel());
+
+        // 모든 조건이 true여야 true 반환
+        return ageMatch && occupationMatch && incomeMatch;
+    }
+
 }

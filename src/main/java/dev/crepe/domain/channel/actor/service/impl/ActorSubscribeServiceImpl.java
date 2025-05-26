@@ -3,6 +3,7 @@ package dev.crepe.domain.channel.actor.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
+import dev.crepe.domain.channel.actor.model.dto.request.ActorEligibilityRequest;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorSubscribeService;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -124,7 +126,6 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
 
         return buildSubscribeResponse(saved, product, initialRates);
     }
-
 
 
     private boolean checkAgeEligibility(Actor user, EligibilityCriteria criteria) {
@@ -225,7 +226,6 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     private String generateVoucherCode() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
     }
-
 
 
     private PreferentialRateModels.InitialRateCalculationResult calculateInitialPreferentialRates(Actor user, Product product, SubscribeProductRequest request) {
@@ -475,6 +475,42 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
         return productService.getProductDetail(product.getBank().getId(), productId);
     }
 
+    @Override
+    public boolean checkEligibility(Long productId, String actorEmail) {
 
+        Actor actor = actorRepository.findByEmail(actorEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Actor를 찾을 수 없습니다."));
 
+        AgeGroup ageGroup = determineAgeGroup(actor.getBirth());
+        Occupation occupation = actor.getOccupation();
+        IncomeLevel incomeLevel = determineIncomeLevel(actor.getAnnualIncome());
+
+        ActorEligibilityRequest actorEligibilityRequest = ActorEligibilityRequest.builder()
+                .ageGroup(ageGroup)
+                .occupation(occupation)
+                .incomeLevel(incomeLevel)
+                .build();
+
+        return productService.checkEligibility(productId, actorEligibilityRequest);
+    }
+
+    private AgeGroup determineAgeGroup(String birthDate) {
+        int age = Period.between(LocalDate.parse(birthDate), LocalDate.now()).getYears();
+        for (AgeGroup group : AgeGroup.values()) {
+            if (group.isInRange(age)) {
+                return group;
+            }
+        }
+        throw new IllegalArgumentException("유효하지 않은 연령대입니다.");
+    }
+
+    private IncomeLevel determineIncomeLevel(BigDecimal annualIncome) {
+        if (annualIncome.compareTo(new BigDecimal("30000000")) <= 0) {
+            return IncomeLevel.LOW_INCOME;
+        } else if (annualIncome.compareTo(new BigDecimal("60000000")) <= 0) {
+            return IncomeLevel.LIMITED_INCOME;
+        } else {
+            return IncomeLevel.NO_LIMIT;
+        }
+    }
 }
