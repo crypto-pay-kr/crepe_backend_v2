@@ -40,13 +40,13 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     BigDecimal sumTransactionAmountByUserRole();
 
     @Query("""
-  SELECT new dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto(th.coin.currency, SUM(th.amount))
+  SELECT new dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto(acc.coin.currency, SUM(th.amount))
   FROM TransactionHistory th
   JOIN th.account acc
   JOIN acc.actor actor
   WHERE th.status = 'ACCEPTED'
     AND actor.role = 'USER'
-  GROUP BY th.coin.currency
+  GROUP BY acc.coin.currency
 """)
     List<CoinUsageDto> getUsageByCoinFiltered();
 
