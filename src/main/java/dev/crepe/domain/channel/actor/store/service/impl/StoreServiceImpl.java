@@ -98,7 +98,7 @@ public class StoreServiceImpl implements StoreService {
             throw new AlreadyEmailException();
         }
 
-        if (actorRepository.existsByName(request.getStoreName())) {
+        if (actorRepository.existsByNickName(request.getStoreName())) {
             throw new AlreadyNicknameException();
         }
 

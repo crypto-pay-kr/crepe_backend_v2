@@ -1,5 +1,7 @@
 package dev.crepe.infra.sms.service.impl;
 
+import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.infra.sms.exception.SmsAuthCodeNotValidException;
 import dev.crepe.infra.sms.exception.SmsAuthNotFoundException;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -20,6 +22,7 @@ public class SmsManageServiceImpl implements SmsManageService {
 
     private final NhnSmsService nhnSmsService;
     private final InMemorySmsAuthService inMemorySmsAuthService;
+    private final ActorRepository actorRepository;
 
     @Override
     public InMemorySmsAuthService.SmsAuthData getSmsAuthData(String phoneNumber, SmsType smsType) {
@@ -34,6 +37,12 @@ public class SmsManageServiceImpl implements SmsManageService {
 
     @Override
     public void sendSmsCode(String phoneNumber, SmsType type) {
+
+        // SIGN_UP일 경우 번호 중복 확인
+        if (type == SmsType.SIGN_UP && actorRepository.existsByPhoneNum(phoneNumber)) {
+            throw new AlreadyPhoneNumberException();
+        }
+
         String code = CodeGenerator.generateCode(digitLength);
 
         // 메모리 저장소에 인증 번호 저장

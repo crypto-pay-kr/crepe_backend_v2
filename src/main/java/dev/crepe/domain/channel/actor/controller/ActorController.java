@@ -42,6 +42,29 @@ public class ActorController {
     private final OtpService otpService;
     private final IdCardOcrService idCardOcrService;
 
+
+    // 이메일 중복 확인
+    @PostMapping("/check/email-duplicate")
+    @Operation(summary = "회원가입 시 이메일 중복 체크", description = "이메일 중복 체크")
+    public ResponseEntity<Void> checkEmailDuplicate(@RequestBody Map<String, String> request) {
+        if (actorService.isEmailExists(request.get("email"))) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+        return ResponseEntity.ok().build();
+    }
+
+
+
+
+    // 닉네임 중복 확인
+    @PostMapping("/check/nickname-duplicate")
+    public ResponseEntity<Void> checkNicknameDuplicate(@RequestBody Map<String, String> request) {
+        if (actorService.isNicknameExists(request.get("nickname"))) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/captcha")
     @Operation(summary = "로그인에 필요한 captcha 키 발급", description = "captcha 키 발급")
     public ResponseEntity<?> getCaptcha() {
@@ -67,6 +90,7 @@ public class ActorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
 
     @PostMapping("/login")
     @Operation(summary = "유저, 가맹점 로그인", description = "회원 로그인")

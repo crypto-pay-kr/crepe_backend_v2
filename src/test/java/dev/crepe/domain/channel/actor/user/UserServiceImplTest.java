@@ -61,7 +61,7 @@ class UserServiceImplTest {
         );
 
         when(actorRepository.existsByEmail(anyString())).thenReturn(false);
-        when(actorRepository.existsByName(anyString())).thenReturn(false);
+        when(actorRepository.existsByNickName(anyString())).thenReturn(false);
         when(actorRepository.existsByPhoneNum(anyString())).thenReturn(false);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(actorRepository.save(any(Actor.class))).thenReturn(new Actor());
@@ -97,8 +97,8 @@ class UserServiceImplTest {
     }
 
     @Test
-    @DisplayName("이미 존재하는 이름으로 회원가입 시도 시 예외 발생")
-    void signup_WithExistingName() {
+    @DisplayName("이미 존재하는 닉네임으로 회원가입 시도 시 예외 발생")
+    void signup_WithExistingNickName() {
         // given
         UserSignupRequest request = new UserSignupRequest(
                 "test@example.com",
@@ -109,7 +109,7 @@ class UserServiceImplTest {
         );
 
         when(actorRepository.existsByEmail(anyString())).thenReturn(false);
-        when(actorRepository.existsByName("Existing User")).thenReturn(true);
+        when(actorRepository.existsByNickName("testUser")).thenReturn(true);
 
         // when & then
         assertThrows(AlreadyNicknameException.class, () -> userService.signup(request));
@@ -130,7 +130,7 @@ class UserServiceImplTest {
         );
 
         when(actorRepository.existsByEmail(anyString())).thenReturn(false);
-        when(actorRepository.existsByName(anyString())).thenReturn(false);
+        when(actorRepository.existsByNickName(anyString())).thenReturn(false);
         when(actorRepository.existsByPhoneNum("01012345678")).thenReturn(true);
 
         // when & then
