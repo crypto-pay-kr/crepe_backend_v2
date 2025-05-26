@@ -5,6 +5,9 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
+import dev.crepe.domain.core.util.history.pay.model.PayType;
+import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,7 +32,8 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     List<TransactionHistory> findByAccount_Id(Long accountId);
 
     List<TransactionHistory> findAllByPayHistory_Order(Order order);
-
+    Page<TransactionHistory> findByTypeAndStatusAndAccount_Actor_Id(TransactionType type, TransactionStatus status, Long storeId,Pageable pageable);
+    Page<TransactionHistory> findByTypeAndAccount_Actor_Id(TransactionType type, Long storeId, Pageable pageable);
     @Query("""
     SELECT COALESCE(SUM(th.amount), 0)
     FROM TransactionHistory th
@@ -50,5 +54,5 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
 """)
     List<CoinUsageDto> getUsageByCoinFiltered();
 
-
+    TransactionHistory getTransactionHistoryById(Long id);
 }

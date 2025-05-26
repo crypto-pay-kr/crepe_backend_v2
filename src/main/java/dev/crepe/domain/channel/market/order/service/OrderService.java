@@ -22,4 +22,5 @@ public interface OrderService {
 
     //주문 조회
     Page<Order> getOrdersByUserId(Long userId, Pageable pageable);
+    Page<Order> getOrdersByStoreId(Long storeId, Pageable pageable);
 }

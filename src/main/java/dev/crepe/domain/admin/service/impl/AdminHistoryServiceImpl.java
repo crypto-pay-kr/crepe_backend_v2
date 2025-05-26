@@ -2,9 +2,17 @@ package dev.crepe.domain.admin.service.impl;
 
 
 import dev.crepe.domain.admin.dto.response.GetPayHistoryResponse;
-import dev.crepe.domain.admin.service.AdminPayHistoryService;
+import dev.crepe.domain.admin.dto.response.GetSettlementHistoryResponse;
+import dev.crepe.domain.admin.service.AdminHistoryService;
+
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.channel.market.order.service.OrderService;
+import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
+import dev.crepe.domain.core.util.history.business.model.TransactionType;
+import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
+import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.pay.service.PayHistoryService;
 import lombok.AllArgsConstructor;
@@ -17,10 +25,11 @@ import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
-public class AdminPayHistoryServiceImpl implements AdminPayHistoryService {
+public class AdminHistoryServiceImpl implements AdminHistoryService {
 
     private final OrderService orderService;
     private final PayHistoryService payHistoryService;
+    private final TransactionHistoryService transactionHistoryService;
 
     // 유저 ID 기반으로 모든 결제 내역 조회
     @Override
@@ -52,6 +61,30 @@ public class AdminPayHistoryServiceImpl implements AdminPayHistoryService {
 
         return new PageImpl<>(filtered, pageable, filtered.size());
     }
+
+
+    @Override
+    public Page<GetSettlementHistoryResponse> getSettlementHistoriesByUserId(Long storeId, TransactionStatus status, Pageable pageable) {
+
+        Page<TransactionHistory> transactionHistories = transactionHistoryService.getSettlementHistory(status, storeId, pageable);
+
+        return transactionHistories.map(settlement ->
+                GetSettlementHistoryResponse.builder()
+                        .id(settlement.getId())
+                        .date(settlement.getUpdatedAt())
+                        .status(settlement.getStatus().name())
+                        .currency(settlement.getAccount().getCoin().getCurrency())
+                        .amount(settlement.getAmount())
+                        .build()
+        );
+    }
+
+
+    @Override
+    public void reSettlement(Long historyId) {
+        transactionHistoryService.reSettlement(historyId);
+    }
+
 }
 
 
