@@ -62,7 +62,6 @@ public class ActorServiceImpl  implements ActorService {
             throw new LoginFailedException();
         }
 
-        // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
         AuthenticationToken token = authService.createAndSaveToken(actor.getEmail(), actor.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, actor);

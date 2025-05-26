@@ -191,4 +191,5 @@ public class Actor extends BaseEntity {
     public void changeSuspension(ActorSuspension suspension) {
         this.suspension = suspension;
     }
+
 }

@@ -9,6 +9,7 @@ import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResp
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.ocr.id.service.IdCardOcrService;
 import dev.crepe.infra.otp.model.dto.OtpSetupResponse;
+import dev.crepe.infra.otp.model.entity.OtpCredential;
 import dev.crepe.infra.otp.service.OtpService;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
@@ -126,6 +127,27 @@ public class ActorController {
         }
     }
 
+    @PostMapping("/status")
+    @Operation(summary = "OTP 상태 조회", description = "사용자의 OTP 설정 상태 조회")
+    public ResponseEntity<?> getOtpStatus(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "이메일이 필요합니다");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            ApiResponse<OtpCredential> response = otpService.getOtpStatus(email);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 
 
     //******************************************** 회원 정보 수정 start ********************************************/
