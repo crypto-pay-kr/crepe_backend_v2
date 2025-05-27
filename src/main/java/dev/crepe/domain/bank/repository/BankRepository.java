@@ -18,4 +18,5 @@ public interface BankRepository extends JpaRepository<Bank, Long> {
     boolean existsByBankCode(String bankCode);
 
     List<Bank> findByStatus(BankStatus status);
+
 }
