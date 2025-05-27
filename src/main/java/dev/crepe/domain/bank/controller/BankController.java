@@ -36,32 +36,6 @@ public class BankController {
     private final NaverCaptchaService captchaService;
 
 
-    @GetMapping("/captcha")
-    @Operation(summary = "로그인에 필요한 captcha 키 발급", description = "captcha 키 발급")
-    public ResponseEntity<?> getCaptcha() {
-        try {
-            String captchaResponse = captchaService.generateCaptchaKey();
-            log.info("captcha response: {}", captchaResponse);
-
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(captchaResponse);
-            String captchaKey = rootNode.path("key").asText();
-
-            String captchaImageUrl = "https://naveropenapi.apigw.ntruss.com/captcha-bin/v1/ncaptcha?key=" + captchaKey;
-
-            Map<String, String> response = new HashMap<>();
-            response.put("captchaKey", captchaKey);
-            response.put("captchaImageUrl", captchaImageUrl);
-
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
-    }
-
     @PostMapping("/login")
     @Operation(summary = "은행 로그인", description = "은행 로그인")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {

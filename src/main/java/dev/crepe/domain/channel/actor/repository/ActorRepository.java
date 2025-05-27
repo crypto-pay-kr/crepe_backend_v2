@@ -1,5 +1,6 @@
 package dev.crepe.domain.channel.actor.repository;
 
+import dev.crepe.domain.channel.actor.model.ActorStatus;
 import dev.crepe.domain.channel.actor.model.RoleCountProjection;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
@@ -17,7 +18,7 @@ public interface ActorRepository extends JpaRepository<Actor, Long> {
 
     Optional<Actor> findByEmail(String email);
     boolean existsByEmail(String email);
-    boolean existsByName(String name);
+    boolean existsByNickName(String nickname);
     boolean existsByPhoneNum(String phoneNum);
 
     @Query("SELECT a.role AS role, COUNT(a) AS count FROM Actor a GROUP BY a.role")
@@ -25,5 +26,6 @@ public interface ActorRepository extends JpaRepository<Actor, Long> {
 
 
     Page<Actor> findByRole(UserRole role, Pageable pageable);
-    List<Actor> findByDataStatusTrue();
+
+    Page<Actor> findByRoleAndActorStatus(UserRole enumRole, ActorStatus status, Pageable pageable);
 }

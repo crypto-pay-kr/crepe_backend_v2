@@ -1,5 +1,7 @@
 package dev.crepe.domain.channel.actor.service;
 
+import dev.crepe.domain.admin.dto.request.ChangeActorStatusRequest;
+import dev.crepe.domain.admin.dto.response.ChangeActorStatusResponse;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
@@ -14,6 +16,11 @@ import java.util.Map;
 
 
 public interface ActorService {
+
+    //********** 회원정보 중복 체크 **********/
+    boolean isEmailExists(String email);
+
+    boolean isNicknameExists(String nickname);
 
     //********** 회원 정보 수정 **********/
     ResponseEntity<Void> changePassword(ChangePasswordRequest request, String userEmail);
@@ -32,4 +39,8 @@ public interface ActorService {
 
     // role 역할별 수 세기
     Map<String, Long> getRoleCounts();
+
+    // actor 정지, 해제
+    ChangeActorStatusResponse changeActorStatus(ChangeActorStatusRequest request);
+
 }

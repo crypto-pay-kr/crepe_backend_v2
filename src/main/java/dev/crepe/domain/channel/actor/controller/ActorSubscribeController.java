@@ -1,13 +1,10 @@
 package dev.crepe.domain.channel.actor.controller;
 
-import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
-import dev.crepe.domain.bank.service.BankProductService;
 import dev.crepe.domain.channel.actor.service.impl.ActorSubscribeServiceImpl;
 import dev.crepe.domain.core.product.model.dto.response.GetOnsaleProductListReponse;
-import dev.crepe.domain.core.product.service.ProductService;
 import dev.crepe.domain.core.subscribe.model.dto.request.SubscribeProductRequest;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeProductResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +23,15 @@ public class ActorSubscribeController {
 
     private final ActorSubscribeServiceImpl actorSubscribeService;
 
+
+    @PostMapping("/check-eligibility")
+    @ActorAuth
+    public ResponseEntity<Boolean> checkEligibility(
+            @RequestParam Long productId,
+            AppAuthentication auth) {
+        boolean isEligible = actorSubscribeService.checkEligibility(productId, auth.getUserEmail());
+        return ResponseEntity.ok(isEligible);
+    }
     @Operation(
             summary = "상품 구독",
             description = "은행이 발행한 ACTIVE 상품을 구독"

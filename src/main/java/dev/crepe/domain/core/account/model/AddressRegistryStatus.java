@@ -7,6 +7,5 @@ public enum AddressRegistryStatus {
     UNREGISTERED,                 //해지 중
     UNREGISTERED_AND_REGISTERING, //해지 중 및 재 등록 중
     REJECTED,                      //거절됨
-
     HOLD                         //정지됨
 }
