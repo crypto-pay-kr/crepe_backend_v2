@@ -10,6 +10,9 @@ import dev.crepe.domain.core.util.history.business.model.dto.PayStatusCountDto;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
+import dev.crepe.domain.core.util.history.pay.model.PayType;
+import org.springframework.data.domain.Page;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -34,7 +37,8 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     List<TransactionHistory> findByAccount_Id(Long accountId);
 
     List<TransactionHistory> findAllByPayHistory_Order(Order order);
-
+    Page<TransactionHistory> findByTypeAndStatusAndAccount_Actor_Id(TransactionType type, TransactionStatus status, Long storeId,Pageable pageable);
+    Page<TransactionHistory> findByTypeAndAccount_Actor_Id(TransactionType type, Long storeId, Pageable pageable);
     @Query("""
     SELECT COALESCE(SUM(th.amount), 0)
     FROM TransactionHistory th
@@ -97,4 +101,6 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     GROUP BY th.status
 """)
     List<PayStatusCountDto> countTotalByStatus(@Param("email") String email);
+
+    TransactionHistory getTransactionHistoryById(Long id);
 }

@@ -23,33 +23,40 @@ public class DuplicateLoginNotificationService {
      * 사용자의 SSE 연결 등록
      */
     public SseEmitter registerUser(String userEmail) {
-        SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
-
-        // 기존 연결이 있다면 해제
-        SseEmitter existingEmitter = userEmitters.get(userEmail);
-        if (existingEmitter != null) {
-            try {
-                existingEmitter.complete();
-            } catch (Exception e) {
-                // 무시
-            }
-        }
+        // 30분 타임아웃 설정 (Long.MAX_VALUE 대신 실제 시간 사용)
+        SseEmitter emitter = new SseEmitter(30 * 60 * 1000L); // 30분
 
         // 새 연결 등록
         userEmitters.put(userEmail, emitter);
 
         // 연결 해제 시 정리
-        emitter.onCompletion(() -> userEmitters.remove(userEmail));
-        emitter.onTimeout(() -> userEmitters.remove(userEmail));
-        emitter.onError((e) -> userEmitters.remove(userEmail));
+        emitter.onCompletion(() -> {
+            log.info("SSE 연결 완료됨: {}", userEmail);
+            userEmitters.remove(userEmail);
+        });
 
-        // 연결 성공 메시지
+        emitter.onTimeout(() -> {
+            log.info("SSE 연결 타임아웃: {}", userEmail);
+            userEmitters.remove(userEmail);
+        });
+
+        emitter.onError((e) -> {
+            log.error("SSE 연결 오류: {}", userEmail, e);
+            userEmitters.remove(userEmail);
+        });
+
+        // 연결 성공 메시지 전송 - 필수!
         try {
             emitter.send(SseEmitter.event()
                     .name("connected")
                     .data("Authentication monitoring started"));
+
+            log.info("SSE 연결 성공 메시지 전송 완료: {}", userEmail);
         } catch (IOException e) {
+            log.error("SSE 연결 성공 메시지 전송 실패: {}", userEmail, e);
+            userEmitters.remove(userEmail);
             emitter.completeWithError(e);
+            return emitter; // 실패 시 바로 리턴
         }
 
         log.info("SSE registered for user: {}", userEmail);
@@ -70,13 +77,14 @@ public class DuplicateLoginNotificationService {
 
                 log.info("Sent duplicate login notification to: {}", userEmail);
 
-                // 잠시 후 연결 해제 (프론트엔드에서 처리할 시간 제공)
-                CompletableFuture.delayedExecutor(2, TimeUnit.SECONDS)
+                // 3초 후 연결 해제 (프론트엔드에서 처리할 시간 제공)
+                CompletableFuture.delayedExecutor(3, TimeUnit.SECONDS)
                         .execute(() -> {
                             try {
                                 emitter.complete();
+                                log.info("SSE 연결 해제 완료: {}", userEmail);
                             } catch (Exception e) {
-                                // 무시
+                                log.warn("SSE 연결 해제 중 오류: {}", userEmail, e);
                             }
                             userEmitters.remove(userEmail);
                         });
@@ -98,8 +106,9 @@ public class DuplicateLoginNotificationService {
         if (emitter != null) {
             try {
                 emitter.complete();
+                log.info("사용자 SSE 연결 해제: {}", userEmail);
             } catch (Exception e) {
-                // 무시
+                log.warn("사용자 SSE 연결 해제 중 오류: {}", userEmail, e);
             }
         }
     }
@@ -109,5 +118,22 @@ public class DuplicateLoginNotificationService {
      */
     public int getConnectedUserCount() {
         return userEmitters.size();
+    }
+
+    /**
+     * Keep-alive 메시지 전송 (선택적)
+     */
+    public void sendKeepAlive(String userEmail) {
+        SseEmitter emitter = userEmitters.get(userEmail);
+        if (emitter != null) {
+            try {
+                emitter.send(SseEmitter.event()
+                        .name("keepalive")
+                        .data("ping"));
+            } catch (IOException e) {
+                log.error("Keep-alive 전송 실패: {}", userEmail, e);
+                userEmitters.remove(userEmail);
+            }
+        }
     }
 }

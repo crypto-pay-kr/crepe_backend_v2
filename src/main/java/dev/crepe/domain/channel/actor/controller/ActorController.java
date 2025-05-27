@@ -9,6 +9,7 @@ import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResp
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.ocr.id.service.IdCardOcrService;
 import dev.crepe.infra.otp.model.dto.OtpSetupResponse;
+import dev.crepe.infra.otp.model.entity.OtpCredential;
 import dev.crepe.infra.otp.service.OtpService;
 import dev.crepe.domain.auth.role.ActorAuth;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
@@ -42,6 +43,29 @@ public class ActorController {
     private final OtpService otpService;
     private final IdCardOcrService idCardOcrService;
 
+
+    // 이메일 중복 확인
+    @PostMapping("/check/email-duplicate")
+    @Operation(summary = "회원가입 시 이메일 중복 체크", description = "이메일 중복 체크")
+    public ResponseEntity<Void> checkEmailDuplicate(@RequestBody Map<String, String> request) {
+        if (actorService.isEmailExists(request.get("email"))) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+        return ResponseEntity.ok().build();
+    }
+
+
+
+
+    // 닉네임 중복 확인
+    @PostMapping("/check/nickname-duplicate")
+    public ResponseEntity<Void> checkNicknameDuplicate(@RequestBody Map<String, String> request) {
+        if (actorService.isNicknameExists(request.get("nickname"))) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).build();
+        }
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping("/captcha")
     @Operation(summary = "로그인에 필요한 captcha 키 발급", description = "captcha 키 발급")
     public ResponseEntity<?> getCaptcha() {
@@ -67,6 +91,7 @@ public class ActorController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
+
 
     @PostMapping("/login")
     @Operation(summary = "유저, 가맹점 로그인", description = "회원 로그인")
@@ -126,6 +151,27 @@ public class ActorController {
         }
     }
 
+    @PostMapping("/status")
+    @Operation(summary = "OTP 상태 조회", description = "사용자의 OTP 설정 상태 조회")
+    public ResponseEntity<?> getOtpStatus(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "이메일이 필요합니다");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
+
+            ApiResponse<OtpCredential> response = otpService.getOtpStatus(email);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 
 
     //******************************************** 회원 정보 수정 start ********************************************/
@@ -161,7 +207,7 @@ public class ActorController {
     //******************************************** 회원 정보 수정 end ********************************************/
 
     // 직업 입력 받기
-    @Operation(summary = "휴대폰 인증, 직업 등록", description = "상품 가입 전 휴대폰 인증 및 직업 등록")
+    @Operation(summary = "직업 등록", description = "상품 가입 전 직업 등록")
     @PostMapping("/add/occupation")
     @ActorAuth
     @SecurityRequirement(name = "bearer-jwt")

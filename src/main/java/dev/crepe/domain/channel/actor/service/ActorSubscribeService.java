@@ -17,5 +17,7 @@ public interface ActorSubscribeService {
 
     GetProductDetailResponse getProductById(Long productId, String userEmail);
 
+    boolean checkEligibility(Long productId, String actorEmail);
+
 
 }

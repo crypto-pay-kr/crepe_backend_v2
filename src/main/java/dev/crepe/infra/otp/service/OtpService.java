@@ -58,8 +58,11 @@ public class OtpService {
     }
 
     // OTP 상태 및 비밀키 조회
-    public OtpCredential getOtpCredential(Long userId) {
-        return otpCredentialRepository.findByUserId(userId)
+    public OtpCredential getOtpCredential(String email) {
+        Actor actor = actorRepository.findByEmail(email)
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
+
+        return otpCredentialRepository.findByUserId(actor.getId())
                 .orElse(null);
     }
 
@@ -87,7 +90,7 @@ public class OtpService {
         Actor actor = actorRepository.findByEmail(email)
                 .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
 
-        OtpCredential credential = getOtpCredential(actor.getId());
+        OtpCredential credential = getOtpCredential(email);
         if (credential == null) {
             throw new RuntimeException("OTP가 설정되지 않았습니다");
         }
@@ -102,5 +105,17 @@ public class OtpService {
         } else {
             return ApiResponse.fail("잘못된 OTP 코드입니다");
         }
+    }
+
+    @Transactional
+    public ApiResponse<OtpCredential> getOtpStatus(String email) {
+
+        OtpCredential credential = getOtpCredential(email);
+
+        if (credential == null) {
+            return ApiResponse.success("OTP 미설정", null);
+        }
+
+        return ApiResponse.success("OTP 상태 조회 성공", credential);
     }
 }

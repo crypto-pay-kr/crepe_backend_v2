@@ -1,12 +1,17 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
+import dev.crepe.domain.admin.dto.request.ChangeActorStatusRequest;
+import dev.crepe.domain.admin.dto.response.ChangeActorStatusResponse;
 import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
 import dev.crepe.domain.auth.jwt.repository.TokenRepository;
 import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
 import dev.crepe.domain.channel.actor.exception.*;
+import dev.crepe.domain.channel.actor.model.ActorStatus;
+import dev.crepe.domain.channel.actor.model.ActorSuspension;
 import dev.crepe.domain.channel.actor.model.RoleCountProjection;
+import dev.crepe.domain.channel.actor.model.SuspensionType;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
@@ -29,6 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -46,6 +52,22 @@ public class ActorServiceImpl  implements ActorService {
     private final SmsManageService smsManageService;
     private final Random random = new Random();
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean isEmailExists(String email) {
+        if (actorRepository.existsByEmail(email)) {
+            throw new AlreadyEmailException();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isNicknameExists(String nickname) {
+        if (actorRepository.existsByNickName(nickname)) {
+            throw new AlreadyNicknameException();
+        }
+        return false;
+    }
 
     @Override
     @Transactional
@@ -57,7 +79,6 @@ public class ActorServiceImpl  implements ActorService {
             throw new LoginFailedException();
         }
 
-        // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
         AuthenticationToken token = authService.createAndSaveToken(actor.getEmail(), actor.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, actor);
@@ -182,20 +203,15 @@ public class ActorServiceImpl  implements ActorService {
                     log.error("사용자를 찾을 수 없음: {}", userEmail);
                     return new EntityNotFoundException("사용자를 찾을 수 없습니다.");
                 });
-
-        log.info("기존 사용자 정보 - ID: {}, 이름: {}", actor.getId(), actor.getName());
-
-        // 논리 수정: equals가 아니라 !equals 또는 이름 검증 로직 변경
         if (!actor.getName().equals(idCardResponse.getName())) {
             log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
                     actor.getName(), idCardResponse.getName());
             throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
         }
 
-
         try {
             actor.updateFromIdCard(idCardResponse);
-            actorRepository.save(actor); // 명시적 저장 (선택사항)
+            actorRepository.save(actor);
             log.info("사용자 정보 업데이트 완료");
             return new ResponseEntity<>("OCR 인증 성공", HttpStatus.OK);
         } catch (Exception e) {
@@ -211,5 +227,68 @@ public class ActorServiceImpl  implements ActorService {
                 .collect(Collectors.toMap(RoleCountProjection::getRole, RoleCountProjection::getCount));
     }
 
+    @Override
+    public ChangeActorStatusResponse changeActorStatus(ChangeActorStatusRequest request) {
+        Actor actor = actorRepository.findById(request.getActorId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 Actor를 찾을 수 없습니다."));
+
+        String message;
+        ChangeActorStatusResponse.SuspensionInfo suspensionInfo = null;
+
+        if ("SUSPEND".equals(request.getAction())) {
+            // 정지 처리
+            actor.changeActorStatus(ActorStatus.SUSPENDED);
+
+            if (request.getSuspensionRequest() != null) {
+                ChangeActorStatusRequest.SuspensionRequest suspReq = request.getSuspensionRequest();
+                LocalDateTime now = LocalDateTime.now();
+                LocalDateTime endDate = null;
+
+                if (suspReq.getType() == SuspensionType.TEMPORARY && suspReq.getDays() != null) {
+                    endDate = now.plusDays(suspReq.getDays());
+                }
+
+                ActorSuspension suspension = ActorSuspension.builder()
+                        .type(suspReq.getType())
+                        .suspendedAt(now)
+                        .suspendedUntil(endDate)
+                        .reason(suspReq.getReason())
+                        .build();
+
+                actor.changeSuspension(suspension); // 메서드명 변경됨
+
+                suspensionInfo = ChangeActorStatusResponse.SuspensionInfo.builder()
+                        .type(suspReq.getType())
+                        .startDate(now)
+                        .endDate(endDate)
+                        .reason(suspReq.getReason())
+                        .build();
+
+                message = suspReq.getType() == SuspensionType.PERMANENT
+                        ? "계정이 영구정지되었습니다."
+                        : suspReq.getDays() + "일 정지되었습니다.";
+            } else {
+                message = "계정이 정지되었습니다.";
+            }
+
+        } else if ("UNSUSPEND".equals(request.getAction())) {
+            // 정지 해제 처리
+            actor.changeActorStatus(ActorStatus.ACTIVE);
+            actor.changeSuspension(null); // 정지 정보 제거
+            message = "계정 정지가 해제되었습니다.";
+
+        } else {
+            throw new IllegalArgumentException("유효하지 않은 액션입니다: " + request.getAction());
+        }
+
+        actorRepository.save(actor); // 저장 필수!
+
+        return ChangeActorStatusResponse.builder()
+                .userId(actor.getId())
+                .message(message)
+                .actorStatus(actor.getActorStatus())
+                .suspensionInfo(suspensionInfo)
+                .build();
+    }
 
 }
