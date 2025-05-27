@@ -22,7 +22,9 @@ public interface OrderService {
 
     // 관리자 주문 조회
     Page<Order> getOrdersByUserId(Long userId, Pageable pageable);
+    Page<Order> getOrdersByStoreId(Long storeId, Pageable pageable);
 
     // 유저 주문 조회
     Page<Order> getOrdersByUserEmail(String userEmail, Pageable pageable);
+
 }
