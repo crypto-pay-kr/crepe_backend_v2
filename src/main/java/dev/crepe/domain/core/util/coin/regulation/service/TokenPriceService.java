@@ -8,4 +8,6 @@ import java.math.BigDecimal;
 public interface TokenPriceService {
 
     void createAndSaveTokenPrice(BankToken bankToken, BigDecimal price);
+
+    void saveTokenPrice();
 }
