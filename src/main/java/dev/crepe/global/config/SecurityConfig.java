@@ -23,7 +23,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private static final String[] PUBLIC_URI = {
             // 회원가입/로그인
-            "/user/signup", "/store/signup", "/login", "/bank/login", "/admin/login", "/auth/**","/status",
+            "/user/signup", "/store/signup", "/login", "/bank/login", "/admin/login", "/auth/**","/otp/**",
 
             // API 서비스
             "/sms/**", "/ocr/**", "/upbit/**", "/api/**",

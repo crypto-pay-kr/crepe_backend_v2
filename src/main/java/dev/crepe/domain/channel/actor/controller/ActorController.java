@@ -99,7 +99,7 @@ public class ActorController {
             }
     }
 
-    @PostMapping("/setup")
+    @PostMapping("/otp/setup")
     @Operation(summary = "OTP 설정", description = "사용자의 OTP 초기 설정")
     public ResponseEntity<?> setupOtp(@RequestParam String email) {
         try {
@@ -113,7 +113,7 @@ public class ActorController {
         }
     }
 
-    @PostMapping("/verify")
+    @PostMapping("/otp/verify")
     @Operation(summary = "OTP 검증 및 활성화", description = "OTP 코드 검증 및 활성화")
     public ResponseEntity<?> verifyAndEnableOtp(@RequestParam String email, @RequestParam int otpCode) {
         try {
@@ -127,7 +127,7 @@ public class ActorController {
         }
     }
 
-    @PostMapping("/status")
+    @PostMapping("/otp/status")
     @Operation(summary = "OTP 상태 조회", description = "사용자의 OTP 설정 상태 조회")
     public ResponseEntity<?> getOtpStatus(@RequestBody Map<String, String> request) {
         try {
@@ -148,7 +148,38 @@ public class ActorController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+    @PostMapping("/otp/disable")
+    @Operation(summary = "OTP 해제", description = "사용자의 OTP 설정을 완전히 삭제합니다")
+    public ResponseEntity<?> disableOtp(@RequestBody Map<String, String> request) {
+        try {
+            String email = request.get("email");
+            if (email == null || email.trim().isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("message", "이메일이 필요합니다");
+                return ResponseEntity.badRequest().body(errorResponse);
+            }
 
+            log.info("OTP 해제 요청 - 이메일: {}", email);
+
+            ApiResponse<Boolean> response = otpService.deleteOtp(email);
+
+            if ("success".equals(response.getStatus())) {
+                log.info("OTP 해제 성공 - 이메일: {}", email);
+                return ResponseEntity.ok(response);
+            } else {
+                log.warn("OTP 해제 실패 - 이메일: {}, 메시지: {}", email, response.getMessage());
+                return ResponseEntity.badRequest().body(response);
+            }
+
+        } catch (Exception e) {
+            log.error("OTP 해제 중 예외 발생 - 오류: {}", e.getMessage(), e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "OTP 해제 중 오류가 발생했습니다: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 
     //******************************************** 회원 정보 수정 start ********************************************/
 
