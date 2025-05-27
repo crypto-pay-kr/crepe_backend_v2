@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
             throw new AlreadyEmailException();
         }
 
-        if (actorRepository.existsByName(request.getName())) {
+        if (actorRepository.existsByNickName(request.getNickname())) {
             throw new AlreadyNicknameException();
         }
 
@@ -98,6 +98,7 @@ public class UserServiceImpl implements UserService {
 
         return UserInfoResponse.builder()
                 .email(actor.getEmail())
+                .name(actor.getName())
                 .nickname(actor.getNickName())
                 .phoneNumber(actor.getPhoneNum())
                 .role(actor.getRole().name())

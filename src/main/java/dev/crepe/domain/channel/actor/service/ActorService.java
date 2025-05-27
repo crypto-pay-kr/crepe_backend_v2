@@ -17,6 +17,11 @@ import java.util.Map;
 
 public interface ActorService {
 
+    //********** 회원정보 중복 체크 **********/
+    boolean isEmailExists(String email);
+
+    boolean isNicknameExists(String nickname);
+
     //********** 회원 정보 수정 **********/
     ResponseEntity<Void> changePassword(ChangePasswordRequest request, String userEmail);
 
