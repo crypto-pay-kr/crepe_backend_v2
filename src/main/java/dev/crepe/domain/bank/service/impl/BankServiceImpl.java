@@ -102,8 +102,16 @@ public class BankServiceImpl implements BankService {
             throw new LoginFailedException();
         }
 
+        // 디버깅 로그 추가
+        log.info("=== Bank 로그인 시작 ===");
+        log.info("Bank Email: {}", bank.getEmail());
+        log.info("Bank Role: {}", bank.getRole());
+
         // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
         AuthenticationToken token = authService.createAndSaveToken(bank.getEmail(), bank.getRole());
+
+        log.info("Bank 토큰 생성 완료: {}", bank.getEmail());
+        log.info("=== Bank 로그인 완료 ===");
 
         TokenResponse tokenResponse = new TokenResponse(token, bank);
         return ApiResponse.success(bank.getRole() + " 로그인 성공", tokenResponse);

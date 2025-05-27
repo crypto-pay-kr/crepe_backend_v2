@@ -1,5 +1,7 @@
 package dev.crepe.domain.channel.actor.service;
 
+import dev.crepe.domain.admin.dto.request.ChangeActorStatusRequest;
+import dev.crepe.domain.admin.dto.response.ChangeActorStatusResponse;
 import dev.crepe.domain.channel.actor.model.dto.request.*;
 import dev.crepe.domain.channel.actor.model.dto.response.GetFinancialSummaryResponse;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
@@ -37,4 +39,8 @@ public interface ActorService {
 
     // role 역할별 수 세기
     Map<String, Long> getRoleCounts();
+
+    // actor 정지, 해제
+    ChangeActorStatusResponse changeActorStatus(ChangeActorStatusRequest request);
+
 }

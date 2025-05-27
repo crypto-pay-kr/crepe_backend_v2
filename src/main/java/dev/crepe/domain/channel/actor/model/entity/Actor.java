@@ -3,6 +3,8 @@ package dev.crepe.domain.channel.actor.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.channel.actor.model.ActorStatus;
+import dev.crepe.domain.channel.actor.model.ActorSuspension;
 import dev.crepe.domain.channel.actor.model.Gender;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
 import dev.crepe.domain.channel.market.like.model.entity.Like;
@@ -91,6 +93,14 @@ public class Actor extends BaseEntity {
     @Column(name="store_image")
     private String storeImage;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name="actor_status")
+    private ActorStatus actorStatus = ActorStatus.ACTIVE;
+
+    @Embedded
+    private ActorSuspension suspension;
+
     @ManyToMany
     @JoinTable(
             name = "store_coin",
@@ -174,4 +184,12 @@ public class Actor extends BaseEntity {
             }
         }
     }
+
+    public void changeActorStatus(ActorStatus actorStatus) {
+        this.actorStatus = actorStatus;
+    }
+    public void changeSuspension(ActorSuspension suspension) {
+        this.suspension = suspension;
+    }
+
 }
