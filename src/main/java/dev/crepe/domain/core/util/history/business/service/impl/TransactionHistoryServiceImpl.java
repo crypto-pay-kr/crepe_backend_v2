@@ -6,6 +6,8 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
+import dev.crepe.domain.core.util.history.business.model.dto.PayMonthlyAmountDto;
+import dev.crepe.domain.core.util.history.business.model.dto.PayStatusCountDto;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
 import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
@@ -42,6 +44,16 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         return transactionHistoryRepository.getUsageByCoinFiltered();
     }
 
+
+    public List<PayMonthlyAmountDto> getMonthlyPayAmount(String email){
+        return transactionHistoryRepository.findMonthlyAcceptedTransactionTotalsByEmail(email);
+    }
+
+
+    public List<PayStatusCountDto>  getPayStatusCount(String email){
+        return transactionHistoryRepository.countTotalByStatus(email);
+    }
+
     @Override
     public Page<TransactionHistory> getSettlementHistory(TransactionStatus status, Long storeId, Pageable pageable) {
         if (status == null) {
@@ -75,8 +87,5 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
 
         transactionHistoryRepository.save(reSettlementHistory);
     }
-
-
-
 
 }
