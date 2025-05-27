@@ -1,10 +1,15 @@
 package dev.crepe.domain.core.util.history.business.repository;
 
 import dev.crepe.domain.channel.market.order.model.entity.Order;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto;
+import dev.crepe.domain.core.util.history.business.model.dto.PayMonthlyAmountDto;
+import dev.crepe.domain.core.util.history.business.model.dto.PayStatusCountDto;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
+import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
+import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -51,4 +56,45 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     List<CoinUsageDto> getUsageByCoinFiltered();
 
 
+    @Query("""
+    SELECT new dev.crepe.domain.core.util.history.business.model.dto.PayMonthlyAmountDto(
+        MONTH(th.createdAt), 
+        SUM(th.amount)
+    )
+    FROM TransactionHistory th
+    WHERE th.status = dev.crepe.domain.core.util.history.business.model.TransactionStatus.ACCEPTED
+        AND th.type = dev.crepe.domain.core.util.history.business.model.TransactionType.PAY
+        AND th.account.actor.email = :email
+    GROUP BY MONTH(th.createdAt)
+    ORDER BY MONTH(th.createdAt)
+""")
+    List<PayMonthlyAmountDto> findMonthlyAcceptedTransactionTotalsByEmail(@Param("email") String email);
+
+    @Query("""
+    SELECT new dev.crepe.domain.core.util.history.business.model.dto.PayMonthlyAmountDto(
+        MONTH(th.createdAt), 
+        SUM(th.amount)
+    )
+    FROM TransactionHistory th
+    WHERE th.status = dev.crepe.domain.core.util.history.business.model.TransactionStatus.ACCEPTED
+        AND th.type = dev.crepe.domain.core.util.history.business.model.TransactionType.PAY
+        AND th.account.actor.email = :email
+    GROUP BY MONTH(th.createdAt)
+    ORDER BY MONTH(th.createdAt)
+""")
+    List<PayMonthlyAmountDto> findMonthlyAcceptedTransactionTotalsByEmail();
+
+
+
+    @Query("""
+    SELECT new dev.crepe.domain.core.util.history.business.model.dto.PayStatusCountDto(
+        th.status,
+        COUNT(th)
+    )
+    FROM TransactionHistory th
+    WHERE th.type = dev.crepe.domain.core.util.history.business.model.TransactionType.PAY
+        AND th.account.actor.email = :email
+    GROUP BY th.status
+""")
+    List<PayStatusCountDto> countTotalByStatus(@Param("email") String email);
 }
