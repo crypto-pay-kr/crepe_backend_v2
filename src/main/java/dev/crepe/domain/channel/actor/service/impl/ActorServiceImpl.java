@@ -48,6 +48,23 @@ public class ActorServiceImpl  implements ActorService {
 
 
     @Override
+    @Transactional(readOnly = true)
+    public boolean isEmailExists(String email) {
+        if (actorRepository.existsByEmail(email)) {
+            throw new AlreadyEmailException();
+        }
+        return false;
+    }
+
+    @Override
+    public boolean isNicknameExists(String nickname) {
+        if (actorRepository.existsByNickName(nickname)) {
+            throw new AlreadyNicknameException();
+        }
+        return false;
+    }
+
+    @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
         Actor actor = actorRepository.findByEmail(request.getEmail())

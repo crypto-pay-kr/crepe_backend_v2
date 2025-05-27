@@ -67,7 +67,7 @@ public class UserServiceImpl implements UserService {
             throw new AlreadyEmailException();
         }
 
-        if (actorRepository.existsByName(request.getName())) {
+        if (actorRepository.existsByNickName(request.getNickname())) {
             throw new AlreadyNicknameException();
         }
 

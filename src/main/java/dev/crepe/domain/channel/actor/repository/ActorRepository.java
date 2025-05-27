@@ -17,7 +17,7 @@ public interface ActorRepository extends JpaRepository<Actor, Long> {
 
     Optional<Actor> findByEmail(String email);
     boolean existsByEmail(String email);
-    boolean existsByName(String name);
+    boolean existsByNickName(String nickname);
     boolean existsByPhoneNum(String phoneNum);
 
     @Query("SELECT a.role AS role, COUNT(a) AS count FROM Actor a GROUP BY a.role")
