@@ -208,6 +208,7 @@ class UserServiceImplTest {
         String email = "test@example.com";
         Actor actor = Actor.builder()
                 .email(email)
+                .name("박찬진")
                 .nickName("testNickname")
                 .phoneNum("01012345678")
                 .role(UserRole.USER)
@@ -222,6 +223,7 @@ class UserServiceImplTest {
         assertNotNull(response);
         assertEquals(email, response.getEmail());
         assertEquals("testNickname", response.getNickname());
+        assertEquals("박찬진", response.getName());
         assertEquals("01012345678", response.getPhoneNumber());
         assertEquals("USER", response.getRole());
     }

@@ -98,6 +98,7 @@ public class UserServiceImpl implements UserService {
 
         return UserInfoResponse.builder()
                 .email(actor.getEmail())
+                .name(actor.getName())
                 .nickname(actor.getNickName())
                 .phoneNumber(actor.getPhoneNum())
                 .role(actor.getRole().name())
