@@ -77,6 +77,7 @@ public class ProductServiceImpl implements ProductService {
 
         return GetProductDetailResponse.builder()
                 .productName(product.getProductName())
+                .bankName(product.getBank().getName())
                 .type(product.getType())
                 .baseInterestRate(product.getBaseInterestRate())
                 .joinCondition(parseJoinCondition(product.getJoinCondition()))
