@@ -4,6 +4,7 @@ import dev.crepe.domain.admin.dto.request.ChangeBankStatusRequest;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
 import dev.crepe.domain.admin.dto.response.*;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
+import dev.crepe.domain.bank.model.dto.response.GetBankDashboardResponse;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,4 +38,5 @@ public interface AdminBankManageService {
 
     GetProductDetailResponse getBankProductDetail(Long bankId, Long productId);
 
+    GetBankDashboardResponse getBankDashboard();
 }
