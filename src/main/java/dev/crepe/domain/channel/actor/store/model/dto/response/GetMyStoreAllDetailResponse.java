@@ -15,6 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 public class GetMyStoreAllDetailResponse {
     private Long storeId;
+    private String email;
     private Long likeCount;
     private StoreStatus storeStatus;
     private String storeName;

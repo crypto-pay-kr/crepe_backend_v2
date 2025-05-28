@@ -8,4 +8,7 @@ import java.util.Optional;
 
 public interface TokenPriceRepository extends JpaRepository<TokenPrice, Long> {
     Optional<TokenPrice> findByBankToken(BankToken bankToken);
+
+    Optional<TokenPrice> findTopByBankTokenOrderByCreatedAtDesc(BankToken bankToken);
+
 }

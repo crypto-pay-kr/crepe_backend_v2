@@ -41,9 +41,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -369,12 +367,12 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 .interestRate(saved.getInterestRate()) // 현재 확정된 금리
                 .message("상품 가입이 완료되었습니다.");
 
-        // 잠재적 우대금리가 있는 경우 안내 - 적금에만 해당
+
         if (product.getType() == BankProductType.INSTALLMENT && result.getPotentialRate() > result.getConfirmedRate()) {
             float additionalRate = result.getPotentialRate() - result.getConfirmedRate();
 
             // 잠재적 조건의 유형에 따라 다른 메시지
-            List<String> potentialMessages = new ArrayList<>();
+            Set<String> potentialMessages = new HashSet<>(); // 중복 제거를 위해 Set 사용
             for (PreferentialRateModels.AppliedCondition condition : result.getPotentialConditions()) {
                 String title = condition.getCondition().getTitle().toLowerCase();
                 if (title.contains("자유납입") || title.contains("초급") || title.contains("중급") || title.contains("고급")) {

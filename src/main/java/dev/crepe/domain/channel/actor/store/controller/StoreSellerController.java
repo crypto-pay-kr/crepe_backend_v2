@@ -1,6 +1,7 @@
 package dev.crepe.domain.channel.actor.store.controller;
 
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
+import dev.crepe.domain.auth.role.AdminAuth;
 import dev.crepe.domain.auth.role.SellerAuth;
 import dev.crepe.domain.channel.actor.store.model.dto.request.*;
 import dev.crepe.domain.channel.actor.store.model.dto.response.ChangeBusinessInfoResponse;
@@ -8,6 +9,10 @@ import dev.crepe.domain.channel.actor.store.model.dto.response.ChangeCoinStatusR
 import dev.crepe.domain.channel.actor.store.model.dto.response.ChangeStoreStatusResponse;
 import dev.crepe.domain.channel.actor.store.model.dto.response.GetMyStoreAllDetailResponse;
 import dev.crepe.domain.channel.actor.store.service.StoreService;
+import dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto;
+import dev.crepe.domain.core.util.history.business.model.dto.PayMonthlyAmountDto;
+import dev.crepe.domain.core.util.history.business.model.dto.PayStatusCountDto;
+import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -21,6 +26,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/store")
 @RequiredArgsConstructor
@@ -28,6 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class StoreSellerController {
 
     private final StoreService storeService;
+    private final TransactionHistoryService transactionHistoryService;
 
     @Operation(summary = "가맹점 회원가입", description = "가맹점 회원으로 회원가입합니다. 가게 이미지와 사업자 등록증 이미지는 자동으로 S3에 업로드됩니다.")
     @PostMapping(value = "/signup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -123,5 +131,26 @@ public class StoreSellerController {
         GetMyStoreAllDetailResponse res = storeService.getMyStoreAllDetails(auth.getUserEmail());
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
+
+    /**
+     * 내 가게 월 매출 정보 조회(가맹점)
+     */
+    @Operation(summary = "내 가게 월 매출 조회", description = "가게의 월 매출 amount를 조회합니다.")
+    @GetMapping(value = "/my/settlement")
+    @SellerAuth
+    public List<PayMonthlyAmountDto>  getMonthlyPayAmount(AppAuthentication auth) {
+        return transactionHistoryService.getMonthlyPayAmount(auth.getUserEmail());
+    }
+
+    /**
+     * 내 가게 주문 건수 조회(가맹점)
+     */
+    @Operation(summary = "내 가게 주문 건수 조회", description = "가게의 주문 건수를 조회합니다.")
+    @GetMapping(value = "/my/transaction/count")
+    @SellerAuth
+    public List<PayStatusCountDto> getPayStatusCount(AppAuthentication auth) {
+        return transactionHistoryService.getPayStatusCount(auth.getUserEmail());
+    }
+
 
 }

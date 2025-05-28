@@ -1,6 +1,9 @@
 package dev.crepe.domain.admin.controller;
 
+import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.auth.role.AdminAuth;
+import dev.crepe.domain.bank.model.dto.response.GetBankDashboardResponse;
+import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.core.util.history.business.model.dto.CoinUsageDto;
 import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
@@ -23,7 +26,9 @@ import java.util.Map;
 public class AdminStatisticsController {
 
     private final ActorService actorService;
+    private final BankService bankService;
     private final TransactionHistoryService transactionHistoryService;
+    private final AdminBankManageService adminBankManageService;
 
     // 역할 별 수 count
     @Operation(summary = "actor 역할 수 조회", description = "actor 역할 수를 조회합니다.")
@@ -47,5 +52,15 @@ public class AdminStatisticsController {
     public List<CoinUsageDto> getCoinUsageByCurrency() {
         return transactionHistoryService.getCoinUsageForUsers();
     }
+
+    // Bank 대시보드 데이터 조회
+    @Operation(summary = "Bank 대시보드 데이터 조회", description = "Bank 대시보드 데이터를 조회합니다.")
+    @GetMapping(value = "/bank/dashboard")
+    @AdminAuth
+    public GetBankDashboardResponse getBankDashboard() {
+        return adminBankManageService.getBankDashboard();
+    }
+
+
 
 }

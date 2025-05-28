@@ -108,6 +108,18 @@ public class JwtTokenProvider {
         }
     }
 
+    public boolean isTokenExpired(String token) {
+        try {
+            Claims claims = getClaims(token);
+            return claims.getExpiration().before(new Date());
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (Exception e) {
+            log.error("Error checking token expiration: {}", e.getMessage());
+            return true;
+        }
+    }
+
     private Claims getClaims(String token) {
         try {
             return Jwts.parserBuilder()

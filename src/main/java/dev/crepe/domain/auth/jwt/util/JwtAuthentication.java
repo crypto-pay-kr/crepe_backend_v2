@@ -65,4 +65,8 @@ public class JwtAuthentication implements AppAuthentication {
     public String getName() {
         return userEmail;
     }
+
+    public UserRole getRole() {
+        return userRole;
+    }
 }

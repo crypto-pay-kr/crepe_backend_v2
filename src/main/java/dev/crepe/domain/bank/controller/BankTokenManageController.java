@@ -8,13 +8,21 @@ import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
 import dev.crepe.domain.bank.model.dto.response.GetTokenHistoryResponse;
 import dev.crepe.domain.bank.service.BankTokenManageService;
+import dev.crepe.domain.channel.actor.service.ActorExchangeService;
+import dev.crepe.domain.channel.actor.service.impl.ActorExchangeServiceImpl;
+import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.service.TokenPriceService;
+import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import dev.crepe.global.model.dto.GetPaginationRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -23,6 +31,8 @@ import java.util.List;
 public class BankTokenManageController {
 
     private final BankTokenManageService bankTokenManageService;
+    private final TokenPriceService tokenPriceService;
+    private final ActorExchangeService actorExchangeService;
 
 
     @Operation(summary = "토큰 발행", description = "은행 토큰 발행 요청")
@@ -67,8 +77,34 @@ public class BankTokenManageController {
     }
 
 
+    // 토큰 시세 조회
+    @Operation(summary = "토큰 시세 조회", description = "해당 은행 토큰의 최신 시세를 조회합니다.")
+    @GetMapping("/price")
+    @BankAuth
+    public ResponseEntity<BigDecimal> getLatestTokenPrice(AppAuthentication auth) {
+        BigDecimal latestPrice = bankTokenManageService.getLatestTokenPrice(auth.getUserEmail());
+        return ResponseEntity.ok(latestPrice);
+    }
+
+    // 토큰 거래량 조회
+    @GetMapping("/volume")
+    @BankAuth
+    @Operation(summary = "토큰 거래량 조회", description = "현재 은행의 토큰 거래량 총합을 조회합니다.")
+    public ResponseEntity<BigDecimal> getTokenVolume(AppAuthentication auth) {
+        BigDecimal volume = bankTokenManageService.getTotalTokenVolume(auth.getUserEmail());
+        return ResponseEntity.ok(volume);
+    }
 
 
-
+    // 내 토큰 정보 조회
+    @GetMapping("/info")
+    @BankAuth
+    @Operation(summary = "내 은행의 토큰 정보 조회", description = "현재 로그인된 은행의 토큰 정보를 조회합니다.")
+    public ResponseEntity<TokenInfoResponse> getMyBankTokenInfo(AppAuthentication auth) {
+        BankToken bankToken = bankTokenManageService.getBankTokenByEmail(auth.getUserEmail());
+        TokenInfoResponse info = actorExchangeService.getBankTokenInfo(bankToken.getCurrency());
+        return ResponseEntity.ok(info);
+    }
 
 }
+
