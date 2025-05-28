@@ -19,4 +19,5 @@ public interface BankTokenRepository extends JpaRepository<BankToken, Long> {
     boolean existsByBank_Id(Long bankId);
     List<BankToken> findByBankId(Long bankId);
 
+    Optional<BankToken> findByBank_Email(String email);
 }

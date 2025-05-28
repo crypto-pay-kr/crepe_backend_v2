@@ -44,6 +44,17 @@ public interface SubscribeHistoryRepository extends JpaRepository<SubscribeHisto
             @Param("end") LocalDateTime end
     );
 
+    @Query("""
+    SELECT COALESCE(SUM(sh.amount), 0)
+    FROM SubscribeHistory sh
+    JOIN sh.subscribe sub
+    JOIN sub.product prod
+    JOIN prod.bank b
+    WHERE b.email = :bankEmail
+""")
+    BigDecimal sumAmountByBankEmail(@Param("bankEmail") String bankEmail);
+
+
     Slice<SubscribeHistory> findAllBySubscribe_IdOrderByCreatedAtDesc(Long subscribeId, Pageable pageable);
 
 }

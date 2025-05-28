@@ -12,10 +12,15 @@ import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
+import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
+import dev.crepe.domain.core.util.coin.regulation.service.TokenPriceService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
+import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
+import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
@@ -40,6 +45,9 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     private final TokenSetupService tokenSetupService;
     private final TokenHistoryService tokenHistoryService;
     private final PortfolioService portfolioService;
+    private final TokenPriceService tokenPriceService;
+    private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final BankTokenRepository bankTokenRepository;
 
 
 
@@ -167,4 +175,25 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                 })
                 .collect(Collectors.toList());
     }
+
+    // 은행 토큰 시세 조회
+    public BigDecimal getLatestTokenPrice(String bankEmail) {
+        Bank bank = bankService.findBankInfoByEmail(bankEmail);
+        BankToken bankToken = bankTokenInfoService.findByBank(bank);
+        return tokenPriceService.getPreviousTotalPrice(bankToken);
+    }
+
+    // 은행 토큰 거래량 조회
+    public BigDecimal getTotalTokenVolume(String bankEmail) {
+        return subscribeHistoryRepository.sumAmountByBankEmail(bankEmail);
+    }
+
+    // 내 은행 토큰 조회
+    public BankToken getBankTokenByEmail(String bankEmail) {
+        return bankTokenRepository.findByBank_Email(bankEmail)
+                .orElseThrow(() -> new IllegalArgumentException("은행의 토큰이 존재하지 않습니다."));
+    }
+
 }
+
+

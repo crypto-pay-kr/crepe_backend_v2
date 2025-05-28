@@ -10,4 +10,6 @@ public interface TokenPriceService {
     void createAndSaveTokenPrice(BankToken bankToken, BigDecimal price);
 
     void saveTokenPrice();
+
+    BigDecimal getPreviousTotalPrice(BankToken bankToken);
 }
