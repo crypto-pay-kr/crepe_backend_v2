@@ -57,4 +57,6 @@ public interface AccountService {
 
     List<GetBankTokenInfoResponse> getBankTokensInfo(String email);
 
+    List<Account> getActiveAccountsByBankEmail(String bankEmail);
+
 }

@@ -10,6 +10,7 @@ import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.service.BankTokenManageService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
@@ -45,9 +46,9 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     private final TokenSetupService tokenSetupService;
     private final TokenHistoryService tokenHistoryService;
     private final PortfolioService portfolioService;
+    private final BankTokenRepository bankTokenRepository;
     private final TokenPriceService tokenPriceService;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
-    private final BankTokenRepository bankTokenRepository;
 
 
 
@@ -176,6 +177,16 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                 .collect(Collectors.toList());
     }
 
+
+    @Override
+    @Transactional(readOnly = true)
+    public BankToken getBankTokenByEmail(String bankEmail) {
+
+        return bankTokenRepository.findByBankEmail(bankEmail)
+                .orElseThrow(() -> new BankTokenNotFoundException(bankEmail));
+
+    }
+  
     // 은행 토큰 시세 조회
     public BigDecimal getLatestTokenPrice(String bankEmail) {
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
@@ -186,12 +197,6 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     // 은행 토큰 거래량 조회
     public BigDecimal getTotalTokenVolume(String bankEmail) {
         return subscribeHistoryRepository.sumAmountByBankEmail(bankEmail);
-    }
-
-    // 내 은행 토큰 조회
-    public BankToken getBankTokenByEmail(String bankEmail) {
-        return bankTokenRepository.findByBank_Email(bankEmail)
-                .orElseThrow(() -> new IllegalArgumentException("은행의 토큰이 존재하지 않습니다."));
     }
 
 }

@@ -6,6 +6,7 @@ import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.service.BankAccountManageService;
+import dev.crepe.domain.core.util.coin.regulation.model.dto.response.RemainingCoinBalanceResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -92,6 +93,13 @@ public class BankCoinManageController {
     ) {
         bankAccountManageService.unRegisterBankAccount(currency,auth.getUserEmail());
         return ResponseEntity.ok(currency + " 계좌 해지 성공");
+    }
+
+    @GetMapping("/coin/remaining")
+    @BankAuth
+    public ResponseEntity<List<RemainingCoinBalanceResponse>> getRemainingCoinBalance(AppAuthentication auth) {
+        List<RemainingCoinBalanceResponse> result = bankAccountManageService.calculateRemainingBalances(auth.getUserEmail());
+        return ResponseEntity.ok(result);
     }
 
 
