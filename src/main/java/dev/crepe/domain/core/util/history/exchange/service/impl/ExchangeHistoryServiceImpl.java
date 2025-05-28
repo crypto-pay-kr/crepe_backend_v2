@@ -3,10 +3,15 @@ package dev.crepe.domain.core.util.history.exchange.service.impl;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
 import dev.crepe.domain.core.util.history.exchange.model.entity.ExchangeHistory;
 import dev.crepe.domain.core.util.history.exchange.repositroy.ExchangeHistoryRepository;
 import dev.crepe.domain.core.util.history.exchange.service.ExchangeHistoryService;
+import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
+import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
+import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,7 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
 
     private final ExchangeHistoryRepository exchangeHistoryRepository;
     private final AccountRepository accountRepository;
+    private final SubscribeHistoryRepository subscribeHistoryRepository;
 
     @Override
     public GetTransactionHistoryResponse getExchangeHistory(ExchangeHistory ex, Account userAccount) {
@@ -102,6 +108,29 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
                             .build()
             );
         }
+
+        // 2. 구독 거래 내역 포함
+        List<SubscribeHistory> subscribeHistories = subscribeHistoryRepository.findBySubscribe_User_Email(email);
+
+        for (SubscribeHistory sh : subscribeHistories) {
+            Subscribe subscribe = sh.getSubscribe();
+
+            if (!subscribe.getProduct().getBankToken().getCurrency().equalsIgnoreCase(currency)) continue;
+
+            BigDecimal amount = sh.getEventType()== SubscribeHistoryType.TERMINATION
+                    ? sh.getAmount()
+                    : sh.getAmount().negate();
+
+            resultList.add(GetTransactionHistoryResponse.builder()
+                    .type("SUBSCRIBE")
+                    .status("ACCEPTED")
+                    .amount(amount)
+                    .afterBalance(sh.getAfterAccountBalance())
+                    .transferredAt(sh.getCreatedAt())
+                    .build());
+        }
+
+
         resultList.sort(Comparator.comparing(GetTransactionHistoryResponse::getTransferredAt).reversed());
 
         int start = page * size;

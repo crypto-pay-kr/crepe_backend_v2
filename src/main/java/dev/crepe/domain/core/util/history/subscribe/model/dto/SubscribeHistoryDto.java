@@ -13,12 +13,14 @@ import java.math.BigDecimal;
 public class SubscribeHistoryDto {
     private String eventType;
     private BigDecimal amount;
+    private BigDecimal afterBalance;
     private String date;
 
     public static SubscribeHistoryDto from(SubscribeHistory entity) {
         return SubscribeHistoryDto.builder()
                 .eventType(entity.getEventType().name())
                 .amount(entity.getAmount())
+                .afterBalance(entity.getAfterBalance())
                 .date(entity.getCreatedAt().toString())
                 .build();
     }

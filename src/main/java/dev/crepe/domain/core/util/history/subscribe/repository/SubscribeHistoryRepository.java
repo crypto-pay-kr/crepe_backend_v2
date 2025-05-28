@@ -46,4 +46,5 @@ public interface SubscribeHistoryRepository extends JpaRepository<SubscribeHisto
 
     Slice<SubscribeHistory> findAllBySubscribe_IdOrderByCreatedAtDesc(Long subscribeId, Pageable pageable);
 
+    List<SubscribeHistory> findBySubscribe_User_Email(String email);
 }

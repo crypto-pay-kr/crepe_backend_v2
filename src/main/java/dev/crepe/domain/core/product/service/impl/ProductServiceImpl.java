@@ -262,7 +262,8 @@ public class ProductServiceImpl implements ProductService {
         }
 
         // 조건 비교
-        boolean ageMatch = criteria.getAgeGroups().contains(actorEligibilityRequest.getAgeGroup());
+        boolean ageMatch = criteria.getAgeGroups().contains(AgeGroup.ALL_AGES) ||
+                criteria.getAgeGroups().contains(actorEligibilityRequest.getAgeGroup());
         boolean occupationMatch = criteria.getOccupations().contains(Occupation.ALL_OCCUPATIONS) ||
                 criteria.getOccupations().contains(actorEligibilityRequest.getOccupation());
         boolean incomeMatch = criteria.getIncomeLevels().contains(IncomeLevel.NO_LIMIT) ||

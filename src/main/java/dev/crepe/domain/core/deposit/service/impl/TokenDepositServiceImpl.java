@@ -78,7 +78,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         subscribeRepository.save(subscribe);
 
         // 6. subscribe 거래내역에 예치 완료 내역 찍기
-        saveDepositHistory(subscribe, amount);
+        saveDepositHistory(subscribe, amount,subscribe.getBalance(),account.getBalance());
     }
 
     // 예금 예치
@@ -107,7 +107,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         subscribeRepository.save(subscribe);
 
         // 8. subscribe 거래내역에 예치 완료 내역 찍기
-        saveDepositHistory(subscribe, amount);
+        saveDepositHistory(subscribe, amount, subscribe.getBalance(),account.getBalance());
 
     }
 
@@ -130,17 +130,19 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         subscribeRepository.save(subscribe);
 
         // 5. subscribe 거래내역에 예치 완료 내역 찍기
-        saveDepositHistory(subscribe, amount);
+        saveDepositHistory(subscribe, amount, subscribe.getBalance(),account.getBalance());
     }
 
 
 
     // subscribe 거래내역에 예치 완료 내역 저장
-    private void saveDepositHistory(Subscribe subscribe, BigDecimal amount) {
+    private void saveDepositHistory(Subscribe subscribe, BigDecimal amount,BigDecimal afterBalance,BigDecimal accountBalance) {
         SubscribeHistory history = SubscribeHistory.builder()
                 .subscribe(subscribe)
                 .eventType(SubscribeHistoryType.DEPOSIT)
                 .amount(amount)
+                .afterBalance(afterBalance)
+                .afterAccountBalance(accountBalance)
                 .build();
         subscribeHistoryRepository.save(history);
     }
