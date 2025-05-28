@@ -21,4 +21,5 @@ public interface BankTokenRepository extends JpaRepository<BankToken, Long> {
 
     Optional<BankToken> findByBankEmail(String email);
 
+
 }

@@ -199,13 +199,6 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
         return subscribeHistoryRepository.sumAmountByBankEmail(bankEmail);
     }
 
-    // 내 은행 토큰 조회
-    public BankToken getBankTokenByEmail(String bankEmail) {
-        return bankTokenRepository.findByBank_Email(bankEmail)
-                .orElseThrow(() -> new IllegalArgumentException("은행의 토큰이 존재하지 않습니다."));
-    }
-
-
 }
 
 
