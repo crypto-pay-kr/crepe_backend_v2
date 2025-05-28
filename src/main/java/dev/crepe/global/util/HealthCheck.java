@@ -12,4 +12,3 @@ public class HealthCheck {
         return ResponseEntity.ok("Crepe!!");
     }
 }
-h
