@@ -2,6 +2,7 @@ package dev.crepe.domain.core.account;
 
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
 import dev.crepe.domain.core.account.exception.TagRequiredException;
@@ -44,6 +45,9 @@ class AccountServiceImplTest {
 
     @Mock
     private CoinRepository coinRepository;
+    @Mock
+    private ActorRepository actorRepository;
+
 
     @InjectMocks
     private AccountServiceImpl accountService;
@@ -66,12 +70,13 @@ class AccountServiceImplTest {
         );
 
         when(coinRepository.findAll()).thenReturn(coins);
-
+        when(actorRepository.findByEmail(actor.getEmail())).thenReturn(Optional.of(actor));
         // when
         accountService.createBasicAccounts(actor.getEmail());
 
         // then
         verify(coinRepository).findAll();
+        verify(actorRepository).findByEmail(actor.getEmail());
         verify(accountRepository, times(2)).save(any(Account.class));
     }
 
