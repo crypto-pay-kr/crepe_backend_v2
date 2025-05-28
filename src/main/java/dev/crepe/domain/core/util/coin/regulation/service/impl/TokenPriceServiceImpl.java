@@ -1,3 +1,4 @@
+
 package dev.crepe.domain.core.util.coin.regulation.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -92,21 +93,21 @@ public class TokenPriceServiceImpl implements TokenPriceService {
 
     }
 
-        private BigDecimal getPreviousTotalPrice(BankToken bankToken) {
-            // BankToken에 대한 가장 최근 TokenPrice 조회
-            return tokenPriceRepository.findTopByBankTokenOrderByCreatedAtDesc(bankToken)
-                    .map(TokenPrice::getPrice)
-                    .orElse(null);
-        }
+    public BigDecimal getPreviousTotalPrice(BankToken bankToken) {
+        // BankToken에 대한 가장 최근 TokenPrice 조회
+        return tokenPriceRepository.findTopByBankTokenOrderByCreatedAtDesc(bankToken)
+                .map(TokenPrice::getPrice)
+                .orElse(null);
+    }
 
-        private BigDecimal calculateChangeRate(BigDecimal previousPrice, BigDecimal currentPrice) {
-            if (previousPrice == null || previousPrice.compareTo(BigDecimal.ZERO) == 0) {
-                return null; // 이전 가격이 없거나 0이면 등락율 계산 불가
-            }
-            return currentPrice.subtract(previousPrice)
-                    .divide(previousPrice, 4, RoundingMode.HALF_UP)
-                    .multiply(BigDecimal.valueOf(100));
+    private BigDecimal calculateChangeRate(BigDecimal previousPrice, BigDecimal currentPrice) {
+        if (previousPrice == null || previousPrice.compareTo(BigDecimal.ZERO) == 0) {
+            return null; // 이전 가격이 없거나 0이면 등락율 계산 불가
         }
+        return currentPrice.subtract(previousPrice)
+                .divide(previousPrice, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
+    }
 
 
 }
