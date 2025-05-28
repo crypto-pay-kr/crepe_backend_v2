@@ -1,8 +1,11 @@
+
+
 package dev.crepe.domain.channel.actor.controller;
 
 
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.role.BankAuth;
 import dev.crepe.domain.channel.actor.service.ActorExchangeService;
 import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
@@ -31,7 +34,7 @@ public class ActorExchangeController {
     @ActorAuth
     @PostMapping("/token")
     public ResponseEntity<String> requestExchangeToToken(@RequestBody CreateExchangeRequest request,
-                                                 AppAuthentication auth) {
+                                                         AppAuthentication auth) {
         actorExchangeService.requestExchangeToToken(auth.getUserEmail(), request );
         return ResponseEntity.ok("코인에서 토큰으로 환전 요청이 완료되었습니다");
     }
@@ -44,7 +47,7 @@ public class ActorExchangeController {
     @ActorAuth
     @PostMapping("/coin")
     public ResponseEntity<String> requestExchangeToCoin(@RequestBody CreateExchangeRequest request,
-                                                 AppAuthentication auth) {
+                                                        AppAuthentication auth) {
         actorExchangeService.requestExchangeToCoin(auth.getUserEmail(), request );
         return ResponseEntity.ok("토큰에서 코인으로 환전 요청이 완료되었습니다");
     }
@@ -60,5 +63,8 @@ public class ActorExchangeController {
     public ResponseEntity<TokenInfoResponse> getTokenInfo(@RequestParam String currency) {
         return ResponseEntity.ok(actorExchangeService.getBankTokenInfo(currency));
     }
+
+
 }
+
 

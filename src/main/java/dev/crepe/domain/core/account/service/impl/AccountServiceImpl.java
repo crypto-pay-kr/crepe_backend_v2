@@ -350,7 +350,12 @@ public class AccountServiceImpl implements AccountService {
         return accountRepository.findByBank_Email(bankEmail);
     }
 
-
+    @Override
+    public List<Account> getActiveAccountsByBankEmail(String bankEmail) {
+        return accountRepository.findByBank_Email(bankEmail).stream()
+                .filter(account -> account.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE)
+                .collect(Collectors.toList());
+    }
 
 
     @Override

@@ -6,8 +6,10 @@ import dev.crepe.domain.admin.dto.response.*;
 import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
+import dev.crepe.domain.bank.model.dto.response.GetBankDashboardResponse;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
+import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.NotActorAccountOwnerException;
@@ -19,6 +21,7 @@ import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.service.ProductService;
 import dev.crepe.domain.core.product.service.impl.ProductServiceImpl;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenService;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,9 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     private final ProductServiceImpl productService;
     private final AccountService accountService;
     private final AccountRepository accountRepository;
+    private final ProductRepository productRepository;
+    private final BankRepository bankRepository;
+    private final BankTokenRepository bankTokenRepository;
 
     // 은행 계정 생성
     @Override
@@ -154,6 +160,14 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
     public GetProductDetailResponse getBankProductDetail(Long bankId, Long productId) {
         return productService.getProductDetail(bankId,productId);
+    }
+
+    public GetBankDashboardResponse getBankDashboard() {
+        long bankCount = bankRepository.count();
+        long productCount = productRepository.count();
+        long bankTokenCount = bankTokenRepository.count();
+
+        return new GetBankDashboardResponse(bankCount, productCount, bankTokenCount);
     }
 
 

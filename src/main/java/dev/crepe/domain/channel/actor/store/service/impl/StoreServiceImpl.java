@@ -244,7 +244,7 @@ public class StoreServiceImpl implements StoreService {
                 .orElse(false);
 
         GetMyStoreAllDetailResponse res =
-                GetMyStoreAllDetailResponse.builder().storeId(store.getId()).likeCount(likeRepository.countByStoreAndActiveTrue(store)).storeName(store.getName())
+                GetMyStoreAllDetailResponse.builder().storeId(store.getId()).email(store.getEmail()).likeCount(likeRepository.countByStoreAndActiveTrue(store)).storeName(store.getName())
                 .storeAddress(store.getStoreAddress()).storeStatus(store.getStatus()).storeImageUrl(store.getStoreImage())
                 .coinList(store.getCoinList()).menuList(menuResponse).isLiked(isLiked).build();
 
