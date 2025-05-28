@@ -1,11 +1,16 @@
 package dev.crepe.domain.channel.actor.user;
 
 import dev.crepe.domain.auth.UserRole;
+import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
+import dev.crepe.domain.auth.sse.service.AuthService;
 import dev.crepe.domain.channel.actor.exception.AlreadyEmailException;
 import dev.crepe.domain.channel.actor.exception.AlreadyNicknameException;
 import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
+import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
+import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.channel.actor.user.model.dto.ChangeNicknameRequest;
 import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;
@@ -42,9 +47,6 @@ class UserServiceImplTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
-    @Mock
-    private AccountService accountService;
-
     @InjectMocks
     private UserServiceImpl userService;
 
@@ -73,7 +75,6 @@ class UserServiceImplTest {
         assertNotNull(response);
         assertEquals("success", response.getStatus());
         assertEquals("회원가입 성공", response.getMessage());
-        verify(accountService).createBasicAccounts(any(Actor.class));
     }
 
     @Test
@@ -93,7 +94,6 @@ class UserServiceImplTest {
         // when & then
         assertThrows(AlreadyEmailException.class, () -> userService.signup(request));
         verify(actorRepository, never()).save(any(Actor.class));
-        verify(accountService, never()).createBasicAccounts(any(Actor.class));
     }
 
     @Test
@@ -114,7 +114,6 @@ class UserServiceImplTest {
         // when & then
         assertThrows(AlreadyNicknameException.class, () -> userService.signup(request));
         verify(actorRepository, never()).save(any(Actor.class));
-        verify(accountService, never()).createBasicAccounts(any(Actor.class));
     }
 
     @Test
@@ -136,7 +135,6 @@ class UserServiceImplTest {
         // when & then
         assertThrows(AlreadyPhoneNumberException.class, () -> userService.signup(request));
         verify(actorRepository, never()).save(any(Actor.class));
-        verify(accountService, never()).createBasicAccounts(any(Actor.class));
     }
 
     @Test

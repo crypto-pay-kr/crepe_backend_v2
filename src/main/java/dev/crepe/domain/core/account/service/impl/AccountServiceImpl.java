@@ -3,6 +3,7 @@ package dev.crepe.domain.core.account.service.impl;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.AccountOnHoldException;
 import dev.crepe.domain.core.account.exception.DuplicateAccountException;
@@ -48,18 +49,23 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional
-    public void createBasicAccounts(Actor actor) {
+    public void createBasicAccounts(String email) {
 
         //지원하는 모든 코인에 대해서 기본 계좌 생성
         List<Coin> coins = coinRepository.findAll();
-
+        Actor actor = actorRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("해당 이메일로 등록된 사용자를 찾을 수 없습니다."));
         for (Coin coin : coins) {
-            Account account = Account.builder()
-                    .actor(actor)
-                    .coin(coin)
-                    .accountAddress(null)
-                    .build();
-            accountRepository.save(account);
+            boolean exists = accountRepository.existsByActor_EmailAndCoin(email, coin);
+
+            if (!exists) {
+                Account account = Account.builder()
+                        .actor(actor)
+                        .coin(coin)
+                        .accountAddress(null)
+                        .build();
+                accountRepository.save(account);
+            }
         }
     }
 
@@ -194,6 +200,7 @@ public class AccountServiceImpl implements AccountService {
                                 .subscribeId(sub.getId())
                                 .name(sub.getProduct().getProductName())
                                 .balance(sub.getBalance())
+                                .imageUrl(sub.getProduct().getImageUrl())
                                 .build(), Collectors.toList())
                 ));
 

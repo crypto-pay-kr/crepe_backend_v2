@@ -36,4 +36,9 @@ public class SubscribeHistory extends BaseEntity {
     @Column(name = "amount", precision = 18, scale = 8, nullable = false)
     private BigDecimal amount;
 
+    @Column(name = "after_balance", precision = 18, scale = 8)
+    private BigDecimal afterBalance;
+
+    @Column(name = "after_account_balance", precision = 18, scale = 8)
+    private BigDecimal afterAccountBalance;
 }

@@ -19,6 +19,7 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -51,6 +52,7 @@ public class ActorServiceImpl  implements ActorService {
     private final AuthServiceImpl authService;
     private final SmsManageService smsManageService;
     private final Random random = new Random();
+    private final AccountService accountService;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,6 +84,10 @@ public class ActorServiceImpl  implements ActorService {
         AuthenticationToken token = authService.createAndSaveToken(actor.getEmail(), actor.getRole());
 
         TokenResponse tokenResponse = new TokenResponse(token, actor);
+
+        // 로그인 시 기본 코인 계좌 생성
+        accountService.createBasicAccounts(request.getEmail());
+
         return ApiResponse.success(actor.getRole() + " 로그인 성공", tokenResponse);
     }
 

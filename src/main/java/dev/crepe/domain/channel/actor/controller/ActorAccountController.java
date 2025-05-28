@@ -8,6 +8,7 @@ import dev.crepe.domain.channel.actor.service.ActorAccountService;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.dto.response.GetBalanceResponse;
+import dev.crepe.domain.core.util.coin.model.GetCoinInfo;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -139,6 +140,18 @@ public class ActorAccountController {
         BigDecimal balance = actorAccountService.getTokenBalance(auth.getUserEmail(), currency);
         return ResponseEntity.ok(balance);
     }
+
+    @Operation(
+            summary = "특정 코인 정보 조회",
+            description = "코인의 정보를 조회합니다.",
+            security = @SecurityRequirement(name = "bearer-jwt"))
+    @ActorAuth
+    @GetMapping("/coin/info/{currency}")
+    public ResponseEntity<GetCoinInfo> getCoinInfo(@PathVariable String currency) {
+        GetCoinInfo coin = actorAccountService.getCoinInfo(currency);
+        return ResponseEntity.ok(coin);
+    }
+
 }
 
 

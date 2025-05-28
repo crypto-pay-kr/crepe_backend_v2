@@ -32,7 +32,7 @@ public class GetBankTokenInfoResponse {
         private Long subscribeId;
         private String name;
         private BigDecimal balance;
-
+        private String imageUrl;
         }
 
 }

@@ -5,10 +5,8 @@ import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
-import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
-import dev.crepe.domain.core.util.coin.non_regulation.service.CoinService;
+import dev.crepe.domain.core.util.coin.non_regulation.service.impl.CoinServiceImpl;
 import dev.crepe.domain.core.util.coin.regulation.exception.InvalidPortfolioException;
-import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
@@ -20,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -31,7 +28,7 @@ public class PortfolioServiceImpl implements PortfolioService {
     private static final int MIN_PORTFOLIO_SIZE = 2;
 
     private final AccountService accountService;
-    private final CoinService coinService;
+    private final CoinServiceImpl coinService;
     private final PortfolioRepository portfolioRepository;
 
     // 포토폴리오 구성 유효성 검증

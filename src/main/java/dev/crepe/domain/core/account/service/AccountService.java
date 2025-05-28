@@ -17,7 +17,7 @@ import java.util.Optional;
 public interface AccountService {
 
 
-    void createBasicAccounts(Actor actor);
+    void createBasicAccounts(String email);
     void createBasicBankAccounts(Bank bank);
 
     void createBankTokenAccount(BankToken bankToken);

@@ -44,4 +44,10 @@ public class Coin  extends BaseEntity {
     @Column(name = "coin_image", nullable = false)
     private String coinImage;
 
+    @Column(name = "address")
+    private String address;
+
+    @Column(name="tag")
+    private String tag;
+
 }

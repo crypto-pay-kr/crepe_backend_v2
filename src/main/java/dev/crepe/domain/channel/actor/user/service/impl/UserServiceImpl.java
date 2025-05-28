@@ -55,8 +55,6 @@ public class UserServiceImpl implements UserService {
 
         actorRepository.save(user);
 
-        // 기본 계좌 생성
-        accountService.createBasicAccounts(user);
         return ApiResponse.success("회원가입 성공", null);
     }
 
