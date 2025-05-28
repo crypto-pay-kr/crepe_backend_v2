@@ -10,9 +10,11 @@ import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.service.BankTokenManageService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
@@ -40,7 +42,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     private final TokenSetupService tokenSetupService;
     private final TokenHistoryService tokenHistoryService;
     private final PortfolioService portfolioService;
-
+    private final BankTokenRepository bankTokenRepository;
 
 
     // 은행 토큰 생성
@@ -166,5 +168,15 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                             .build();
                 })
                 .collect(Collectors.toList());
+    }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public BankToken getBankTokenByEmail(String bankEmail) {
+
+        return bankTokenRepository.findByBankEmail(bankEmail)
+                .orElseThrow(() -> new BankTokenNotFoundException(bankEmail));
+
     }
 }

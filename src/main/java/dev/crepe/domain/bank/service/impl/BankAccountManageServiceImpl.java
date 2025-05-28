@@ -9,6 +9,7 @@ import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.service.BankAccountManageService;
 import dev.crepe.domain.bank.service.BankService;
+import dev.crepe.domain.bank.service.BankTokenManageService;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.MissingAccountRequestException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
@@ -16,11 +17,21 @@ import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.util.coin.regulation.model.dto.response.RemainingCoinBalanceResponse;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
+import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
+import dev.crepe.domain.core.util.history.token.model.entity.PortfolioHistoryDetail;
+import dev.crepe.domain.core.util.history.token.repository.PortfolioHistoryDetailRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,6 +40,9 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
 
     private final AccountService accountService;
     private final BankService bankService;
+    private final BankTokenManageService bankTokenManageService;
+    private final PortfolioRepository portfolioRepository;
+    private final PortfolioHistoryDetailRepository portfolioHistoryDetailRepository;
 
     // 은행 출금 계좌 등록
     @Transactional
@@ -143,4 +157,58 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
         }
         accountService.holdAccount(account);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RemainingCoinBalanceResponse> calculateRemainingBalances(String email) {
+
+        BankToken bankToken = bankTokenManageService.getBankTokenByEmail(email);
+
+        // Portfolio 조회
+        List<Portfolio> portfolios = portfolioRepository.findByBankToken(bankToken);
+
+        // Portfolio에서 published_balance 계산
+        Map<String, BigDecimal> publishedBalances = portfolios.stream()
+                .collect(Collectors.toMap(
+                        p -> p.getCoin().getCurrency(),
+                        p -> p.getAmount().multiply(p.getInitialPrice())
+                ));
+
+        // Account에서 balance 조회
+        List<Account> accounts = accountService.getActiveAccountsByBankEmail(email);
+        Map<String, BigDecimal> accountBalances = accounts.stream()
+                .filter(a -> a.getCoin() != null)
+                .collect(Collectors.toMap(
+                        a -> a.getCoin().getCurrency(),
+                        Account::getBalance
+                ));
+
+        // published_balance - balance 계산
+        List<RemainingCoinBalanceResponse> result = new ArrayList<>();
+        for (Map.Entry<String, BigDecimal> entry : publishedBalances.entrySet()) {
+            String currency = entry.getKey();
+            BigDecimal publishedBalance = entry.getValue();
+            BigDecimal accountBalance = accountBalances.getOrDefault(currency, BigDecimal.ZERO);
+            BigDecimal remainingBalance = publishedBalance.subtract(accountBalance);
+
+            String coinName = portfolios.stream()
+                    .filter(p -> p.getCoin().getCurrency().equals(currency))
+                    .findFirst()
+                    .map(p -> p.getCoin().getName())
+                    .orElse(null);
+
+            result.add(RemainingCoinBalanceResponse.builder()
+                    .coinName(coinName)
+                    .currency(currency)
+                    .publishedBalance(publishedBalance)
+                    .accountBalance(accountBalance)
+                    .remainingBalance(remainingBalance)
+                    .build());
+        }
+
+        return result;
+
+    }
+
 }
+
