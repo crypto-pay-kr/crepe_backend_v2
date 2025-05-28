@@ -17,6 +17,8 @@ import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
+import dev.crepe.domain.core.util.coin.model.GetCoinInfo;
+import dev.crepe.domain.core.util.coin.non_regulation.service.CoinService;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import jakarta.transaction.Transactional;
@@ -33,7 +35,7 @@ import java.util.stream.Collectors;
 public class ActorAccountServiceImpl implements ActorAccountService {
 
     private final AccountService accountService;
-    private final BankTokenRepository bankTokenRepository;
+    private final CoinService coinService;
     private final SubscribeRepository subscribeRepository;
     private final AccountRepository accountRepository;
 
@@ -130,5 +132,9 @@ public class ActorAccountServiceImpl implements ActorAccountService {
         return new GetAllBalanceResponse(balanceList, bankTokenAccounts);
     }
 
+    @Override
+    public GetCoinInfo getCoinInfo(String currency) {
+        return coinService.coinInfoService(currency);
 
+    }
 }
