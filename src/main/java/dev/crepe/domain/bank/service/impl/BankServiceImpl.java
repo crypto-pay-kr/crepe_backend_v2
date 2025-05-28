@@ -84,9 +84,6 @@ public class BankServiceImpl implements BankService {
 
         bankRepository.save(bank);
 
-        // 기본 계좌 생성
-        accountService.createBasicBankAccounts(bank);
-
         return ApiResponse.success("회원가입 성공", null);
     }
 
@@ -112,7 +109,8 @@ public class BankServiceImpl implements BankService {
 
         log.info("Bank 토큰 생성 완료: {}", bank.getEmail());
         log.info("=== Bank 로그인 완료 ===");
-
+        // 기본 계좌 생성
+        accountService.createBasicBankAccounts(bank);
         TokenResponse tokenResponse = new TokenResponse(token, bank);
         return ApiResponse.success(bank.getRole() + " 로그인 성공", tokenResponse);
     }

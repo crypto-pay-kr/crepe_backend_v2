@@ -68,7 +68,7 @@ class AccountServiceImplTest {
         when(coinRepository.findAll()).thenReturn(coins);
 
         // when
-        accountService.createBasicAccounts(actor);
+        accountService.createBasicAccounts(actor.getEmail());
 
         // then
         verify(coinRepository).findAll();

@@ -85,9 +85,6 @@ public class StoreServiceImpl implements StoreService {
 
         actorRepository.save(store);
 
-        // 기본 계좌 생성
-        accountService.createBasicAccounts(store);
-
         return ApiResponse.success("가맹점 회원가입 성공", null);
     }
 
