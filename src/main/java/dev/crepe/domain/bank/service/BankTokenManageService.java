@@ -7,6 +7,7 @@ import dev.crepe.domain.bank.model.dto.response.GetTokenHistoryResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.global.model.dto.GetPaginationRequest;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface BankTokenManageService {
@@ -18,6 +19,10 @@ public interface BankTokenManageService {
     GetTokenAccountInfoResponse getAccountByBankToken(String bankEmail);
 
     List<GetTokenHistoryResponse> getTokenHistory(GetPaginationRequest request);
+
+    BigDecimal getLatestTokenPrice(String bankEmail);
+
+    BigDecimal getTotalTokenVolume(String bankEmail);
 
     BankToken getBankTokenByEmail(String bankEmail);
 }
