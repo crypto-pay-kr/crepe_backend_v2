@@ -8,6 +8,7 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorSubscribeService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
@@ -56,7 +57,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
     private final PreferentialConditionSatisfactionService satisfactionService;
     private final ProductService productService;
-
+    private final AccountService accountService;
     // 상품 구독
     @Override
     @Transactional
@@ -122,6 +123,8 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
         // 5. 가입 시점 우대금리 조건 만족도 기록
         recordInitialConditionSatisfactions(user, saved, product, initialRates);
 
+        // 6.유저 토큰 계좌 생성
+        accountService.getOrCreateTokenAccount(user.getEmail(), product.getBankToken().getCurrency());
         return buildSubscribeResponse(saved, product, initialRates);
     }
 
