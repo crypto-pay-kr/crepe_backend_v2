@@ -36,7 +36,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             AddressRegistryStatus status
     );
     boolean existsByActor_EmailAndCoin(String email,Coin coin);
-
+    boolean existsByBankAndCoin(Bank bank, Coin coin);
     Optional<Account> findByBank_EmailAndCoin_CurrencyAndAddressRegistryStatus(
             String bankEmail,
             String currency,

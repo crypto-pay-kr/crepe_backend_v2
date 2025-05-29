@@ -77,12 +77,15 @@ public class AccountServiceImpl implements AccountService {
         List<Coin> coins = coinRepository.findAll();
 
         for (Coin coin : coins) {
-            Account account = Account.builder()
-                    .bank(bank)
-                    .coin(coin)
-                    .accountAddress(null)
-                    .build();
-            accountRepository.save(account);
+            boolean exists = accountRepository.existsByBankAndCoin(bank, coin);
+            if (!exists) {
+                Account account = Account.builder()
+                        .bank(bank)
+                        .coin(coin)
+                        .accountAddress(null)
+                        .build();
+                accountRepository.save(account);
+            }
         }
     }
 
