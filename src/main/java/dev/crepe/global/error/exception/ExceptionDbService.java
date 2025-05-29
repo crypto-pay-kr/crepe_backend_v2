@@ -12,12 +12,11 @@ public class ExceptionDbService {
     
     private final ExceptionDbRepository exceptionDbRepository;
 
-    public String getExceptionMessage(String code, ExceptionStatus status) {
-        return exceptionDbRepository.findByCodeAndStatus(code, status)
-                .map(ExceptionDb::getMessage)
+    public void throwException(String code) {
+        ExceptionDb exception = exceptionDbRepository.findByCode(code)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Exception message not found for code: " + code + " and status: " + status
-                ));
-    }
+                        "Exception not found for code: " + code));
 
+        throw new CustomException(code, exception.getStatus(), exception.getMessage());
+    }
 }
