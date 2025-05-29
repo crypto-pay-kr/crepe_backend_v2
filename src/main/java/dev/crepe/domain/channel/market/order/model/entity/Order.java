@@ -2,6 +2,7 @@ package dev.crepe.domain.channel.market.order.model.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.store.model.PreparationTime;
 import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderResponse;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
@@ -12,6 +13,7 @@ import lombok.*;
 import org.hibernate.annotations.UuidGenerator;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +36,9 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private OrderStatus status;
+
+    @Column(name = "ready_at", nullable = true)
+    private LocalDateTime readyAt; // 준비 완료 시간 (분 단위)
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -65,8 +70,10 @@ public class Order extends BaseEntity {
     }
 
     // 주문 접수
-    public void accept() {
+    public void accept(PreparationTime preparationTime) {
+
         this.status = OrderStatus.PAID;
+        this.readyAt = this.getUpdatedAt().plusMinutes(preparationTime.getMinutes());
     }
 
     // 주문 거절
