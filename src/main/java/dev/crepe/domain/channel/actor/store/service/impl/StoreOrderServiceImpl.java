@@ -54,7 +54,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
         }
 
         // 주문 상태 업데이트
-        order.accept();
+        order.accept(request.getPreparationTime());
         orderRepository.save(order);
 
         //결제 상태 업데이트
