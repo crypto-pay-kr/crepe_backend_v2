@@ -35,24 +35,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
-    public List<StoreOrderResponse> getWaitingList(Long storeId) {
-        return orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.WAITING).stream()
-                .map(Order::toStoreOrderResponse)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<StoreOrderResponse> getProcessingList(Long storeId) {
-        return orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PAID).stream()
-                .map(Order::toStoreOrderResponse)
-                .toList();
-    }
-
-
     //******************************************** 가맹점 주문 조회 end ********************************************/
-
-
 
 
     //******************************************** 가맹점 주문 수락 start ********************************************/
