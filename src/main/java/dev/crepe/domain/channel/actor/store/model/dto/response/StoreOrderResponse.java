@@ -17,6 +17,7 @@ public class StoreOrderResponse {
     private OrderStatus status;
     private String orderType;
     private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
     private LocalDateTime readyAt;
     private List<OrderDetailResponse> orderDetails;
 

@@ -93,6 +93,7 @@ public class Order extends BaseEntity {
                 .status(this.status)
                 .orderType(this.type.name())
                 .createdAt(this.getCreatedAt())
+                .updatedAt(this.getUpdatedAt())
                 .readyAt(this.readyAt)
                 .orderDetails(this.orderDetails.stream()
                         .map(detail -> StoreOrderResponse.OrderDetailResponse.builder()
