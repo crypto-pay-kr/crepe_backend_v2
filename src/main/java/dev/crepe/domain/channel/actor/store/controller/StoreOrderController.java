@@ -61,30 +61,6 @@ public class StoreOrderController {
         return ResponseEntity.ok(allOrders);
     }
 
-    // 가맹점별 접수된 주문 목록 조회
-    // TODO: 슬라이싱 필요
-    @Operation(summary = "접수된 주문 조회", description = "가맹점별 접수된 주문 목록을 조회합니다.")
-    @SellerAuth
-    @GetMapping("/orders/waiting")
-    public ResponseEntity<List<StoreOrderResponse>> getWaitingList(AppAuthentication auth) {
-        Long storeId = storeService.getStoreIdByEmail(auth.getUserEmail());
-        List<StoreOrderResponse> waitingOrders = storeOrderService.getWaitingList(storeId);
-        return ResponseEntity.ok(waitingOrders);
-    }
-
-
-    // 가맹점별 처리중인 주문 목록 조회
-    // TODO: 슬라이싱 필요
-    @Operation(summary = "처리 중인 주문 조회", description = "가맹점별 처리 중인 주문 목록을 조회합니다.")
-    @SellerAuth
-    @GetMapping("/orders/processing")
-    public ResponseEntity<List<StoreOrderResponse>> getProcessingList(AppAuthentication auth) {
-        Long storeId = storeService.getStoreIdByEmail(auth.getUserEmail());
-        List<StoreOrderResponse> processingOrders = storeOrderService.getProcessingList(storeId);
-        return ResponseEntity.ok(processingOrders);
-    }
-
-
     @Operation(summary = "주문 상태 업데이트", description = "주문을 수락, 거절 또는 완료 상태로 업데이트합니다.")
     @SellerAuth
     @PostMapping("/orders/{orderId}/action")
