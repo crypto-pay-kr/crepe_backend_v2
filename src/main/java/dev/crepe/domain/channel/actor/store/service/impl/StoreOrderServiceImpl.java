@@ -66,6 +66,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
         return StoreOrderManageResponse.builder()
                 .orderId(orderId)
                 .status(order.getStatus())
+                .ReadyAt(order.getReadyAt())
                 .message(request.getPreparationTime().getDescription() + " 후 준비 예정입니다")
                 .build();
     }
