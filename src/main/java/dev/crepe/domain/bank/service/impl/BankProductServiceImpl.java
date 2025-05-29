@@ -30,6 +30,7 @@ import dev.crepe.domain.core.product.repository.ProductRepository;
 import dev.crepe.domain.core.product.repository.TagRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.infra.s3.exception.InvalidFileTypeException;
 import dev.crepe.infra.s3.service.S3Service;
 import jakarta.persistence.EntityNotFoundException;
@@ -55,6 +56,7 @@ public class BankProductServiceImpl implements BankProductService {
     private final ProductRepository productRepository;
     private final TagRepository tagRepository;
     private final MaxParticipantsCalculatorService maxParticipantsCalculatorService;
+    private final ExceptionDbService exceptionDbService;
 
     @Override
     public RegisterProductResponse registerProduct(String email, MultipartFile productImage, MultipartFile guideFile, RegisterProductRequest request) {
@@ -71,8 +73,7 @@ public class BankProductServiceImpl implements BankProductService {
         BigDecimal budget = request.getBudget();
 
         if (tokenAccount.getBalance().compareTo(budget) < 0) {
-            throw new InsufficientCapitalException( MessageFormat.format("상품 예산으로 설정할 자금이 부족합니다. 현재 잔액: {0}, 필요 금액: {1}",
-                    tokenAccount.getBalance(), budget));
+            exceptionDbService.throwException("PRODUCT_02");
         }
 
         tokenAccount.deductBalance(budget);

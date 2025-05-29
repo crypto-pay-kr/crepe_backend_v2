@@ -24,6 +24,7 @@ import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeExpiredService;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,18 +50,22 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
     private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
+    private final ExceptionDbService exceptionDbService;
 
 
     @Transactional
     public String expired(String userEmail, Long subscribeId) {
         // 가입 정보 조회
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(SubscribeNotFoundException::new);
+                .orElseThrow(() -> {
+                    exceptionDbService.throwException("SUBSCRIBE_04");
+                    return null;
+                });
 
-        // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new AlreadyExpiredSubscribeException();
+            exceptionDbService.throwException("SUBSCRIBE_01");
         }
+
 
         Product product = subscribe.getProduct();
         BigDecimal balance = subscribe.getBalance();
@@ -68,12 +73,12 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new NoDepositBalanceException();
+            exceptionDbService.throwException("SUBSCRIBE_02");
         }
 
         // 만기일 도달 여부 확인
         if (!subscribe.isMatured()) {
-            throw new TooEarlyToTerminateException();
+            exceptionDbService.throwException("SUBSCRIBE_03");
         };
 
 

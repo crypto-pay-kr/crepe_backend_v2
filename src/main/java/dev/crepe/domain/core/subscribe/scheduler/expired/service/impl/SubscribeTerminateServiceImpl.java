@@ -12,6 +12,7 @@ import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,6 +30,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
     private final AccountRepository accountRepository;
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final ExceptionDbService exceptionDbService;
 
 
     @Transactional
@@ -39,7 +41,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new AlreadyExpiredSubscribeException();
+            exceptionDbService.throwException("SUBSCRIBE_01");
         }
 
 
@@ -48,7 +50,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new NoDepositBalanceException();
+            exceptionDbService.throwException("SUBSCRIBE_02");
         }
 
         // 가입 개월 계산
