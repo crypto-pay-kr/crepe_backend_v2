@@ -12,7 +12,7 @@ public class ExceptionDbService {
     
     private final ExceptionDbRepository exceptionDbRepository;
 
-    public String getExceptionMessage(int code, ExceptionStatus status) {
+    public String getExceptionMessage(String code, ExceptionStatus status) {
         return exceptionDbRepository.findByCodeAndStatus(code, status)
                 .map(ExceptionDb::getMessage)
                 .orElseThrow(() -> new IllegalArgumentException(

@@ -32,6 +32,6 @@ public class ExceptionDb {
     private String message;
 
     @Column
-    private int code;
+    private String code;
     
 }
