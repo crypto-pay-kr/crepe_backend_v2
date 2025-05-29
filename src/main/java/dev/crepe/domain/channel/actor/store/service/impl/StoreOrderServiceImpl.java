@@ -31,28 +31,12 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     @Transactional(readOnly = true)
     public List<StoreOrderResponse> getAllList(Long storeId) {
         return orderRepository.findByStoreId(storeId).stream()
+                .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
                 .map(Order::toStoreOrderResponse)
                 .toList();
     }
-
-    @Transactional(readOnly = true)
-    public List<StoreOrderResponse> getWaitingList(Long storeId) {
-        return orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.WAITING).stream()
-                .map(Order::toStoreOrderResponse)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<StoreOrderResponse> getProcessingList(Long storeId) {
-        return orderRepository.findByStoreIdAndStatus(storeId, OrderStatus.PAID).stream()
-                .map(Order::toStoreOrderResponse)
-                .toList();
-    }
-
 
     //******************************************** 가맹점 주문 조회 end ********************************************/
-
-
 
 
     //******************************************** 가맹점 주문 수락 start ********************************************/

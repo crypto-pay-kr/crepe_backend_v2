@@ -85,6 +85,7 @@ public class Order extends BaseEntity {
                 .totalPrice(this.totalPrice)
                 .status(this.status)
                 .orderType(this.type.name())
+                .createdAt(this.getCreatedAt())
                 .orderDetails(this.orderDetails.stream()
                         .map(detail -> StoreOrderResponse.OrderDetailResponse.builder()
                                 .menuName(detail.getMenu().getName())
