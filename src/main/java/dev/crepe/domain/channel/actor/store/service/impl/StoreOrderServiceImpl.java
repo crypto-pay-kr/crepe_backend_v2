@@ -31,6 +31,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     @Transactional(readOnly = true)
     public List<StoreOrderResponse> getAllList(Long storeId) {
         return orderRepository.findByStoreId(storeId).stream()
+                .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
                 .map(Order::toStoreOrderResponse)
                 .toList();
     }
