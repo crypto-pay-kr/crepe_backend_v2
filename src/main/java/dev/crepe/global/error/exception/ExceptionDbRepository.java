@@ -14,8 +14,7 @@ public interface ExceptionDbRepository extends JpaRepository<ExceptionDb, Long> 
      * Finds an exception message by its code and status.
      *
      * @param code the exception code
-     * @param status the status of the exception
      * @return an Optional containing the ExceptionDb if found, or empty if not found
      */
-    Optional<ExceptionDb> findByCodeAndStatus(String code, ExceptionStatus status);
+    Optional<ExceptionDb> findByCode(String code);
 }
