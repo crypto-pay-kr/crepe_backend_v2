@@ -4,6 +4,7 @@ import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,6 +15,7 @@ public class StoreOrderResponse {
     private int totalPrice;
     private OrderStatus status;
     private String orderType;
+    private LocalDateTime createdAt;
     private List<OrderDetailResponse> orderDetails;
 
     @Getter

@@ -11,10 +11,6 @@ public interface StoreOrderService {
 
     List<StoreOrderResponse> getAllList(Long storeId);
 
-    List<StoreOrderResponse> getWaitingList(Long storeId);
-
-    List<StoreOrderResponse> getProcessingList(Long storeId);
-
     StoreOrderManageResponse acceptOrder(String orderId, Long storeId, StoreOrderActionRequest request);
 
     StoreOrderManageResponse refuseOrder(String orderId, Long storeId, StoreOrderActionRequest request);
