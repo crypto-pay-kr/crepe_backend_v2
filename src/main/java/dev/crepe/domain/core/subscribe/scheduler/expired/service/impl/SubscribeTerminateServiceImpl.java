@@ -220,6 +220,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                 .preTaxInterest(preTaxInterest)
                 .postTaxInterest(postTaxInterest)
                 .totalPayout(balance.add(postTaxInterest))
+                .interestRate(interestRate)
                 .build();
     }
 

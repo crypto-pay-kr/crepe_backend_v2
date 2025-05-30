@@ -182,10 +182,12 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         Account account = accountRepository.findByActor_EmailAndBankTokenId(userEmail, product.getBankToken().getId())
                 .orElseThrow(UserAccountNotFoundException::new);
 
+        // 계좌 잔액 부족
         if (account.getBalance().compareTo(amount) < 0) {
             throw new NotEnoughAmountException("잔액이 부족합니다");
         }
 
+        // 예치 한도 초과 체크 (예치 최대 한도 초과시 예외 처리)
         if (product.getMaxMonthlyPayment() != null &&
                 amount.compareTo(product.getMaxMonthlyPayment()) > 0) {
             throw new ExceedMonthlyLimitException();
@@ -193,6 +195,10 @@ public class TokenDepositServiceImpl implements TokenDepositService {
 
         account.reduceAmount(amount);
         subscribe.deposit(amount); // balance 반영
+
+        // 예치 거래내역 저장
+        saveDepositHistory(subscribe, amount, subscribe.getBalance(), account.getBalance());
+
     }
 
 }

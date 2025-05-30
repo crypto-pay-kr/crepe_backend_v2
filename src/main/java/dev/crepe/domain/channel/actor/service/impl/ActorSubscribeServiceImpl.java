@@ -134,11 +134,11 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
 
         // 예금시 초기납입액 예치
         Subscribe subscribe = subscribeBuilder.build();
+        Subscribe saved = subscribeRepository.saveAndFlush(subscribe);
+
         if (product.getType() == BankProductType.SAVING) {
             tokenDepositService.depositSavingBeforeSubscribe(userEmail, subscribe, initialAmount);
         }
-
-        Subscribe saved = subscribeRepository.save(subscribe);
 
         // 5. 가입 시점 우대금리 조건 만족도 기록
         recordInitialConditionSatisfactions(user, saved, product, initialRates);
