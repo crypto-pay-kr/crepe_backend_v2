@@ -15,6 +15,8 @@ import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.impl.AccountServiceImpl;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
+import dev.crepe.global.error.exception.CustomException;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.util.SecurityUtil;
 
 import org.junit.jupiter.api.DisplayName;
@@ -51,6 +53,10 @@ class AccountServiceImplTest {
 
     @InjectMocks
     private AccountServiceImpl accountService;
+
+
+    @Mock
+    private ExceptionDbService exceptionDbService;
 
     @Test
     @DisplayName("Actor에 대한 기본 계좌 생성 테스트")
@@ -260,10 +266,14 @@ class AccountServiceImplTest {
                     .thenReturn(Optional.of(account));
             when(coinRepository.findByCurrency("XRP"))
                     .thenReturn(createCoin(3L, "Ripple", "XRP", true));
+            when(exceptionDbService.getException("ADDRESS_005"))
+                    .thenReturn(new CustomException("ADDRESS_005", null, "태그가 필요한 코인입니다."));
 
             // when & then
-            assertThrows(TagRequiredException.class, () -> 
-                accountService.submitAccountRegistrationRequest(request, email));
+            CustomException exception = assertThrows(CustomException.class, () ->
+                    accountService.submitAccountRegistrationRequest(request, email));
+            assertEquals("ADDRESS_005", exception.getCode());
+            assertEquals("태그가 필요한 코인입니다.", exception.getMessage());
         }
     }
 
@@ -287,10 +297,14 @@ class AccountServiceImplTest {
                     .thenReturn(Optional.of(account));
             when(coinRepository.findByCurrency("BTC"))
                     .thenReturn(createCoin(1L, "Bitcoin", "BTC", false));
+            when(exceptionDbService.getException("ADDRESS_002"))
+                    .thenReturn(new CustomException("ADDRESS_002", null, "이미 등록된 계좌입니다."));
 
             // when & then
-            assertThrows(DuplicateAccountException.class, () -> 
-                accountService.submitAccountRegistrationRequest(request, email));
+            CustomException exception = assertThrows(CustomException.class, () ->
+                    accountService.submitAccountRegistrationRequest(request, email));
+            assertEquals("ADDRESS_002", exception.getCode());
+            assertEquals("이미 등록된 계좌입니다.", exception.getMessage());
         }
     }
 
