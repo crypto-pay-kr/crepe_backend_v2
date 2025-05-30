@@ -18,6 +18,7 @@ public class SubscribeProductResponse {
     private LocalDateTime subscribeDate;
     private LocalDateTime expiredDate;
     private BigDecimal balance;
+    private float baseInterestRate;
     private float interestRate;
     private String message;
 

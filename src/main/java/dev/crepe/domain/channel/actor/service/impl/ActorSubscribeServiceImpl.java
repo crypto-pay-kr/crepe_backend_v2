@@ -387,6 +387,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 .subscribeDate(saved.getSubscribeDate())
                 .expiredDate(saved.getExpiredDate())
                 .balance(saved.getBalance())
+                .baseInterestRate(product.getBaseInterestRate())
                 .interestRate(saved.getInterestRate()) // 현재 확정된 금리
                 .message("상품 가입이 완료되었습니다.");
 
