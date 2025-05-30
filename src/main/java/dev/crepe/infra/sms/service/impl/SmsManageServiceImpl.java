@@ -1,9 +1,7 @@
 package dev.crepe.infra.sms.service.impl;
 
-import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.infra.sms.exception.SmsAuthCodeNotValidException;
-import dev.crepe.infra.sms.exception.SmsAuthNotFoundException;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
 import dev.crepe.infra.sms.model.SmsType;
 import dev.crepe.infra.sms.service.NhnSmsService;
@@ -23,13 +21,14 @@ public class SmsManageServiceImpl implements SmsManageService {
     private final NhnSmsService nhnSmsService;
     private final InMemorySmsAuthService inMemorySmsAuthService;
     private final ActorRepository actorRepository;
+    private final ExceptionDbService exceptionDbService;
 
     @Override
     public InMemorySmsAuthService.SmsAuthData getSmsAuthData(String phoneNumber, SmsType smsType) {
         InMemorySmsAuthService.SmsAuthData authData = inMemorySmsAuthService.getAuthData(phoneNumber);
 
         if (authData == null || !authData.getSmsType().equals(smsType)) {
-            throw new SmsAuthNotFoundException();
+            throw exceptionDbService.getException("SMS_004");
         }
 
         return authData;
@@ -40,7 +39,7 @@ public class SmsManageServiceImpl implements SmsManageService {
 
         // SIGN_UP일 경우 번호 중복 확인
         if (type == SmsType.SIGN_UP && actorRepository.existsByPhoneNum(phoneNumber)) {
-            throw new AlreadyPhoneNumberException();
+            throw exceptionDbService.getException("ACTOR_009");
         }
 
         String code = CodeGenerator.generateCode(digitLength);
@@ -58,7 +57,7 @@ public class SmsManageServiceImpl implements SmsManageService {
         // 메모리 저장소에서 인증 번호 검증
         InMemorySmsAuthService.SmsAuthData authData = inMemorySmsAuthService.getAuthData(phoneNumber);
         if (authData == null || !authData.getCode().equals(code) || !authData.getSmsType().equals(smsType)) {
-            throw new SmsAuthCodeNotValidException();
+            throw exceptionDbService.getException("SMS_003");
         }
     }
 

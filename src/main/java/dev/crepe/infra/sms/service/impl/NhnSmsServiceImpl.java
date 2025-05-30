@@ -1,7 +1,6 @@
 package dev.crepe.infra.sms.service.impl;
 
-import dev.crepe.infra.sms.exception.CannotSendSmsException;
-import dev.crepe.infra.sms.exception.NotValidSmsResponseException;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.infra.sms.model.dto.request.NhnSmsRequest;
 import dev.crepe.infra.sms.model.dto.response.NhnSmsResponse;
 import dev.crepe.infra.sms.service.NhnSmsService;
@@ -15,6 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class NhnSmsServiceImpl implements NhnSmsService {
 
     private final WebClient webClient;
+    private final ExceptionDbService exceptionDbService;
 
     @Value("${nhn.sms.api-path}")
     private String apiPath;
@@ -27,13 +27,19 @@ public class NhnSmsServiceImpl implements NhnSmsService {
 
     private final String baseUrl;
 
-    public NhnSmsServiceImpl(WebClient.Builder webClientBuilder, @Value("${nhn.sms.base-url}") String baseUrl) {
+
+    public NhnSmsServiceImpl(WebClient.Builder webClientBuilder,
+                             @Value("${nhn.sms.base-url}") String baseUrl,
+                             ExceptionDbService exceptionDbService) {
         this.baseUrl = baseUrl;
+        this.exceptionDbService = exceptionDbService;
         this.webClient = webClientBuilder.baseUrl(this.baseUrl).build();
     }
 
+
     @Override
     public void sendSms(String phone, String smsVerificationCode) {
+        log.info("SMS 전송 요청. 수신자 번호: {}, 인증 코드: {}", phone, smsVerificationCode);
         // 공백 제거
         String trimmedApiPath = apiPath.trim();
         try {
@@ -50,16 +56,14 @@ public class NhnSmsServiceImpl implements NhnSmsService {
                     .block();
 
             if (response == null || !response.getHeader().getIsSuccessful()) {
-                log.error("SMS 전송 실패. 응답: {}", response);
-                throw new CannotSendSmsException();
+                throw exceptionDbService.getException("SMS_001");
             }
 
             log.info("SMS가 성공적으로 전송되었습니다. 수신자 번호: {}", phone);
-        } catch (CannotSendSmsException e) {
-            throw e; // 이미 처리된 예외는 그대로 던짐
+        } catch  (IllegalArgumentException e)  {
+            throw exceptionDbService.getException("SMS_002");
         } catch (Exception e) {
-            log.error("SMS 전송 중 오류 발생. 수신자 번호: {}, 오류: {}", phone, e.getMessage(), e);
-            throw new NotValidSmsResponseException();
+            throw exceptionDbService.getException("SMS_003");
         }
     }
 }

@@ -2,6 +2,7 @@ package dev.crepe.infra.naver.ocr.id.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.infra.naver.ocr.id.entity.IdCardType;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.ocr.id.util.IdCardOcrUtil;
@@ -23,6 +24,7 @@ public class IdCardOcrService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ExceptionDbService exceptionDbService;
 
     @Value("${naver.cloud.id-ocr.secret-key}") private String secretKey;
     @Value("${naver.cloud.id-ocr.base-url}") private String baseUrl;
@@ -49,12 +51,12 @@ public class IdCardOcrService {
         JsonNode images = root.path("images");
 
         if (images.isMissingNode() || images.isEmpty()) {
-            throw new IllegalArgumentException("OCR 응답에 이미지 데이터가 없습니다.");
+            throw exceptionDbService.getException("OCR_003");
         }
 
         JsonNode idCard = images.get(0).path("idCard").path("result");
         if (idCard.isMissingNode() || idCard.isNull()) {
-            throw new IllegalArgumentException("OCR 응답에 신분증 데이터가 없습니다.");
+            throw exceptionDbService.getException("OCR_004");
         }
 
         String idType = idCard.path("idtype").asText();
@@ -63,7 +65,7 @@ public class IdCardOcrService {
         } else if ("Driver's License".equalsIgnoreCase(idType)) {
             return parseIdCardByType(idCard, IdCardType.DRIVERS_LISCENSE);
         } else {
-            throw new IllegalArgumentException("지원하지 않는 신분증 유형입니다: " + idType);
+            throw exceptionDbService.getException("OCR_002");
         }
     }
 
