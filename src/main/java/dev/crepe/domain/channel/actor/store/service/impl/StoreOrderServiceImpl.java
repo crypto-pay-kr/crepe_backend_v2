@@ -45,7 +45,9 @@ public class StoreOrderServiceImpl implements StoreOrderService {
         Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
                 .orElseThrow(InvalidOrderIdException::new);
 
-        if(order.getStatus() != OrderStatus.WAITING) {
+        int isStatusWaintingOrCompleted = (order.getStatus() == OrderStatus.WAITING || order.getStatus() == OrderStatus.COMPLETED) ? 
+                1 : 0;
+        if(isStatusWaintingOrCompleted == 0) {
             return StoreOrderManageResponse.builder()
                     .orderId(orderId)
                     .status(order.getStatus())
