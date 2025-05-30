@@ -51,7 +51,6 @@ public class UpbitDepositService {
             GetDepositResponse deposit = objectMapper.readValue(responseBody, GetDepositResponse.class);
             return List.of(deposit);
         } catch (Exception e) {
-            log.error("입금 리스트 조회 실패", e);
             return Collections.emptyList();
         }
     }

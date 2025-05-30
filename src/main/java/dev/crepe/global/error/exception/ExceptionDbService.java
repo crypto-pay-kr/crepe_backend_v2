@@ -19,15 +19,4 @@ public class ExceptionDbService {
 
         return new CustomException(code, exception.getStatus(), exception.getMessage());
     }
-
-    public void throwException(String code) {
-        throw getException(code);
-    }
-
-    public CustomException throwExceptionAndReturn(String code) {
-        return getException(code);
-    }
-
-
-
 }
