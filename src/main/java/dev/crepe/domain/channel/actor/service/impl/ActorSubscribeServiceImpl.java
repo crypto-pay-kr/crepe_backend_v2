@@ -8,6 +8,7 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorSubscribeService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
@@ -57,7 +58,10 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
     private final PreferentialConditionSatisfactionService satisfactionService;
     private final ProductService productService;
+    private final TokenDepositService tokenDepositService;
     private final AccountService accountService;
+
+  
     // 상품 구독
     @Override
     @Transactional
@@ -95,6 +99,16 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
         checkEligibility(user, product);
         PreferentialRateModels.InitialRateCalculationResult initialRates = calculateInitialPreferentialRates(user, product, request);
 
+        // 초기 납입액
+        BigDecimal initialAmount = request.getInitialDepositAmount() != null
+                ? request.getInitialDepositAmount()
+                : BigDecimal.ZERO;
+
+        // 예금 상품일 경우, 초기 납입액 필수 체크
+        if (product.getType() == BankProductType.SAVING && (initialAmount == null || initialAmount.compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new IllegalArgumentException("예금 상품에는 초기 납입액이 필수입니다.");
+        }
+
         // 3. 구독 엔티티 생성
         LocalDateTime now = LocalDateTime.now();
         Subscribe.SubscribeBuilder subscribeBuilder = Subscribe.builder()
@@ -103,8 +117,8 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 .status(SubscribeStatus.ACTIVE)
                 .subscribeDate(now)
                 .expiredDate(now.plusYears(1))
-                .balance(request.getInitialDepositAmount() != null ? request.getInitialDepositAmount() : BigDecimal.ZERO)
                 .interestRate(initialRates.getConfirmedRate())
+                .balance(BigDecimal.ZERO)
                 .appliedPreferentialRates(initialRates.getAppliedRatesJson());
 
         // 4. 상품 타입별 추가 설정
@@ -118,7 +132,13 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                     .voucherCode(generateVoucherCode());
         }
 
-        Subscribe saved = subscribeRepository.save(subscribeBuilder.build());
+        // 예금시 초기납입액 예치
+        Subscribe subscribe = subscribeBuilder.build();
+        if (product.getType() == BankProductType.SAVING) {
+            tokenDepositService.depositSavingBeforeSubscribe(userEmail, subscribe, initialAmount);
+        }
+
+        Subscribe saved = subscribeRepository.save(subscribe);
 
         // 5. 가입 시점 우대금리 조건 만족도 기록
         recordInitialConditionSatisfactions(user, saved, product, initialRates);
