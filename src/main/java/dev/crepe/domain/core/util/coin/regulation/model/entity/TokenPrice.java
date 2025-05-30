@@ -32,7 +32,7 @@ public class TokenPrice extends BaseEntity {
     private BigDecimal price;
 
     // JSON 형식의 시세 정보
-    @Column(name = "price_details", columnDefinition = "TEXT", nullable = false)
+    @Column(name = "price_details", columnDefinition = "TEXT", nullable = true)
     private String priceDetails;
 
     // 등락율
