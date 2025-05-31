@@ -21,6 +21,7 @@ import dev.crepe.domain.core.util.coin.model.GetCoinInfo;
 import dev.crepe.domain.core.util.coin.non_regulation.service.CoinService;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class ActorAccountServiceImpl implements ActorAccountService {
 
     private final AccountService accountService;
     private final CoinService coinService;
+    private final ExceptionDbService exceptionDbService;
     private final SubscribeRepository subscribeRepository;
     private final AccountRepository accountRepository;
 
@@ -118,7 +120,7 @@ public class ActorAccountServiceImpl implements ActorAccountService {
     public void holdActorAccount(Account account) {
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
-            throw new AlreadyHoldAddressException(account.getAccountAddress());
+            throw exceptionDbService.getException("ACCOUNT_010"); // 정지된 계좌 예외
         }
         accountService.holdAccount(account);
 

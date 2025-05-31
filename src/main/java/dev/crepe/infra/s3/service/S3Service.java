@@ -1,5 +1,6 @@
 package dev.crepe.infra.s3.service;
 
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +18,7 @@ import java.util.UUID;
 public class S3Service {
 
     private final S3Client s3Client;
+    private final ExceptionDbService exceptionDbService;
 
     @Value("${cloud.aws.s3.bucket}")
     private String bucketName;
@@ -48,7 +50,7 @@ public class S3Service {
 
             return baseUrl + "/" + fileName;
         } catch (IOException e) {
-            throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.", e);
+            throw exceptionDbService.getException("INTERNAL_001");
         }
     }
 

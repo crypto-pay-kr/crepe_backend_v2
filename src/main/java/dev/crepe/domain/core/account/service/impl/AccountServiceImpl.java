@@ -50,7 +50,6 @@ public class AccountServiceImpl implements AccountService {
     private final ActorRepository actorRepository;
     private final SubscribeRepository subscribeRepository;
     private final ExceptionDbService exceptionDbService;
-
     @Override
     @Transactional
     public void createBasicAccounts(String email) {
