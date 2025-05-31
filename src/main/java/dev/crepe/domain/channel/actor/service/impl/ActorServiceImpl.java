@@ -60,7 +60,7 @@ public class ActorServiceImpl  implements ActorService {
     @Transactional(readOnly = true)
     public boolean isEmailExists(String email) {
         if (actorRepository.existsByEmail(email)) {
-            exceptionDbService.throwException("ACTOR_003");
+            throw exceptionDbService.getException("ACTOR_003");
         }
         return false;
     }

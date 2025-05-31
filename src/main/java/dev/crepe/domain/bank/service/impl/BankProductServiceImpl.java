@@ -73,7 +73,7 @@ public class BankProductServiceImpl implements BankProductService {
         BigDecimal budget = request.getBudget();
 
         if (tokenAccount.getBalance().compareTo(budget) < 0) {
-            exceptionDbService.throwException("PRODUCT_02");
+            throw exceptionDbService.getException("PRODUCT_02");
         }
 
         tokenAccount.deductBalance(budget);

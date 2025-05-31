@@ -65,7 +65,7 @@ public class UserServiceImpl implements UserService {
     private void checkAlreadyField(UserSignupRequest request) {
         if (actorRepository.existsByEmail(request.getEmail())) {
             System.out.println("⚠️ 중복된 이메일입니다!");
-            exceptionDbService.throwException("ACTOR_003");
+            throw exceptionDbService.getException("ACTOR_003");
         }
 
         if (actorRepository.existsByNickName(request.getNickname())) {

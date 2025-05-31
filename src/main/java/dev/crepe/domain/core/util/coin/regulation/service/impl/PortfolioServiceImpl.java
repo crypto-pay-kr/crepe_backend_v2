@@ -39,12 +39,12 @@ public class PortfolioServiceImpl implements PortfolioService {
     public void validatePortfolioConstitute(List<CreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail) {
 
         if (coinInfoList == null || coinInfoList.size() < MIN_PORTFOLIO_SIZE) {
-            exceptionDbService.throwException("PORTFOLIO_06");
+            throw exceptionDbService.getException("PORTFOLIO_06");
         }
 
         for (CreateBankTokenRequest.CoinInfo coin : coinInfoList) {
             if (coin.getAmount() == null || coin.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                exceptionDbService.throwException("PORTFOLIO_05");
+                throw exceptionDbService.getException("PORTFOLIO_05");
             }
 
             accountService.findActiveAccountByBankEmailAndCurrency(bankEmail, coin.getCurrency());
@@ -59,12 +59,12 @@ public class PortfolioServiceImpl implements PortfolioService {
     public void revalidatePortfolioConstitute(List<ReCreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail) {
 
         if (coinInfoList == null || coinInfoList.size() < MIN_PORTFOLIO_SIZE) {
-            exceptionDbService.throwException("PORTFOLIO_06");
+            throw exceptionDbService.getException("PORTFOLIO_06");
         }
 
         for (ReCreateBankTokenRequest.CoinInfo coin : coinInfoList) {
             if (coin.getAmount() == null || coin.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                exceptionDbService.throwException("PORTFOLIO_05");
+               throw exceptionDbService.getException("PORTFOLIO_05");
             }
 
             // 새로운 계좌 추가 시 계좌가 있는지 확인
