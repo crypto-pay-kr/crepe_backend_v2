@@ -55,7 +55,7 @@ class JwtTokenProviderTest {
     @DisplayName("리프레시 토큰 생성 테스트")
     void createRefreshToken() {
         // when
-        String refreshToken = jwtTokenProvider.createRefreshToken(testEmail, testRole);
+        String refreshToken = jwtTokenProvider.createRefreshToken();
         
         // then
         assertNotNull(refreshToken);
@@ -128,7 +128,7 @@ class JwtTokenProviderTest {
     @DisplayName("토큰 재발급 테스트")
     void reissue() {
         // given
-        String refreshToken = jwtTokenProvider.createRefreshToken(testEmail, testRole);
+        String refreshToken = jwtTokenProvider.createRefreshToken();
         
         // when
         AuthenticationToken reissuedToken = jwtTokenProvider.reissue(refreshToken, testEmail, testRole);
