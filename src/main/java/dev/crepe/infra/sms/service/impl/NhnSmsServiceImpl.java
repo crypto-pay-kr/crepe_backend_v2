@@ -39,7 +39,6 @@ public class NhnSmsServiceImpl implements NhnSmsService {
 
     @Override
     public void sendSms(String phone, String smsVerificationCode) {
-        log.info("SMS 전송 요청. 수신자 번호: {}, 인증 코드: {}", phone, smsVerificationCode);
         // 공백 제거
         String trimmedApiPath = apiPath.trim();
         try {
@@ -59,7 +58,6 @@ public class NhnSmsServiceImpl implements NhnSmsService {
                 throw exceptionDbService.getException("SMS_001");
             }
 
-            log.info("SMS가 성공적으로 전송되었습니다. 수신자 번호: {}", phone);
         } catch  (IllegalArgumentException e)  {
             throw exceptionDbService.getException("SMS_002");
         } catch (Exception e) {

@@ -78,12 +78,16 @@ public class Order extends BaseEntity {
 
     // 주문 거절
     public void refuse() {
-        this.status = OrderStatus.CANCELLED;
+        this.status = OrderStatus.REFUSED;
     }
 
     // 주문 완료
     public void complete() {
         this.status = OrderStatus.COMPLETED;
+    }
+
+    public void cancel() {
+        this.status = OrderStatus.PAID;
     }
 
     public StoreOrderResponse toStoreOrderResponse() {

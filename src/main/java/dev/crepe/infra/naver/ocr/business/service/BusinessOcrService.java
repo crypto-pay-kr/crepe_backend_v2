@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.infra.naver.ocr.business.dto.BusinessOcrResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ import java.net.URL;
 import java.util.UUID;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class BusinessOcrService {
 
@@ -33,6 +35,7 @@ public class BusinessOcrService {
     private final ExceptionDbService exceptionDbService;
 
     public BusinessOcrResponse processMultipartImage(MultipartFile file) throws IOException {
+        log.info("사업자 등록증 인식 시작 - 파일 이름: {}", file.getOriginalFilename());
         String boundary = UUID.randomUUID().toString();
         URL url = new URL(baseUrl);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -90,7 +93,7 @@ public class BusinessOcrService {
         JsonNode images = root.path("images");
 
         if (!images.isArray() || images.isEmpty()) {
-            throw exceptionDbService.getException("OCR_003");
+            throw exceptionDbService.getException("OCR_002");
         }
 
         JsonNode bizLicense = images.get(0).path("bizLicense").path("result");

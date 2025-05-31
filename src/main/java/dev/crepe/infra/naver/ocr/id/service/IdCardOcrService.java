@@ -8,6 +8,7 @@ import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.ocr.id.util.IdCardOcrUtil;
 import dev.crepe.infra.naver.ocr.id.util.MultipartInputStreamFileResource;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -19,6 +20,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class IdCardOcrService {
 
@@ -30,6 +32,7 @@ public class IdCardOcrService {
     @Value("${naver.cloud.id-ocr.base-url}") private String baseUrl;
 
     public IdCardOcrResponse recognizeIdentityCard(MultipartFile file) throws IOException {
+        log.info("신분증 인식 파일 이름: {}", file.getOriginalFilename());
         String jsonMessage = IdCardOcrUtil.buildJsonMessage(file);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
@@ -51,12 +54,12 @@ public class IdCardOcrService {
         JsonNode images = root.path("images");
 
         if (images.isMissingNode() || images.isEmpty()) {
-            throw exceptionDbService.getException("OCR_003");
+            throw exceptionDbService.getException("OCR_002");
         }
 
         JsonNode idCard = images.get(0).path("idCard").path("result");
         if (idCard.isMissingNode() || idCard.isNull()) {
-            throw exceptionDbService.getException("OCR_004");
+            throw exceptionDbService.getException("OCR_002");
         }
 
         String idType = idCard.path("idtype").asText();
