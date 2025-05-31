@@ -2,13 +2,8 @@ package dev.crepe.domain.core.transfer.service.Impl;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.transfer.exception.DepositRequestFailedException;
-import dev.crepe.domain.core.transfer.exception.DuplicateTransactionException;
-import dev.crepe.domain.core.transfer.exception.InvalidDepositException;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetDepositRequest;
 import dev.crepe.domain.core.transfer.model.dto.response.GetDepositResponse;
 import dev.crepe.domain.core.transfer.service.DepositService;
@@ -19,6 +14,7 @@ import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
 import dev.crepe.domain.core.util.upbit.Service.UpbitDepositService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -39,9 +35,11 @@ public class DepositServiceImpl implements DepositService {
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final UpbitDepositService upbitDepositService;
     private final ActorRepository actorRepository;
+    private final ExceptionDbService exceptionDbService;
 
     @Override
     public void requestDeposit(GetDepositRequest request, String email) {
+        log.info("입금 요청 처리 시작: {}", email);
         String txid = request.getTxid();
         String currency = request.getCurrency();
 
@@ -49,28 +47,27 @@ public class DepositServiceImpl implements DepositService {
         Coin coin = coinRepository.findByCurrency(currency);
 
         Actor actor = actorRepository.findByEmail(email)
-        .orElseThrow(() -> new UserNotFoundException(email));
+        .orElseThrow(()->exceptionDbService.getException("ACTOR_002"));
 
 
         // 2. 해당 이메일, 코인에 해당하는 계좌 조회
         Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
-                .orElseThrow(AccountNotFoundException::new);
+                .orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
 
         // 3. 이미 처리된 txid인지 확인
         if (transactionHistoryRepository.existsByTransactionId(txid)) {
-            log.warn("이미 처리된 거래입니다. txid={}", txid);
-            throw new DuplicateTransactionException(txid);
+            throw exceptionDbService.getException("DEPOSIT_001");
         }
 
         // 4. 업비트 API로 입금 내역 조회
         List<GetDepositResponse> depositList = upbitDepositService.getDepositListById(currency, txid);
         if (depositList.isEmpty()) {
-            throw new DepositRequestFailedException(txid);
+            throw exceptionDbService.getException("DEPOSIT_002");
         }
 
         // 5. 거래 ID에 정확히 하나의 입금 내역만 유효하도록 검증
         if (depositList.size() != 1) {
-            throw new InvalidDepositException();
+            throw exceptionDbService.getException("DEPOSIT_003");
         }
 
         GetDepositResponse deposit = depositList.get(0);
@@ -103,7 +100,6 @@ public class DepositServiceImpl implements DepositService {
                 Thread.sleep(RETRY_INTERVAL_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("입금 상태 확인 중 인터럽트 발생");
                 break;
             }
         }

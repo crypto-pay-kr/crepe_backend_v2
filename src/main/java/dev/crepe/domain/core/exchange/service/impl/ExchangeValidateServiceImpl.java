@@ -7,6 +7,7 @@ import dev.crepe.domain.core.exchange.exception.TotalSupplyNotAllowedException;
 import dev.crepe.domain.core.exchange.model.dto.request.CreateExchangeRequest;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 public class ExchangeValidateServiceImpl {
 
     private final UpbitExchangeService upbitExchangeService;
+    private final ExceptionDbService exceptionDbService;
 
 
     /**
@@ -109,7 +111,7 @@ public class ExchangeValidateServiceImpl {
      */
     public BigDecimal calculateTokenPrice(BigDecimal totalCapital, BigDecimal totalSupply) {
         if (totalSupply.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new TotalSupplyNotAllowedException();
+            throw exceptionDbService.getException("EXCHANGE_003");
         }
         return totalCapital.divide(totalSupply, 8, RoundingMode.HALF_UP);
     }
@@ -119,7 +121,7 @@ public class ExchangeValidateServiceImpl {
      */
     public BigDecimal calculateAmount(BigDecimal fromAmount, BigDecimal fromRate, BigDecimal coinRate) {
         if (fromAmount.compareTo(BigDecimal.ZERO) < 0 || fromRate.compareTo(BigDecimal.ZERO) < 0) {
-            throw new AmountNotAllowedException();
+            throw exceptionDbService.getException("EXCHANGE_001");
         }
         BigDecimal coinValue = fromAmount.multiply(fromRate);
         return coinValue.divide(coinRate, 8, RoundingMode.HALF_UP);
@@ -135,7 +137,7 @@ public class ExchangeValidateServiceImpl {
             BigDecimal rate = entry.getValue();
 
             if (rate == null) {
-                throw new ExchangeValidationException("시세가 유효하지 않습니다");
+             throw exceptionDbService.getException("EXCHANGE_001");
             }
 
             upbitExchangeService.validateRateWithinThreshold(rate, currency,BigDecimal.valueOf(1));
@@ -147,7 +149,7 @@ public class ExchangeValidateServiceImpl {
      */
     public void validateRequest(BigDecimal expected, BigDecimal actual, BigDecimal tolerancePercent) {
         if (expected.compareTo(BigDecimal.ZERO) == 0) {
-            throw new ExchangeValidationException("expected 값은 0일 수 없습니다.");
+            throw exceptionDbService.getException("EXCHANGE_004");
         }
 
         BigDecimal diff = expected.subtract(actual).abs();
@@ -155,9 +157,7 @@ public class ExchangeValidateServiceImpl {
                 .multiply(BigDecimal.valueOf(100));
 
         if (percentDiff.compareTo(tolerancePercent) > 0) {
-            throw new ExchangeValidationException(
-                    String.format("계산된 값 %.8f과 요청 값 %.8f의 오차율 %.4f%%가 허용 범위 %.2f%%를 초과했습니다.",
-                            expected, actual, percentDiff, tolerancePercent));
+            throw exceptionDbService.getException("EXCHANGE_005");
         }
 
     }

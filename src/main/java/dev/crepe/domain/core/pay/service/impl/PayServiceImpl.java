@@ -18,7 +18,9 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class PayServiceImpl implements PayService {
 
@@ -34,19 +37,17 @@ public class PayServiceImpl implements PayService {
    private final AccountRepository accountRepository;
    private final TransactionHistoryRepository transactionHistoryRepository;
    private final PayHistoryRepository payHistoryRepository;
-
+    private final ExceptionDbService exceptionDbService;
     @Override
     @Transactional
     public void payForOrder(Order order) {
-
+        log.info("결제 내역 생성");
         // 1. 유저와 가맹점의 계좌 정보 조회
         Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getUser().getEmail(), order.getCurrency())
-                .orElseThrow(() -> new AccountNotFoundException(order.getUser().getEmail()));
-
-        System.out.println("유저 계좌: " + order.getStore().getEmail());
+                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
         Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getStore().getEmail(), order.getCurrency())
-                .orElseThrow(() -> new AccountNotFoundException(order.getStore().getEmail()));
+                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
         accountService.validateAccountNotHold(userAccount);
         accountService.validateAccountNotHold(storeAccount);
@@ -57,7 +58,7 @@ public class PayServiceImpl implements PayService {
 
         // 3. 유저 잔액 부족 여부 확인
         if (userAccount.getBalance().compareTo(totalAmount) < 0) {
-            throw new NotEnoughAmountException(order.getCurrency());
+           throw exceptionDbService.getException("ACCOUNT_006");
         }
 
         // 4. 유저 계좌에서 결제 금액 차감
@@ -104,19 +105,19 @@ public class PayServiceImpl implements PayService {
     @Override
     @Transactional
     public void cancelForOrder(Order order) {
-
+        log.info("주문 취소 내역 생성");
         // 1. 유저 및 스토어 계정 조회
         Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(
                         order.getUser().getEmail(), order.getCurrency())
-                .orElseThrow(() -> new AccountNotFoundException(order.getUser().getEmail()));
+                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
         Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(
                         order.getStore().getEmail(), order.getCurrency())
-                .orElseThrow(() -> new AccountNotFoundException(order.getStore().getEmail()));
+                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
         // 2. 기존 결제 정보 조회
         PayHistory payHistory = payHistoryRepository.findByOrder(order)
-                .orElseThrow(PayHistoryNotFoundException::new);
+                .orElseThrow(()-> exceptionDbService.getException("PAY_HISTORY_001"));
 
         // 3. 유저 계정에 결제했던 금액 다시 추가
         userAccount.addAmount(payHistory.getTotalAmount());
@@ -138,13 +139,14 @@ public class PayServiceImpl implements PayService {
 
     @Transactional
     public void refundForOrder(Long payId, Long id) {
+        log.info("환불 내역 생성");
         // 1. 결제 내역 조회
         PayHistory payHistory = payHistoryRepository.findById(payId)
-                .orElseThrow(PayHistoryNotFoundException::new);
+                .orElseThrow(()-> exceptionDbService.getException("PAY_HISTORY_001"));
 
         // 2. 이미 환불된 상태인지 확인
         if (payHistory.getStatus() == PayType.REFUND) {
-            throw new AlreadyRefundException();
+            throw exceptionDbService.getException("PAY_001");
         }
 
         // 3. PayHistory에 연결된 거래 내역들 가져오기
@@ -166,7 +168,7 @@ public class PayServiceImpl implements PayService {
 
         // 4. 가맹점 정산 상태 확인
         if (storeTx.getStatus() == TransactionStatus.ACCEPTED) {
-            throw new StoreAlreadySettledException();
+            throw exceptionDbService.getException("PAY_002");
         }
 
         // 5. 상태 변경 처리

@@ -176,5 +176,24 @@ public class TokenDepositServiceImpl implements TokenDepositService {
             throw new SubscribeInactiveException(subscribe.getStatus().name());
         }
     }
+
+    public void depositSavingBeforeSubscribe(String userEmail, Subscribe subscribe, BigDecimal amount) {
+        Product product = subscribe.getProduct();
+        Account account = accountRepository.findByActor_EmailAndBankTokenId(userEmail, product.getBankToken().getId())
+                .orElseThrow(UserAccountNotFoundException::new);
+
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw new NotEnoughAmountException("잔액이 부족합니다");
+        }
+
+        if (product.getMaxMonthlyPayment() != null &&
+                amount.compareTo(product.getMaxMonthlyPayment()) > 0) {
+            throw new ExceedMonthlyLimitException();
+        }
+
+        account.reduceAmount(amount);
+        subscribe.deposit(amount); // balance 반영
+    }
+
 }
 
