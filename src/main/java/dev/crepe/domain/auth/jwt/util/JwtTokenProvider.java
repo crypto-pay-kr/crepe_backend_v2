@@ -56,7 +56,7 @@ public class JwtTokenProvider {
         claims.put("role", role.name());
 
         String accessToken = createToken(claims);
-        String refreshToken = createRefreshToken();
+        String refreshToken = createRefreshToken(email, role);
 
         return JwtAuthenticationToken.builder()
                 .accessToken(accessToken)
@@ -64,11 +64,18 @@ public class JwtTokenProvider {
                 .build();
     }
 
-    public String createRefreshToken() {
+    public String createRefreshToken(String email, UserRole role) {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime validity = now.plus(refreshExpiration);
 
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", email);
+        claims.put("role", role.name());
+        claims.put("type", "refresh"); // 토큰 타입 명시
+
         return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(email)
                 .setIssuedAt(Date.from(now.atZone(ZoneId.systemDefault()).toInstant()))
                 .setExpiration(Date.from(validity.atZone(ZoneId.systemDefault()).toInstant()))
                 .signWith(getSigningKey())

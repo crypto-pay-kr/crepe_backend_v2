@@ -8,8 +8,8 @@ import dev.crepe.infra.otp.model.entity.OtpCredential;
 import dev.crepe.infra.otp.repository.OtpCredentialRepository;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,12 +20,10 @@ public class OtpService {
     private final GoogleAuthenticator gAuth;
     private final OtpCredentialRepository otpCredentialRepository;
     private final ActorRepository actorRepository;
-
-
+    private final ExceptionDbService exceptionDbService;
 
     @Transactional
     public GoogleAuthenticatorKey generateAndSaveKey(Long userId) {
-
         GoogleAuthenticatorKey key = gAuth.createCredentials();
 
         otpCredentialRepository.findByUserId(userId)
@@ -37,79 +35,65 @@ public class OtpService {
         return key;
     }
 
-    // QR 코드 URL 생성
     public String generateQRUrl(String email, GoogleAuthenticatorKey key) {
         return GoogleAuthenticatorQRGenerator.getOtpAuthURL("Crepe", email, key);
     }
 
-    // OTP 코드 검증
     public boolean verifyCode(String secretKey, int code) {
         return gAuth.authorize(secretKey, code);
     }
 
-    // OTP 활성화
     @Transactional
     public void enableOtp(Long userId) {
         OtpCredential credential = otpCredentialRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("OTP 설정이 없습니다"));
+                .orElseThrow(() -> exceptionDbService.getException("OTP_002")); // OTP 설정이 없습니다.
 
         credential.setEnabled(true);
         otpCredentialRepository.save(credential);
     }
 
-    // OTP 상태 및 비밀키 조회
     public OtpCredential getOtpCredential(String email) {
         Actor actor = actorRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> exceptionDbService.getException("OTP_001")); // 사용자를 찾을 수 없습니다.
 
         return otpCredentialRepository.findByUserId(actor.getId())
                 .orElse(null);
     }
 
-    // OTP 설정 메서드
     @Transactional
     public ApiResponse<OtpSetupResponse> setupOtp(String email) {
         Actor actor = actorRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> exceptionDbService.getException("OTP_001")); // 사용자를 찾을 수 없습니다.
 
         GoogleAuthenticatorKey key = generateAndSaveKey(actor.getId());
-
         String qrCodeUrl = generateQRUrl(email, key);
 
-        OtpSetupResponse response = new OtpSetupResponse(
-                key.getKey(),
-                qrCodeUrl
-        );
-
+        OtpSetupResponse response = new OtpSetupResponse(key.getKey(), qrCodeUrl);
         return ApiResponse.success("OTP 설정 정보", response);
     }
 
-    // OTP 활성화 메서드
     @Transactional
     public ApiResponse<Boolean> verifyAndEnableOtp(String email, int otpCode) {
         Actor actor = actorRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> exceptionDbService.getException("OTP_001")); // 사용자를 찾을 수 없습니다.
 
         OtpCredential credential = getOtpCredential(email);
         if (credential == null) {
-            throw new RuntimeException("OTP가 설정되지 않았습니다");
+            throw exceptionDbService.getException("OTP_005"); // OTP가 설정되지 않았습니다.
         }
 
-        // OTP 코드 검증
         boolean isValid = verifyCode(credential.getSecretKey(), otpCode);
 
         if (isValid) {
-            // OTP 활성화
             enableOtp(actor.getId());
             return ApiResponse.success("OTP가 성공적으로 활성화되었습니다", true);
         } else {
-            return ApiResponse.fail("잘못된 OTP 코드입니다");
+            throw exceptionDbService.getException("OTP_003"); // 잘못된 OTP 코드입니다.
         }
     }
 
     @Transactional
     public ApiResponse<OtpCredential> getOtpStatus(String email) {
-
         OtpCredential credential = getOtpCredential(email);
 
         if (credential == null) {
@@ -121,26 +105,24 @@ public class OtpService {
 
     @Transactional
     public ApiResponse<Boolean> deleteOtp(String email) {
-        try{
+        try {
             Actor actor = actorRepository.findByEmail(email)
-                    .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다"));
+                    .orElseThrow(() -> exceptionDbService.getException("OTP_001")); // 사용자를 찾을 수 없습니다.
 
             OtpCredential credential = otpCredentialRepository.findByUserId(actor.getId()).orElse(null);
 
             if (credential == null) {
-                return ApiResponse.fail("OTP가 설정되지 않았습니다");
+                throw exceptionDbService.getException("OTP_005"); // OTP가 설정되지 않았습니다.
             }
 
             if (!credential.isEnabled()) {
-                return ApiResponse.fail("OTP가 이미 비활성화되어 있습니다");
+                throw exceptionDbService.getException("OTP_004"); // OTP가 이미 비활성화되어 있습니다.
             }
 
             otpCredentialRepository.delete(credential);
-            return ApiResponse.success("OTP 해제 성공",true);
-        }catch (EntityNotFoundException e) {
-            return ApiResponse.fail("사용자를 찾을 수 없습니다.");
-        }catch (Exception e) {
-            return ApiResponse.fail("OTP 해제 중 오류 발생");
+            return ApiResponse.success("OTP 해제 성공", true);
+        } catch (Exception e) {
+            throw exceptionDbService.getException("OTP_006"); // OTP 해제 중 오류 발생
         }
     }
 }

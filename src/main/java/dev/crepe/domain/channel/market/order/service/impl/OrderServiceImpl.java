@@ -21,9 +21,11 @@ import dev.crepe.domain.channel.market.order.repository.OrderRepository;
 import dev.crepe.domain.channel.market.order.service.OrderService;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.error.exception.NotSingleObjectException;
 import dev.crepe.global.error.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
@@ -44,6 +47,7 @@ public class OrderServiceImpl implements OrderService {
     private final ActorRepository actorRepository;
     private final UpbitExchangeService upbitExchangeService;
     private final PayService payService;
+    private final ExceptionDbService exceptionDbService;
 
 
 
@@ -52,9 +56,10 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public List<CreateOrderResponse> getCustomerOrderList(String userEmail) {
+        log.info("사용자 이메일로 주문 목록 조회: {}", userEmail);
 
-        Actor user= actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+        Actor user = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         List<Order> ordersList = orderRepository.findByUserId(user.getId());
 
@@ -75,17 +80,20 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public CreateOrderResponse getOrderDetails(String orderId, String userEmail) {
+
+        log.info("사용자 이메일로 주문 상세 조회: {}", userEmail);
+
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new OrderNotFoundException(orderId));
+                .orElseThrow(() -> exceptionDbService.getException("ORDER_002"));
 
         if (!order.getUser().getEmail().equals(userEmail)) {
-            throw new UnauthorizedException("해당 주문을 조회할 권한이 없습니다.");
+            throw exceptionDbService.getException("ACTOR_001");
         }
 
         // orderId로 OrderDetail 조회
         List<OrderDetail> orderDetails = orderDetailRepository.findByOrderId(orderId);
         if (orderDetails.size() != 1) {
-            throw new NotSingleObjectException();
+            throw exceptionDbService.getException("ORDER_003");
         }
 
         return CreateOrderResponse.builder()
@@ -111,21 +119,21 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     public String createOrder(CreateOrderRequest request, String userEmail) {
 
-        Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+        log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
 
-        System.out.println("주문자의 이메일 " + request.getUserEmail());
+        Actor user = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         Actor store = actorRepository.findById(request.getStoreId())
-                .orElseThrow(() -> new StoreNotFoundException(request.getStoreId()));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
-        System.out.println("가맹점의 이메일 " + store.getEmail());
-
+        log.info("환율 검증 - 통화: {}, 환율: {}", request.getCurrency(), request.getExchangeRate());
         upbitExchangeService.validateRateWithinThreshold(request.getExchangeRate(),request.getCurrency(),BigDecimal.valueOf(1));
+
 
         Map<Long, Menu> menuMap = request.getOrderDetails().stream()
                 .map(detail -> menuRepository.findById(detail.getMenuId())
-                        .orElseThrow(() -> new MenuNotFoundException(detail.getMenuId())))
+                        .orElseThrow(() -> exceptionDbService.getException("MENU_001")))
                 .collect(Collectors.toMap(Menu::getId, menu -> menu));
 
 
@@ -133,6 +141,7 @@ public class OrderServiceImpl implements OrderService {
                 .mapToInt(detail -> menuMap.get(detail.getMenuId()).getPrice() * detail.getMenuCount())
                 .sum();
 
+        log.info("총 주문 금액 계산 완료: {}", totalPrice);
 
         Order orders = Order.builder()
                 .totalPrice(totalPrice)
@@ -145,6 +154,7 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderRepository.save(orders);
+        log.info("주문 저장 완료 - 주문 ID: {}", orders.getId());
 
         List<OrderDetail> orderDetails = request.getOrderDetails().stream()
                 .map(detail -> OrderDetail.builder()
@@ -155,9 +165,11 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
 
         orderDetailRepository.saveAll(orderDetails);
+        log.info("주문 상세 저장 완료 - 주문 ID: {}", orders.getId());
 
         // 결제 내역 등록
         payService.payForOrder(orders);
+        log.info("결제 처리 완료 - 주문 ID: {}", orders.getId());
 
         return orders.getId();
 
