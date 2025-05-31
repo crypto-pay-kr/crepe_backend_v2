@@ -433,6 +433,7 @@ public class AccountServiceImpl implements AccountService {
                     .actor(actor)
                     .bankToken(token)
                     .balance(BigDecimal.ZERO)
+                    .addressRegistryStatus(AddressRegistryStatus.ACTIVE)
                     .build());
         });
     }
