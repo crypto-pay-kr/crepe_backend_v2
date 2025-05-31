@@ -131,20 +131,21 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                     .interestRate(0)
                     .voucherCode(generateVoucherCode());
         }
+        //유저 토큰 계좌 생성
+        accountService.getOrCreateTokenAccount(user.getEmail(), product.getBankToken().getCurrency());
 
         // 예금시 초기납입액 예치
         Subscribe subscribe = subscribeBuilder.build();
+        Subscribe saved = subscribeRepository.saveAndFlush(subscribe);
+
         if (product.getType() == BankProductType.SAVING) {
             tokenDepositService.depositSavingBeforeSubscribe(userEmail, subscribe, initialAmount);
         }
 
-        Subscribe saved = subscribeRepository.save(subscribe);
-
         // 5. 가입 시점 우대금리 조건 만족도 기록
         recordInitialConditionSatisfactions(user, saved, product, initialRates);
 
-        // 6.유저 토큰 계좌 생성
-        accountService.getOrCreateTokenAccount(user.getEmail(), product.getBankToken().getCurrency());
+
         return buildSubscribeResponse(saved, product, initialRates);
     }
 

@@ -209,11 +209,11 @@ public class ActorServiceImpl  implements ActorService {
                     log.error("사용자를 찾을 수 없음: {}", userEmail);
                     return new EntityNotFoundException("사용자를 찾을 수 없습니다.");
                 });
-        if (!actor.getName().equals(idCardResponse.getName())) {
-            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
-                    actor.getName(), idCardResponse.getName());
-            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
-        }
+//        if (!actor.getName().equals(idCardResponse.getName())) {
+//            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
+//                    actor.getName(), idCardResponse.getName());
+//            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
+//        }
 
         try {
             actor.updateFromIdCard(idCardResponse);
