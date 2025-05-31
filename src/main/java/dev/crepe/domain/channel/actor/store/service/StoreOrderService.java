@@ -16,4 +16,6 @@ public interface StoreOrderService {
     StoreOrderManageResponse refuseOrder(String orderId, Long storeId, StoreOrderActionRequest request);
 
     StoreOrderManageResponse completeOrder(String orderId, Long storeId);
+
+    StoreOrderManageResponse cancelOrder(String orderId, Long storeId);
 }

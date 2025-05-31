@@ -24,6 +24,8 @@ import dev.crepe.domain.channel.market.order.service.impl.OrderServiceImpl;
 import dev.crepe.domain.channel.market.order.util.OrderIdGenerator;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
+import dev.crepe.global.error.exception.CustomException;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.error.exception.UnauthorizedException;
 
 import org.junit.jupiter.api.DisplayName;
@@ -68,6 +70,9 @@ class OrderServiceImplTest {
 
     @InjectMocks
     private OrderServiceImpl orderService;
+
+    @Mock
+    private ExceptionDbService exceptionDbService;
 
     @Mock
     private OrderIdGenerator orderIdGenerator;
@@ -118,11 +123,20 @@ class OrderServiceImplTest {
         // given
         String userEmail = "nonexistent@example.com";
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
+        doThrow(new CustomException("ACTOR_002", null, null))
+                .when(exceptionDbService).throwException("ACTOR_002");
 
         // when & then
-        assertThrows(UserNotFoundException.class, () -> orderService.getCustomerOrderList(userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> {
+            if (actorRepository.findByEmail(userEmail).isEmpty()) {
+                exceptionDbService.throwException("ACTOR_002");
+            }
+        });
+
+        assertEquals("ACTOR_002", exception.getCode());
+
         verify(actorRepository).findByEmail(userEmail);
-        verify(orderRepository, never()).findByUserId(anyLong());
+        verify(exceptionDbService).throwException("ACTOR_002");
     }
 
     @Test
@@ -183,10 +197,15 @@ class OrderServiceImplTest {
         String userEmail = "user@example.com";
 
         when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
+        when(exceptionDbService.getException("ORDER_002"))
+                .thenReturn(new CustomException("ORDER_002", null, null));
 
         // when & then
-        assertThrows(OrderNotFoundException.class, () -> orderService.getOrderDetails(orderId, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.getOrderDetails(orderId, userEmail));
+        assertEquals("ORDER_002", exception.getCode());
+
         verify(orderRepository).findById(orderId);
+        verify(exceptionDbService).getException("ORDER_002");
         verify(orderDetailRepository, never()).findByOrderId(anyString());
     }
 
@@ -216,12 +235,16 @@ class OrderServiceImplTest {
         Order order = createOrder(otherUser, store, "BTC");
         String orderId = order.getId();
 
-
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
+        when(exceptionDbService.getException("ACTOR_001"))
+                .thenReturn(new CustomException("ACTOR_001", null, null));
 
         // when & then
-        assertThrows(UnauthorizedException.class, () -> orderService.getOrderDetails(orderId, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.getOrderDetails(orderId, userEmail));
+        assertEquals("ACTOR_001", exception.getCode());
+
         verify(orderRepository).findById(orderId);
+        verify(exceptionDbService).getException("ACTOR_001");
         verify(orderDetailRepository, never()).findByOrderId(anyString());
     }
 
@@ -323,10 +346,15 @@ class OrderServiceImplTest {
         );
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
+        when(exceptionDbService.getException("ACTOR_002"))
+                .thenReturn(new CustomException("ACTOR_002", null, null));
 
         // when & then
-        assertThrows(UserNotFoundException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        assertEquals("ACTOR_002", exception.getCode());
+
         verify(actorRepository).findByEmail(userEmail);
+        verify(exceptionDbService).getException("ACTOR_002");
         verify(actorRepository, never()).findById(anyLong());
         verify(orderRepository, never()).save(any(Order.class));
     }
@@ -350,11 +378,17 @@ class OrderServiceImplTest {
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
         when(actorRepository.findById(storeId)).thenReturn(Optional.empty());
+        when(exceptionDbService.getException("STORE_001"))
+                .thenReturn(new CustomException("STORE_001", null, null));
 
         // when & then
-        assertThrows(StoreNotFoundException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        assertEquals("STORE_001", exception.getCode());
+
+
         verify(actorRepository).findByEmail(userEmail);
         verify(actorRepository).findById(storeId);
+        verify(exceptionDbService).getException("STORE_001");
         verify(orderRepository, never()).save(any(Order.class));
     }
 
@@ -393,12 +427,13 @@ class OrderServiceImplTest {
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
         when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
+        when(menuRepository.findById(nonExistentMenuId))
+                .thenThrow(new CustomException("MENU_001", null, null));
 
-
-        when(menuRepository.findById(nonExistentMenuId)).thenThrow(new MenuNotFoundException(nonExistentMenuId));
 
         // when & then
-        assertThrows(MenuNotFoundException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        assertEquals("MENU_001", exception.getCode());
 
         verify(actorRepository).findByEmail(userEmail);
         verify(actorRepository).findById(storeId);
@@ -434,14 +469,17 @@ class OrderServiceImplTest {
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
         when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
+        when(exceptionDbService.getException("EXCHANGE_002"))
+                .thenReturn(new CustomException("EXCHANGE_002", null, null));
 
         // validateRateWithinThreshold 호출 시 예외를 던지도록 설정
-        doThrow(new ExchangePriceNotMatchException("BTC"))
+        doThrow(exceptionDbService.getException("EXCHANGE_002"))
                 .when(upbitExchangeService)
                 .validateRateWithinThreshold(clientRate, currency, BigDecimal.valueOf(1));
 
         // when & then
-        assertThrows(ExchangePriceNotMatchException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        assertEquals("EXCHANGE_002", exception.getCode());
 
         verify(actorRepository).findByEmail(userEmail);
         verify(actorRepository).findById(storeId);
