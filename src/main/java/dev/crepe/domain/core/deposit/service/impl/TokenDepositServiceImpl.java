@@ -11,6 +11,7 @@ import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistor
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TokenDepositServiceImpl implements TokenDepositService {
 
@@ -28,6 +30,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
     private final ExceptionDbService exceptionDbService;
     @Transactional
     public String depositToProduct(String userEmail, Long subscribeId, BigDecimal amount) {
+        log.info("상품 예치 서비스 시작: userEmail={}", userEmail);
         // 1. 상품이 있는지 확인
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
                 .orElseThrow(()->exceptionDbService.getException("SUBSCRIBE_004"));
