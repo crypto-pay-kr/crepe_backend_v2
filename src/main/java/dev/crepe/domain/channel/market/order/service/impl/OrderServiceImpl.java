@@ -87,7 +87,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> exceptionDbService.getException("ORDER_002"));
 
         if (!order.getUser().getEmail().equals(userEmail)) {
-            throw exceptionDbService.throwExceptionAndReturn("ACTOR_001");
+            throw exceptionDbService.getException("ACTOR_001");
         }
 
         // orderId로 OrderDetail 조회
@@ -125,7 +125,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         Actor store = actorRepository.findById(request.getStoreId())
-                .orElseThrow(() -> exceptionDbService.throwExceptionAndReturn("STORE_001"));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         log.info("환율 검증 - 통화: {}, 환율: {}", request.getCurrency(), request.getExchangeRate());
         upbitExchangeService.validateRateWithinThreshold(request.getExchangeRate(),request.getCurrency(),BigDecimal.valueOf(1));
