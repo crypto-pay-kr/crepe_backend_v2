@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     
-    <!-- 프로파일별 설정 -->
-    <springProfile name="local,dev">
-        <property name="LOG_LEVEL" value="DEBUG"/>
-    </springProfile>
-    
-    <springProfile name="prod">
-        <property name="LOG_LEVEL" value="INFO"/>
-    </springProfile>
-    
     <!-- 로그 파일 경로 설정 -->
     <property name="LOG_PATH" value="./logs"/>
     <property name="LOG_FILE_NAME" value="application"/>
@@ -18,7 +9,7 @@
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %5level [%X{requestId:-}] [%X{userId:-}] %logger{36} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %5level [%X{requestId:-}] [%X{method:-}] [%X{uri:-}] [%X{userEmail:-}] %logger{36} - %msg%n
             </pattern>
         </encoder>
     </appender>
@@ -38,12 +29,12 @@
         
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>
-                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %5level [%X{requestId:-}] [%X{userId:-}] [%X{method:-}] [%X{uri:-}] [%X{remoteAddr:-}] %logger{36} - %msg%n
+                %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %5level [%X{requestId:-}] [%X{method:-}] [%X{uri:-}] [%X{remoteAddr:-}] [%X{userEmail:-}] %logger{36} - %msg%n
             </pattern>
         </encoder>
     </appender>
     
-    <!-- JSON 형식 로그 (ELK Stack 연동시) -->
+    <!-- JSON 형식 로그 (Production 전용) -->
     <springProfile name="prod">
         <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/${LOG_FILE_NAME}-json.log</file>
@@ -71,23 +62,52 @@
         </appender>
     </springProfile>
     
-    <!-- 특정 패키지별 로그 레벨 설정 -->
-    <logger name="dev.crepe" level="DEBUG" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-    </logger>
-    <logger name="org.springframework.web" level="DEBUG"/>
-    <logger name="org.springframework.security" level="DEBUG"/>
-    <logger name="org.hibernate.SQL" level="DEBUG"/>
-    <logger name="org.hibernate.type" level="TRACE"/>
+    <!-- ============================ -->
+    <!-- 프로파일별 로거 설정 -->
+    <!-- ============================ -->
     
-    <!-- Root Logger -->
-    <root level="DEBUG">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-        <springProfile name="prod">
+    <!-- DEV 환경: TRACE, DEBUG, INFO, WARN, ERROR 모두 출력 -->
+    <springProfile name="dev,local,default">
+        <!-- 애플리케이션 로거 -->
+        <logger name="dev.crepe" level="TRACE" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </logger>
+        
+        <!-- 외부 라이브러리 - 개발시 디버깅용 -->
+        <logger name="org.springframework.web" level="DEBUG"/>
+        <logger name="org.springframework.security" level="DEBUG"/>
+        <logger name="org.hibernate.SQL" level="DEBUG"/>
+        <logger name="org.hibernate.type" level="TRACE"/>
+        
+        <!-- Root Logger -->
+        <root level="DEBUG">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
+    </springProfile>
+    
+    <!-- PROD 환경: INFO와 ERROR만 출력 -->
+    <springProfile name="prod">
+        <!-- 애플리케이션 로거 - INFO와 ERROR만 -->
+        <logger name="dev.crepe" level="INFO" additivity="false">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
             <appender-ref ref="JSON_FILE"/>
-        </springProfile>
-    </root>
+        </logger>
+        
+        <!-- 외부 라이브러리 - 최소한만 -->
+        <logger name="org.springframework.web" level="WARN"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+        <logger name="org.hibernate.type" level="WARN"/>
+        
+        <!-- Root Logger -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="JSON_FILE"/>
+        </root>
+    </springProfile>
     
 </configuration>
