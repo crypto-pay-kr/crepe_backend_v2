@@ -124,19 +124,19 @@ class OrderServiceImplTest {
         String userEmail = "nonexistent@example.com";
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
         doThrow(new CustomException("ACTOR_002", null, null))
-                .when(exceptionDbService).throwException("ACTOR_002");
+                .when(exceptionDbService).getException("ACTOR_002");
 
         // when & then
         CustomException exception = assertThrows(CustomException.class, () -> {
             if (actorRepository.findByEmail(userEmail).isEmpty()) {
-                exceptionDbService.throwException("ACTOR_002");
+                exceptionDbService.getException("ACTOR_002");
             }
         });
 
         assertEquals("ACTOR_002", exception.getCode());
 
         verify(actorRepository).findByEmail(userEmail);
-        verify(exceptionDbService).throwException("ACTOR_002");
+        verify(exceptionDbService).getException("ACTOR_002");
     }
 
     @Test
