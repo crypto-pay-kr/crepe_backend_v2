@@ -3,6 +3,8 @@ package dev.crepe.domain.bank.model.entity;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.global.base.BaseEntity;
+import dev.crepe.global.encrypt.converter.EncryptedPhoneConverter;
+import dev.crepe.global.encrypt.converter.EncryptedStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -33,9 +35,11 @@ public class Bank extends BaseEntity {
     private String name;
 
     @Column(name = "bank_phone_num",nullable = false)
+    @Convert(converter = EncryptedPhoneConverter.class)
     private String bankPhoneNum;
 
     @Column(name = "manager_name",nullable = false)
+    @Convert(converter = EncryptedStringConverter.class)
     private String managerName;
 
 

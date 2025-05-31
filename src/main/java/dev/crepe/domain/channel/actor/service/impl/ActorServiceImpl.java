@@ -38,6 +38,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -74,10 +75,20 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
-        Actor actor = actorRepository.findByEmail(request.getEmail())
-                .orElseThrow(LoginFailedException::new);
+        log.info("Login attempt for email: {}", request.getEmail());
+
+        // 사용자 존재 여부 먼저 확인
+        Optional<Actor> actorOptional = actorRepository.findByEmail(request.getEmail());
+        if (actorOptional.isEmpty()) {
+            log.warn("No user found with email: {}", request.getEmail());
+            throw new LoginFailedException();
+        }
+
+        Actor actor = actorOptional.get();
+        log.info("User found: {}, checking password...", actor.getEmail());
 
         if (!encoder.matches(request.getPassword(), actor.getPassword())) {
+            log.warn("Password does not match for email: {}", request.getEmail());
             throw new LoginFailedException();
         }
 
