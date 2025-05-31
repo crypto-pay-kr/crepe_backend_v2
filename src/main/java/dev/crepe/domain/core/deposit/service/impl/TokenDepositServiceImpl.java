@@ -1,21 +1,17 @@
 package dev.crepe.domain.core.deposit.service.impl;
 
-import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.deposit.exception.AlreadyDepositedException;
-import dev.crepe.domain.core.deposit.exception.ExceedMonthlyLimitException;
-import dev.crepe.domain.core.deposit.exception.SubscribeInactiveException;
 import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.product.model.entity.Product;
-import dev.crepe.domain.core.subscribe.exception.SubscribeNotFoundException;
-import dev.crepe.domain.core.subscribe.exception.UserAccountNotFoundException;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,27 +20,29 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class TokenDepositServiceImpl implements TokenDepositService {
 
     private final AccountRepository accountRepository;
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
-
+    private final ExceptionDbService exceptionDbService;
     @Transactional
     public String depositToProduct(String userEmail, Long subscribeId, BigDecimal amount) {
+        log.info("상품 예치 서비스 시작: userEmail={}", userEmail);
         // 1. 상품이 있는지 확인
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(SubscribeNotFoundException::new);
+                .orElseThrow(()->exceptionDbService.getException("SUBSCRIBE_004"));
 
         Product product = subscribe.getProduct();
 
         // 2. 토큰 계좌 확인
         Account account = accountRepository.findByActor_EmailAndBankTokenId(userEmail, product.getBankToken().getId())
-                .orElseThrow(UserAccountNotFoundException::new);
+                .orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
 
         if (account.getBalance().compareTo(amount) < 0) {
-            throw new NotEnoughAmountException("잔액이 부족합니다");
+            throw exceptionDbService.getException("ACCOUNT_001");
         }
 
         switch (product.getType()) {
@@ -89,14 +87,14 @@ public class TokenDepositServiceImpl implements TokenDepositService {
 
         // 2. 이미 예치한 경우 예외 처리
         if (subscribe.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-            throw new AlreadyDepositedException();
+            throw exceptionDbService.getException("PRODUCT_DEPOSIT_001");
         }
 
         // 5. 예치 최대 한도 체크 (예치 최대 한도 초과시 예외 처리)
         BigDecimal maxLimit = product.getMaxMonthlyPayment(); // 예금 예치 최대 한도
 
         if (maxLimit != null && amount.compareTo(maxLimit) > 0) {
-            throw new ExceedMonthlyLimitException();
+            throw exceptionDbService.getException("PRODUCT_DEPOSIT_002");
         }
 
         // 6. 해당 bankToken 계좌에서 amount 차감
@@ -165,7 +163,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
             // 총액 계산
             BigDecimal totalAfterDeposit = depositedThisMonth.add(amount);
             if (totalAfterDeposit.compareTo(maxLimit) > 0) {
-                throw new ExceedMonthlyLimitException();
+                throw exceptionDbService.getException("PRODUCT_DEPOSIT_002");
             }
         }
     }
@@ -173,7 +171,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
     // 상품 가입 상태 검증
     private void validateActiveSubscribe(Subscribe subscribe) {
         if (!subscribe.isActive()) {
-            throw new SubscribeInactiveException(subscribe.getStatus().name());
+           throw exceptionDbService.getException("SUBSCRIBE_004");
         }
     }
 
