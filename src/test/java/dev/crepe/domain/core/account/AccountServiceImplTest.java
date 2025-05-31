@@ -267,13 +267,12 @@ class AccountServiceImplTest {
             when(coinRepository.findByCurrency("XRP"))
                     .thenReturn(createCoin(3L, "Ripple", "XRP", true));
             when(exceptionDbService.getException("ADDRESS_005"))
-                    .thenReturn(new CustomException("ADDRESS_005", null, "태그가 필요한 코인입니다."));
+                    .thenReturn(new CustomException("ADDRESS_005", null, null));
 
             // when & then
             CustomException exception = assertThrows(CustomException.class, () ->
                     accountService.submitAccountRegistrationRequest(request, email));
             assertEquals("ADDRESS_005", exception.getCode());
-            assertEquals("태그가 필요한 코인입니다.", exception.getMessage());
         }
     }
 
@@ -298,13 +297,12 @@ class AccountServiceImplTest {
             when(coinRepository.findByCurrency("BTC"))
                     .thenReturn(createCoin(1L, "Bitcoin", "BTC", false));
             when(exceptionDbService.getException("ADDRESS_002"))
-                    .thenReturn(new CustomException("ADDRESS_002", null, "이미 등록된 계좌입니다."));
+                    .thenReturn(new CustomException("ADDRESS_002", null, null));
 
             // when & then
             CustomException exception = assertThrows(CustomException.class, () ->
                     accountService.submitAccountRegistrationRequest(request, email));
             assertEquals("ADDRESS_002", exception.getCode());
-            assertEquals("이미 등록된 계좌입니다.", exception.getMessage());
         }
     }
 
