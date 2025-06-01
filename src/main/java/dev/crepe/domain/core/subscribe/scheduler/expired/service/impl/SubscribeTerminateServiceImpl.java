@@ -12,6 +12,7 @@ import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,17 +30,18 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
     private final AccountRepository accountRepository;
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final ExceptionDbService exceptionDbService;
 
 
     @Transactional
     public String terminate(String userEmail, Long subscribeId) {
         // 가입 정보 조회
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(SubscribeNotFoundException::new);
+                .orElseThrow(()->exceptionDbService.getException("SUBSCRIBE_004"));
 
         // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new AlreadyExpiredSubscribeException();
+            throw exceptionDbService.getException("SUBSCRIBE_01");
         }
 
 
@@ -48,7 +50,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new NoDepositBalanceException();
+            throw exceptionDbService.getException("SUBSCRIBE_02");
         }
 
         // 가입 개월 계산
@@ -58,7 +60,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate) ;
 
         if (totalMonths <= 0) {
-            throw new TooEarlyToTerminateException();
+            throw exceptionDbService.getException("SUBSCRIBE_03");
         }
 
         // 이자 계산
@@ -71,7 +73,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentInterest(subscribe, interestRate);
             }
-            default -> throw new UnsupportedProductTypeException();
+            default -> throw exceptionDbService.getException("PRODUCT_01");
         }
 
         // 세후 이자 계산
@@ -83,7 +85,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         // 은행 자본금 계좌에서 이자 차감
         Account bankTokenAccount = accountRepository
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
-                .orElseThrow(BankAccountNotFoundException::new);
+                .orElseThrow(()-> exceptionDbService.getException("BANK_001"));
 
         bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
@@ -91,7 +93,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
         Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
                 subscribe.getUser().getEmail(), product.getBankToken().getId()
-        ).orElseThrow(UserAccountNotFoundException::new);
+        ).orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
 
 
         BigDecimal totalPayout = balance.add(postTaxInterest);
@@ -178,17 +180,17 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
     // 중도 해지시 값 조회
     public TerminatePreviewDto TerminationPreview(String userEmail, Long subscribeId) {
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(SubscribeNotFoundException::new);
+                .orElseThrow(()->exceptionDbService.getException("SUBSCRIBE_004"));
 
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new AlreadyExpiredSubscribeException();
+            throw exceptionDbService.getException("SUBSCRIBE_01");
         }
 
         Product product = subscribe.getProduct();
         BigDecimal balance = subscribe.getBalance();
 
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new NoDepositBalanceException();
+            throw exceptionDbService.getException("SUBSCRIBE_02");
         }
 
         LocalDate startDate = subscribe.getSubscribeDate().toLocalDate();
@@ -196,7 +198,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate);
 
         if (totalMonths <= 0) {
-            throw new TooEarlyToTerminateException();
+            throw exceptionDbService.getException("SUBSCRIBE_03");
         }
 
         BigDecimal interestRate = BigDecimal.valueOf(product.getBaseInterestRate())
@@ -209,7 +211,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                     .divide(BigDecimal.valueOf(12), 10, RoundingMode.DOWN)
                     .multiply(BigDecimal.valueOf(totalMonths));
             case INSTALLMENT -> preTaxInterest = calculateInstallmentInterest(subscribe, interestRate);
-            default -> throw new UnsupportedProductTypeException();
+            default -> throw exceptionDbService.getException("PRODUCT_01");
         }
 
         BigDecimal postTaxInterest = preTaxInterest.multiply(BigDecimal.valueOf(0.846)); // 1 - 0.154

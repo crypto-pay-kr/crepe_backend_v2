@@ -32,6 +32,7 @@ import dev.crepe.domain.core.subscribe.repository.PotentialPreferentialCondition
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.subscribe.service.PreferentialConditionSatisfactionService;
 import dev.crepe.domain.core.subscribe.util.PreferentialRateUtils;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,6 +61,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     private final ProductService productService;
     private final TokenDepositService tokenDepositService;
     private final AccountService accountService;
+    private final ExceptionDbService exceptionDbService;
 
   
     // 상품 구독
@@ -67,32 +69,32 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     @Transactional
     public SubscribeProductResponse subscribeProduct(String userEmail, SubscribeProductRequest request) {
         Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(()->exceptionDbService.getException("ACTOR_002"));
 
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+                .orElseThrow(()->exceptionDbService.getException("PRODUCT_03"));
 
         if (product.getStatus().equals(BankProductStatus.WAITING)) {
-            throw new IllegalStateException("Product is not available for subscription");
+            throw exceptionDbService.getException("PRODUCT_10");
         }
 
         LocalDate today = LocalDate.now();
         if (product.getStartDate() != null && today.isBefore(product.getStartDate())) {
-            throw new IllegalStateException("아직 가입 시작일이 되지 않았습니다. (가입 시작일: " + product.getStartDate() + ")");
+            throw exceptionDbService.getException("PRODUCT_04");
         }
         if (product.getEndDate() != null && today.isAfter(product.getEndDate())) {
-            throw new IllegalStateException("가입 기간이 만료되었습니다. (가입 종료일: " + product.getEndDate() + ")");
+            throw exceptionDbService.getException("PRODUCT_05");
         }
 
         if (subscribeRepository.existsByUserAndProduct(user, product)) {
-            throw new IllegalStateException("이미 가입한 상품입니다.");
+            throw exceptionDbService.getException("PRODUCT_07");
         }
 
         Integer subscribeNum = subscribeRepository.countByProductIdAndStatus(request.getProductId(), SubscribeStatus.ACTIVE);
 
         if (product.getMaxParticipants() != null) {
             if (subscribeNum != null && subscribeNum >= product.getMaxParticipants()) {
-                throw new IllegalStateException("상품의 최대 가입자 수를 초과했습니다. (최대: " + product.getMaxParticipants() + "명)");
+                throw exceptionDbService.getException("PRODUCT_06");
             }
         }
 
@@ -106,7 +108,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
 
         // 예금 상품일 경우, 초기 납입액 필수 체크
         if (product.getType() == BankProductType.SAVING && (initialAmount == null || initialAmount.compareTo(BigDecimal.ZERO) <= 0)) {
-            throw new IllegalArgumentException("예금 상품에는 초기 납입액이 필수입니다.");
+            throw exceptionDbService.getException("PRODUCT_11");
         }
 
         // 3. 구독 엔티티 생성
@@ -216,29 +218,29 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     public void checkEligibility(Actor user, Product product) {
         LocalDate now = LocalDate.now();
         if (product.getEndDate() != null && now.isAfter(product.getEndDate())) {
-            throw new IllegalStateException("판매가 종료된 상품입니다.");
+            throw exceptionDbService.getException("PRODUCT_08");
         }
         // 상품의 가입 조건 파싱
         EligibilityCriteria eligibilityCriteria;
         try {
             eligibilityCriteria = objectMapper.readValue(product.getJoinCondition(), EligibilityCriteria.class);
         } catch (IOException e) {
-            throw new IllegalStateException("상품 가입 조건을 확인할 수 없습니다.");
+            throw exceptionDbService.getException("PRODUCT_09");
         }
 
         // 연령 확인
         if (!checkAgeEligibility(user, eligibilityCriteria)) {
-            throw new IllegalStateException("연령 조건에 부합하지 않습니다.");
+            throw exceptionDbService.getException("ELIGIBILITY_01");
         }
 
         // 직업 확인
         if (!checkOccupationEligibility(user, eligibilityCriteria)) {
-            throw new IllegalStateException("직업 조건에 부합하지 않습니다.");
+            throw exceptionDbService.getException("ELIGIBILITY_02");
         }
 
         // 소득 수준 확인
         if (!checkIncomeEligibility(user, eligibilityCriteria)) {
-            throw new IllegalStateException("소득 수준 조건에 부합하지 않습니다.");
+            throw exceptionDbService.getException("ELIGIBILITY_03");
         }
     }
 
@@ -480,7 +482,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     public List<GetOnsaleProductListReponse> getAllBankProducts(String userEmail) {
 
         Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(()->exceptionDbService.getException("ACTOR_002"));
 
         // 판매 중인 상품 목록 조회
         return productService.getOnSaleProducts();
@@ -491,7 +493,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     public GetProductDetailResponse getProductById(Long productId, String userEmail) {
 
         Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(()->exceptionDbService.getException("ACTOR_002"));
 
         Product product = productRepository.findById(productId).orElseThrow(EntityNotFoundException::new);
 
@@ -502,7 +504,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     public boolean checkEligibility(Long productId, String actorEmail) {
 
         Actor actor = actorRepository.findByEmail(actorEmail)
-                .orElseThrow(() -> new EntityNotFoundException("Actor를 찾을 수 없습니다."));
+                .orElseThrow(()->exceptionDbService.getException("ACTOR_002"));
 
         AgeGroup ageGroup = determineAgeGroup(actor.getBirth());
         Occupation occupation = actor.getOccupation();
@@ -524,7 +526,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 return group;
             }
         }
-        throw new IllegalArgumentException("유효하지 않은 연령대입니다.");
+        throw exceptionDbService.getException("ELIGIBILITY_04");
     }
 
     private IncomeLevel determineIncomeLevel(BigDecimal annualIncome) {
