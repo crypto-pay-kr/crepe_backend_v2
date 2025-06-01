@@ -16,4 +16,6 @@ public class GetTransactionHistoryResponse {
     private String type;
     private LocalDateTime transferredAt;
     private BigDecimal afterBalance;
+    //송금 시 받거나 주는 사람 이름
+    private String name;
 }
