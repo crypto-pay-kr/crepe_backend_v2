@@ -16,6 +16,8 @@ import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
+import dev.crepe.infra.sms.model.dto.request.SendSmsCodeRequest;
+import dev.crepe.infra.sms.service.SmsManageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.persistence.EntityNotFoundException;
@@ -42,6 +44,7 @@ public class ActorController {
     private final NaverCaptchaService captchaService;
     private final OtpService otpService;
     private final IdCardOcrService idCardOcrService;
+    private final SmsManageService smsManageService;
 
 
     // 이메일 중복 확인
@@ -305,6 +308,13 @@ public class ActorController {
             log.error("예상치 못한 예외 발생: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    @PostMapping("/sms/code/subscribe-product")
+    @ActorAuth
+    public ResponseEntity<String> sendSmsCodeWithAuth(@Valid @RequestBody SendSmsCodeRequest request, AppAuthentication auth) {
+        smsManageService.sendSmsCodeWithAuth(request, auth.getUserEmail());
+        return ResponseEntity.ok("상품 가입을 위한 SMS 인증 코드 전송 성공");
     }
 
 

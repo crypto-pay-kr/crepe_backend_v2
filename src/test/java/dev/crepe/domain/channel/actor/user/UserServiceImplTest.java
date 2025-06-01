@@ -18,6 +18,8 @@ import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
 import dev.crepe.domain.channel.actor.user.repository.UserRepository;
 import dev.crepe.domain.channel.actor.user.service.impl.UserServiceImpl;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.global.error.exception.CustomException;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,9 @@ class UserServiceImplTest {
 
     @InjectMocks
     private UserServiceImpl userService;
+
+    @Mock
+    private ExceptionDbService exceptionDbService;
 
     @Test
     @DisplayName("회원가입 성공 테스트")
@@ -90,9 +95,12 @@ class UserServiceImplTest {
         );
 
         when(actorRepository.existsByEmail("existing@example.com")).thenReturn(true);
+        when(exceptionDbService.getException("ACTOR_003"))
+                .thenThrow(new CustomException("ACTOR_003", null, null));
 
         // when & then
-        assertThrows(AlreadyEmailException.class, () -> userService.signup(request));
+        CustomException exception = assertThrows(CustomException.class, () -> userService.signup(request));
+        assertEquals("ACTOR_003", exception.getCode());
         verify(actorRepository, never()).save(any(Actor.class));
     }
 
