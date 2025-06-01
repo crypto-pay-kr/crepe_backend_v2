@@ -1,6 +1,9 @@
 package dev.crepe.domain.core.pay.service.impl;
 
 
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
@@ -9,6 +12,11 @@ import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.pay.exception.AlreadyRefundException;
 import dev.crepe.domain.core.pay.exception.StoreAlreadySettledException;
+import dev.crepe.domain.core.product.model.BankProductType;
+import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
+import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.pay.execption.PayHistoryNotFoundException;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.history.pay.model.PayType;
@@ -18,6 +26,9 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
+import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
+import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,10 +45,13 @@ import java.math.RoundingMode;
 public class PayServiceImpl implements PayService {
 
     private final AccountService accountService;
-   private final AccountRepository accountRepository;
-   private final TransactionHistoryRepository transactionHistoryRepository;
-   private final PayHistoryRepository payHistoryRepository;
+    private final AccountRepository accountRepository;
+    private final TransactionHistoryRepository transactionHistoryRepository;
+    private final PayHistoryRepository payHistoryRepository;
     private final ExceptionDbService exceptionDbService;
+    private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final SubscribeRepository subscribeRepository;
+
     @Override
     @Transactional
     public void payForOrder(Order order) {
@@ -47,7 +61,7 @@ public class PayServiceImpl implements PayService {
                 .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
         Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getStore().getEmail(), order.getCurrency())
-                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
+                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_002"));
 
         accountService.validateAccountNotHold(userAccount);
         accountService.validateAccountNotHold(storeAccount);
@@ -101,6 +115,81 @@ public class PayServiceImpl implements PayService {
 
     }
 
+    @Transactional
+    public void payWithVoucher(Order order, Long subscribeId) {
+        log.info("상품권 결제 시작");
+
+        // 1. 현재 주문 요청한 유저 정보 조회
+        Actor user = order.getUser();
+        Actor store = order.getStore();
+
+
+        // 2. 결제 요청 금액
+        BigDecimal totalAmount = BigDecimal.valueOf(order.getTotalPrice());
+
+        // 3. 상품권 유효 검사
+        Subscribe subscribe = findValidVoucherForPayment(user, order.getStore().getStoreType(), totalAmount, subscribeId);
+
+        order.setVoucher(subscribe);
+
+        // 4. 가맹점 은행 토큰 계좌 정보 조회
+        BankToken bankToken = subscribe.getProduct().getBankToken();
+        Account storeAccount = accountRepository.findByActorAndBankToken(store, bankToken)
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
+
+        accountService.validateAccountNotHold(storeAccount);
+
+
+        // 5. 결제 금액 출금
+        subscribe.withdraw(totalAmount);
+
+        // 6. 결제 내역(PayHistory) 생성 - 아직 승인되지 않은 상태
+        PayHistory payHistory = PayHistory.builder()
+                .totalAmount(totalAmount)
+                .status(PayType.PENDING)
+                .order(order)
+                .build();
+
+        // 7. 유저측 결제 내역(SubscribeHistory) 생성
+        SubscribeHistory history = SubscribeHistory.builder()
+                .subscribe(subscribe)
+                .order(order)
+                .amount(totalAmount)
+                .eventType(SubscribeHistoryType.PAYMENT)
+                .afterBalance(subscribe.getBalance())
+                .build();
+
+        // 8. 가맹점 측 거래 내역 생성 - 실제 입금은 스케쥴러로 처리되므로 PENDING
+        TransactionHistory storeHistory = TransactionHistory.builder()
+                .account(storeAccount)
+                .amount(totalAmount)
+                .afterBalance(storeAccount.getBalance())
+                .status(TransactionStatus.PENDING)
+                .type(TransactionType.PAY)
+                .payHistory(payHistory)
+                .build();
+
+        payHistory.addTransactionHistory(storeHistory);
+
+        // 결제 및 거래 내역 저장
+        payHistoryRepository.save(payHistory);
+        subscribeHistoryRepository.save(history);
+        transactionHistoryRepository.save(storeHistory);
+
+    }
+
+    // 유효한 상품권인지 검증
+    private Subscribe findValidVoucherForPayment(Actor user, StoreType storeType,
+                                                 BigDecimal amount, Long subscribeId) {
+        return subscribeRepository.findById(subscribeId)
+                .filter(sub -> sub.getUser().equals(user))
+                .filter(sub -> sub.getStatus() == SubscribeStatus.ACTIVE)
+                .filter(sub -> sub.getProduct().getType() == BankProductType.VOUCHER)
+                .filter(sub -> sub.getProduct().getStoreType() == storeType)
+                .filter(sub -> sub.getBalance().compareTo(amount) >= 0)
+                .orElseThrow(() -> exceptionDbService.getException("PAY_003"));
+    }
+
 
     @Override
     @Transactional
@@ -135,6 +224,7 @@ public class PayServiceImpl implements PayService {
             transactionHistoryRepository.save(history);
         }
     }
+
 
 
     @Transactional
@@ -188,4 +278,6 @@ public class PayServiceImpl implements PayService {
 
         transactionHistoryRepository.save(refundTx);
     }
+
+
 }

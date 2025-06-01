@@ -7,6 +7,7 @@ import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderRespons
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
 import dev.crepe.domain.channel.market.order.util.OrderIdGenerator;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.global.base.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -44,10 +45,10 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private OrderType type;
 
-    @Column(nullable = false)
+    @Column
     private String currency;
 
-    @Column(name = "exchange_rate", precision = 18, scale = 8, nullable = false)
+    @Column(name = "exchange_rate", precision = 18, scale = 8)
     private BigDecimal exchangeRate;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -63,6 +64,10 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false)
     @JsonIgnore
     private Actor store;
+
+    @ManyToOne
+    @JoinColumn(name = "voucher_id")
+    private Subscribe voucher;
 
     @PrePersist
     private void generateId() {
@@ -103,6 +108,10 @@ public class Order extends BaseEntity {
                                 .build())
                         .toList())
                 .build();
+    }
+
+    public void setVoucher(Subscribe voucher) {
+        this.voucher = voucher;
     }
 
 }

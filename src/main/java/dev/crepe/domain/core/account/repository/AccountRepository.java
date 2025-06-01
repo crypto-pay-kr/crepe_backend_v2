@@ -10,6 +10,8 @@ import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -64,5 +66,14 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 
     // 2. 특정 이메일을 가진 유저의 BankToken 계좌 조회
     List<Account> findByActor_EmailAndBankTokenIdIsNotNull(String email);
+
+    // AccountRepository.java
+    @Query("""
+    SELECT a FROM Account a
+    WHERE a.actor = :actor
+    AND a.bankToken = :bankToken
+""")
+    Optional<Account> findByActorAndBankToken(@Param("actor") Actor actor, @Param("bankToken") BankToken bankToken);
+
 
 }
