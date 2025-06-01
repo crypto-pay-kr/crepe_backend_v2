@@ -1,10 +1,15 @@
 package dev.crepe.domain.core.subscribe.service.impl;
 
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.repository.ActorRepository;
+import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.exception.AlreadyExpiredSubscribeException;
 import dev.crepe.domain.core.subscribe.exception.TooEarlyToTerminateException;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
+import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeVoucherDto;
 import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
@@ -33,6 +38,7 @@ public class SubscribeServiceImpl implements SubscribeService {
 
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final ActorRepository actorRepository;
 
 
     // 가입된 상품 조회
@@ -57,7 +63,19 @@ public class SubscribeServiceImpl implements SubscribeService {
         return slice.map(SubscribeHistoryDto::from);
     }
 
+    // 가입한 상품권 조회
+    public List<SubscribeVoucherDto> getAvailableVouchers(String email) {
+        Actor user = actorRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException(email));
 
+        List<Subscribe> vouchers = subscribeRepository.findByUserAndProduct_TypeAndStatus(
+                user, BankProductType.VOUCHER, SubscribeStatus.ACTIVE
+        );
+
+        return vouchers.stream()
+                .map(SubscribeVoucherDto::from)
+                .toList();
+    }
 
 
 }
