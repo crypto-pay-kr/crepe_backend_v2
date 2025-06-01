@@ -26,6 +26,8 @@ import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.global.error.exception.model.ExceptionDb;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
 import dev.crepe.infra.s3.service.S3Service;
@@ -53,13 +55,14 @@ public class BankServiceImpl implements BankService {
     private final CheckAlreadyField checkAlreadyField;
     private final AuthServiceImpl authService;
     private final PasswordEncoder encoder;
+    private final ExceptionDbService exceptionDbService;
     private final BankTokenRepository bankTokenRepository;
 
     // 은행 회원가입
     @Override
     @Transactional
     public ApiResponse<ResponseEntity<Void>> signup(BankDataRequest request) {
-
+        log.info("회원가입 요청: {}", request);
         checkAlreadyField.validate(request);
 
 
@@ -92,23 +95,17 @@ public class BankServiceImpl implements BankService {
     @Override
     @Transactional
     public ApiResponse<TokenResponse> login(LoginRequest request) {
+        log.info("로그인 요청: {}", request);
         Bank bank = bankRepository.findByEmail(request.getEmail())
-                .orElseThrow(LoginFailedException::new);
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         if (!encoder.matches(request.getPassword(), bank.getPassword())) {
-            throw new LoginFailedException();
+            throw exceptionDbService.getException("ACTOR_005");
         }
-
-        // 디버깅 로그 추가
-        log.info("=== Bank 로그인 시작 ===");
-        log.info("Bank Email: {}", bank.getEmail());
-        log.info("Bank Role: {}", bank.getRole());
 
         // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)
         AuthenticationToken token = authService.createAndSaveToken(bank.getEmail(), bank.getRole());
 
-        log.info("Bank 토큰 생성 완료: {}", bank.getEmail());
-        log.info("=== Bank 로그인 완료 ===");
         // 기본 계좌 생성
         accountService.createBasicBankAccounts(bank);
         TokenResponse tokenResponse = new TokenResponse(token, bank);
@@ -141,7 +138,7 @@ public class BankServiceImpl implements BankService {
     @Override
     @Transactional
     public ResponseEntity<Void> changePhone(ChangeBankPhoneRequest request, String userEmail) {
-
+        log.info("전화번호 변경 요청: {}, 사용자 이메일: {}", request, userEmail);
         Bank bank = findBankInfoByEmail(userEmail);
 
         String successNewPhone = NumberUtil.removeDash(request.getBankPhoneNumber());
@@ -153,6 +150,7 @@ public class BankServiceImpl implements BankService {
     @Override
     @Transactional
     public void changeBankCI(MultipartFile ciImage, String bankEmail) {
+        log.info("CI 이미지 변경 요청: {}, 은행 이메일: {}", ciImage.getOriginalFilename(), bankEmail);
         Bank bank = findBankInfoByEmail(bankEmail);
 
         // S3에 이미지 업로드
@@ -191,14 +189,15 @@ public class BankServiceImpl implements BankService {
 
     @Override
     public void changeBankStatus(ChangeBankStatusRequest request) {
+        log.info("은행 상태 변경 요청: {}", request);
         Bank bank = bankRepository.findById(request.getBankId())
-                .orElseThrow(() -> new EntityNotFoundException("해당 은행을 찾을 수 없습니다. ID: " + request.getBankId()));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         BankStatus currentStatus = bank.getStatus();
         BankStatus newStatus = request.getBankStatus();
 
         if (currentStatus == newStatus) {
-            throw new IllegalStateException("은행이 이미 " + newStatus + " 상태입니다.");
+            throw exceptionDbService.getException("BANK_002");
         }
 
         bank.changeStatus(newStatus);
@@ -230,13 +229,13 @@ public class BankServiceImpl implements BankService {
     @Override
     public List<GetCoinAccountInfoResponse> getBankAccountByAdmin(Long bankId) {
         Bank bank = bankRepository.findById(bankId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 은행을 찾을 수 없습니다. ID: " + bankId));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
 
         List<Account> accounts = accountService.getAccountsByBankEmail(bank.getEmail());
 
         if (accounts.isEmpty()) {
-            throw new AccountNotFoundException(bank.getName());
+            throw exceptionDbService.getException("ACCOUNT_001");
         }
 
         return accounts.stream()
@@ -257,7 +256,7 @@ public class BankServiceImpl implements BankService {
     @Override
     public Bank findBankInfoByEmail(String email) {
         return bankRepository.findByEmail(email)
-                .orElseThrow(() -> new BankNotFoundException(email));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
     }
 
 

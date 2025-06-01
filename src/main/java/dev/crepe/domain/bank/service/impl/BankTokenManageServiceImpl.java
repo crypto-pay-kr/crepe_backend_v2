@@ -25,8 +25,10 @@ import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryR
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.GetPaginationRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +39,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BankTokenManageServiceImpl implements BankTokenManageService {
 
     private final BankService bankService;
@@ -48,6 +51,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     private final PortfolioService portfolioService;
     private final BankTokenRepository bankTokenRepository;
     private final TokenPriceService tokenPriceService;
+    private final ExceptionDbService exceptionDbService;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
 
 
@@ -55,6 +59,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     // 은행 토큰 생성
     @Override
     public void createBankToken(CreateBankTokenRequest request, String bankEmail) {
+        log.info("은행 토큰 생성 시작 - 은행 이메일: {}", bankEmail);
 
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
@@ -75,18 +80,21 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
         // PENDING 상태 계좌 생성
         accountService.createBankTokenAccount(bankToken);
 
+        log.info("은행 토큰 생성 완료 - 토큰 이름: {}, 상태: {}", bankToken.getName(), bankToken.getStatus());
+
     }
 
     // 은행 토큰 재발행
     @Override
     public void recreateBankToken(ReCreateBankTokenRequest request, String bankEmail) {
+        log.info("은행 토큰 재발행 시작 - 은행 이메일: {}", bankEmail);
 
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
         BankToken bankToken = bankTokenInfoService.findByBank(bank);
 
         if (tokenHistoryService.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
-            throw new PendingBankTokenExistsException(bankToken.getName());
+            throw exceptionDbService.getException("BANK_TOKEN_002");
         }
 
         // 포토폴리오 재구성 정보 유효성 검증
@@ -105,7 +113,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
         bankToken = tokenSetupService.requestTokenReGenerate(request, bank);
 
         accountService.updateBankTokenAccount(bankToken);
-
+        log.info("은행 토큰 재발행 완료 - 토큰 이름: {}, 상태: {}", bankToken.getName(), bankToken.getStatus());
     }
 
 
@@ -113,12 +121,12 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     @Override
     @Transactional(readOnly = true)
     public GetTokenAccountInfoResponse getAccountByBankToken(String bankEmail) {
-
+        log.info("토큰 계좌 조회 시작 - 은행 이메일: {}", bankEmail);
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
         BankToken bankToken = bankTokenInfoService.findByBank(bank);
 
-        return accountService.findByBankAndBankTokenAndAddressRegistryStatus(
+        GetTokenAccountInfoResponse response = accountService.findByBankAndBankTokenAndAddressRegistryStatus(
                 bank,
                 bankToken,
                 AddressRegistryStatus.ACTIVE
@@ -131,6 +139,9 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                 .accountAddress(account.getAccountAddress())
                 .build()
         ).orElseGet(() -> GetTokenAccountInfoResponse.builder().build());
+
+        log.info("토큰 계좌 조회 완료 - 은행 이름: {}, 토큰 이름: {}", bank.getName(), bankToken.getName());
+        return response;
     }
 
 
@@ -138,14 +149,14 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
     @Override
     @Transactional(readOnly = true)
     public List<GetTokenHistoryResponse> getTokenHistory(GetPaginationRequest request) {
+        log.info("토큰 발행 내역 조회 시작 - 요청 이메일: {}", request.getAuthEmail());
         PageRequest pageRequest = PageRequest.of(request.getPage(), request.getSize());
 
         Bank bank = bankService.findBankInfoByEmail(request.getAuthEmail());
 
         List<TokenHistory> tokenHistories = tokenHistoryService.findTokenHistoriesByBank(bank, pageRequest);
 
-        // 응답 객체 생성
-        return tokenHistories.stream()
+        List<GetTokenHistoryResponse> response = tokenHistories.stream()
                 .map(tokenHistory -> {
                     List<GetTokenHistoryResponse.PortfolioDetail> portfolioDetails = tokenHistory.getPortfolioDetails()
                             .stream()
@@ -175,15 +186,18 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
                             .build();
                 })
                 .collect(Collectors.toList());
-    }
 
+        log.info("토큰 발행 내역 조회 완료 - 총 내역 수: {}", response.size());
+        return response;
+    }
 
     @Override
     @Transactional(readOnly = true)
     public BankToken getBankTokenByEmail(String bankEmail) {
+        log.info("은행 토큰 조회 시작 - 은행 이메일: {}", bankEmail);
 
         return bankTokenRepository.findByBankEmail(bankEmail)
-                .orElseThrow(() -> new BankTokenNotFoundException(bankEmail));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_001"));
 
     }
   

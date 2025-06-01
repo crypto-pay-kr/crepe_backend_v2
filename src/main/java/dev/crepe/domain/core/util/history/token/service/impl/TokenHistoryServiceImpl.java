@@ -8,6 +8,7 @@ import dev.crepe.domain.core.util.history.token.model.TokenRequestType;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,13 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class TokenHistoryServiceImpl implements TokenHistoryService {
 
+    private final ExceptionDbService exceptionDbService;
     private final TokenHistoryRepository tokenHistoryRepository;
 
     @Override
     public TokenHistory findById(Long tokenHistoryId) {
         return tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_003"));
     }
 
     @Override

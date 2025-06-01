@@ -15,6 +15,8 @@ import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
 import dev.crepe.domain.core.util.history.token.service.PortfolioHistoryService;
+import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.global.error.exception.model.ExceptionDb;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class TokenSetupServiceImpl implements TokenSetupService {
     private final AccountService accountService;
     private final BankTokenInfoService bankTokenInfoService;
     private final PortfolioService portfolioService;
+    private final ExceptionDbService exceptionDbService;
     private final TokenCalculationUtil tokenCalculationUtil;
 
     // 토큰 발행 프로세스
@@ -66,8 +69,7 @@ public class TokenSetupServiceImpl implements TokenSetupService {
             return bankToken;
 
         } catch (Exception e) {
-            log.error("토큰 발행 요청 중 예외 발생: {}", e.getMessage(), e);
-            throw new TokenGenerateFailedException("토큰 발행 요청 중 오류가 발생했습니다.", e);
+            throw exceptionDbService.getException("INTERNAL_001");
         }
     }
 
@@ -101,8 +103,7 @@ public class TokenSetupServiceImpl implements TokenSetupService {
            return bankToken;
 
        }catch (Exception e) {
-           log.error("토큰 재발행 요청 중 예외 발생: {}", e.getMessage(), e);
-           throw new TokenGenerateFailedException("토큰 재발행 요청 중 오류가 발생했습니다.", e);
+           throw exceptionDbService.getException("INTERNAL_001");
        }
 
     }
