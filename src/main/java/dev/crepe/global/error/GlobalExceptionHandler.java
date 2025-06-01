@@ -52,7 +52,7 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity
                 .status(httpStatus != null ? httpStatus : HttpStatus.INTERNAL_SERVER_ERROR)
-                .contentType(MediaType.valueOf("application/json; charset=UTF-8"))  // ✅ 이걸로 변경
+                .contentType(MediaType.valueOf("application/json; charset=UTF-8"))
                 .body(new HashMap<>(body));
     }
 
