@@ -1,5 +1,6 @@
 package dev.crepe.domain.channel.actor.store.model.dto.request;
 
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -35,7 +36,7 @@ public class StoreSignupRequest {
 
     @NotBlank
     @Schema(description = "가게 유형", example = "크레페")
-    private String storeType;
+    private StoreType storeType;
 
     @NotBlank(message = "가게명은 필수 입력값입니다.")
     @Schema(description = "가게명", example = "크레페 하우스 명동점")

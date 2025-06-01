@@ -2,6 +2,7 @@ package dev.crepe.domain.channel.actor.store.model.dto.response;
 
 
 import dev.crepe.domain.channel.actor.store.model.CoinStatus;
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -19,7 +20,7 @@ public class GetOpenStoreResponse {
     private String storeName;
     private String storeImage;
     private Long likeCount;
-    private String storeType;
+    private StoreType storeType;
     private List<Coin> coinList;
 
 }
