@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.product.model.entity;
 
 import dev.crepe.domain.bank.model.entity.Bank;
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
@@ -96,6 +97,10 @@ public class Product extends BaseEntity {
     @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductTag> productTags = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "store_type")
+    private StoreType storeType;
 
 
     public void addTag(Tag tag) {
