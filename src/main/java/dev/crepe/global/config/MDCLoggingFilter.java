@@ -136,7 +136,7 @@ public class MDCLoggingFilter implements Filter {
             
         } catch (Exception e) {
             // 토큰 파싱 실패 시 로그 출력 (선택사항)
-            System.err.println("Failed to extract user email from token: " + e.getMessage());
+            log.error("Failed to extract user email from token: {}", e.getMessage(), e);
         }
         
         return null; // 인증되지 않은 사용자 또는 토큰이 없는 경우
