@@ -24,6 +24,7 @@ import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeExpiredService;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,18 +50,19 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
     private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
+    private final ExceptionDbService exceptionDbService;
 
 
     @Transactional
     public String expired(String userEmail, Long subscribeId) {
         // 가입 정보 조회
         Subscribe subscribe = subscribeRepository.findById(subscribeId)
-                .orElseThrow(SubscribeNotFoundException::new);
+                .orElseThrow(()->exceptionDbService.getException("SUBSCRIBE_004"));
 
-        // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw new AlreadyExpiredSubscribeException();
+            throw exceptionDbService.getException("SUBSCRIBE_01");
         }
+
 
         Product product = subscribe.getProduct();
         BigDecimal balance = subscribe.getBalance();
@@ -68,12 +70,12 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new NoDepositBalanceException();
+            throw exceptionDbService.getException("SUBSCRIBE_02");
         }
 
         // 만기일 도달 여부 확인
         if (!subscribe.isMatured()) {
-            throw new TooEarlyToTerminateException();
+            throw exceptionDbService.getException("SUBSCRIBE_03");
         };
 
 
@@ -90,7 +92,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentCompoundInterest(subscribe, baseRate);
             }
-            default -> throw new UnsupportedProductTypeException();
+            default ->  throw exceptionDbService.getException("PRODUCT_01");
         }
 
         // 우대금리 조건 평가 및 저장
@@ -123,13 +125,13 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
         Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(
                 subscribe.getUser().getEmail(), product.getBankToken().getId()
-        ).orElseThrow(UserAccountNotFoundException::new);
+        ).orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
 
 
         // 은행 자본금 계좌에서 이자 차감
         Account bankTokenAccount = accountRepository
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
-                .orElseThrow(BankAccountNotFoundException::new);
+                .orElseThrow(()-> exceptionDbService.getException("BANK_001"));
 
         bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
@@ -313,10 +315,8 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
                                 tier.getRate(), tier.getDescription(), tier.getName(), "CONFIRMED"
                         ));
                     }
-                    System.out.println("📌 비교 title: " + tier.getName() + " vs " + condition.getTitle());
 
                 }
-
 
                 // 자유 납입 횟수 기준 우대 조건 확인 (적금)
                 case FREE_DEPOSIT_COUNT -> {
@@ -327,7 +327,6 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
                                     tier.getRate(), tier.getDescription(), tier.getName(), "CONFIRMED"
                             ));
                         }
-                        System.out.println("📌 비교 title: " + tier.getName() + " vs " + condition.getTitle());
                     }
                 }
 

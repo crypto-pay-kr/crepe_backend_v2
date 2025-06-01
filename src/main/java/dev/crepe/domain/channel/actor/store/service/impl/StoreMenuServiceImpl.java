@@ -14,6 +14,7 @@ import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
 
 import dev.crepe.domain.channel.actor.store.service.MenuService;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.error.exception.ResourceNotFoundException;
 import dev.crepe.global.error.exception.UnauthorizedException;
 import dev.crepe.infra.s3.service.S3Service;
@@ -36,12 +37,13 @@ public class StoreMenuServiceImpl implements MenuService {
     private final MenuRepository menuRepository;
     private final ActorRepository actorRepository;
     private final S3Service s3Service;
+    private final ExceptionDbService exceptionDbService;
 
     @Transactional
     public ResponseEntity<Void> registerStoreMenu(RegisterOrChangeMenuRequest request, MultipartFile menuImage, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         String storeImageUrl = s3Service.uploadFile(menuImage, "menu-images");
         Menu menu = Menu.builder()
@@ -60,19 +62,21 @@ public class StoreMenuServiceImpl implements MenuService {
     public ResponseEntity<Void> changeStoreMenu(RegisterOrChangeMenuRequest request, Long menuId, MultipartFile menuImage, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         Long storeId = store.getId();
 
-        if (store.getRole() != UserRole.SELLER){
-            throw new SecurityException("해당 가게의 메뉴를 변경할 권한이 없습니다.");
+        if (store.getRole() != UserRole.SELLER) {
+            throw exceptionDbService.getException("ACTOR_001");
         }
+
         Menu menu = menuRepository.findById(menuId)
-                .orElseThrow(() -> new ResourceNotFoundException("존재하지 않는 메뉴입니다. ID: " + menuId));
+                .orElseThrow(() -> exceptionDbService.getException("MENU_001"));
 
         if (!menu.getStore().getId().equals(storeId)) {
-            throw new UnauthorizedException("해당 가게의 메뉴가 아닙니다.");
+            throw exceptionDbService.getException("ACTOR_001");
         }
+
         String storeImageUrl = s3Service.uploadFile(menuImage, "menu-images");
         menu.updateMenu(
                 request.getName(),
@@ -86,14 +90,14 @@ public class StoreMenuServiceImpl implements MenuService {
     public ResponseEntity<Void> deleteStoreMenu(Long menuId, String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         Long storeId = store.getId();
         Menu menu = menuRepository.findByIdAndStoreId(menuId, storeId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 메뉴를 찾을 수 없습니다."));
+                .orElseThrow(() -> exceptionDbService.getException("MENU_001"));
 
         if (!menu.getStore().getEmail().equals(userEmail)) {
-            throw new UnauthorizedException("메뉴를 삭제할 권한이 없습니다.");
+            throw exceptionDbService.getException("ACTOR_001");
         }
 
         menu.delete();
@@ -104,10 +108,10 @@ public class StoreMenuServiceImpl implements MenuService {
     @Override
     public GetMenuDetailResponse getMenuDetailById(Long menuId, String userEmail) {
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
         Long storeId = store.getId();
         Menu menu = menuRepository.findByIdAndStoreId(menuId, storeId)
-                .orElseThrow(() -> new EntityNotFoundException("해당 메뉴를 찾을 수 없습니다."));
+                .orElseThrow(() -> exceptionDbService.getException("MENU_001"));
 
         GetMenuDetailResponse res = GetMenuDetailResponse.builder().menuId(menu.getId())
                 .menuName(menu.getName()).menuPrice(menu.getPrice()).menuImage(menu.getImage()).build();
@@ -117,10 +121,10 @@ public class StoreMenuServiceImpl implements MenuService {
 
     public GetMenuListResponse getAllMenusByStore(Long storeId, String userEmail) {
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         if (!store.getEmail().equals(userEmail) || !"SELLER".equals(store.getRole())) {
-            throw new AccessDeniedException("해당 가맹점에 접근 권한이 없습니다.");
+            throw exceptionDbService.getException("ACTOR_001"); // 권한이 없는 유저입니다.
         }
 
 
