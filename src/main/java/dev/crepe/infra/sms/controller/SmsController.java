@@ -23,7 +23,7 @@ public class SmsController {
     // SMS 인증 코드 전송
     @PostMapping("/code")
     public ResponseEntity<String> sendSmsCode(@Valid @RequestBody SendSmsCodeRequest request) {
-        smsManageService.sendSmsCode(request.getPhone(), request.getSmsType());
+        smsManageService.sendSmsCode(request);
         return ResponseEntity.ok("SMS 인증 코드 전송 성공");
     }
 
