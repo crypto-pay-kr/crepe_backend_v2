@@ -65,13 +65,13 @@ public class BankProductServiceImpl implements BankProductService {
                 .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_001"));
 
         Account tokenAccount = accountRepository.findByBankAndBankToken(bank, bankToken)
-                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_01"));
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
 
 
         BigDecimal budget = request.getBudget();
 
         if (tokenAccount.getBalance().compareTo(budget) < 0) {
-            throw exceptionDbService.getException("ACCOUNT_06");
+            throw exceptionDbService.getException("ACCOUNT_006");
         }
 
         tokenAccount.deductBalance(budget);
