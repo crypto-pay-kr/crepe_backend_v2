@@ -42,6 +42,10 @@ public class StoreSignupRequest {
     @Schema(description = "가게명", example = "크레페 하우스 명동점")
     private String storeName;
 
+    @NotBlank(message = "유저이름은 필수 입력값입니다.")
+    @Schema(description = "유저이름", example = "박찬진")
+    private String name;
+
     @NotBlank
     @Schema(description = "가게 주소", example = "서울시 중구 명동길 12")
     private String storeAddress;

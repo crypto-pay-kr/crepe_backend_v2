@@ -107,7 +107,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 : BigDecimal.ZERO;
 
         // 예금 상품일 경우, 초기 납입액 필수 체크
-        if (product.getType() == BankProductType.SAVING && (initialAmount == null || initialAmount.compareTo(BigDecimal.ZERO) <= 0)) {
+        if (product.getType() == BankProductType.SAVING && initialAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw exceptionDbService.getException("PRODUCT_11");
         }
 

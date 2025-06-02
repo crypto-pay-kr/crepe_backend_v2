@@ -12,7 +12,6 @@ import dev.crepe.domain.channel.actor.model.SuspensionType;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.impl.ActorServiceImpl;
-import dev.crepe.domain.core.account.model.entity.Account;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

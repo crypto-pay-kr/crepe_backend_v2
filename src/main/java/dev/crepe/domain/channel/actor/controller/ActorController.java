@@ -121,7 +121,7 @@ public class ActorController {
         }catch (Exception e) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("success", false);
-                errorResponse.put("message", e.getMessage());
+                errorResponse.put("message", "이메일 또는 비밀번호가 올바르지 않습니다.");
                 return ResponseEntity.badRequest().body(errorResponse);
             }
     }
