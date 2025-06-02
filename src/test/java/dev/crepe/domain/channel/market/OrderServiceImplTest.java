@@ -452,6 +452,7 @@ class OrderServiceImplTest {
         Long storeId = 2L;
         String currency = "BTC";
         BigDecimal clientRate = new BigDecimal("40000000");
+        PaymentType paymentType = PaymentType.COIN; // PaymentType 설정 추가
 
         Actor user = Actor.builder()
                 .email(userEmail)
@@ -467,9 +468,7 @@ class OrderServiceImplTest {
                 storeId,
                 userEmail,
                 Collections.singletonList(new CreateOrderRequest.OrderDetailRequest(1L, 1)),
-                currency,
-                PaymentType.COIN, // ✅ null 대신 실제 PaymentType 값
-                null // voucherSubscribeId는 null이어도 됨
+                currency, paymentType, null // PaymentType 설정 추가
         );
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
