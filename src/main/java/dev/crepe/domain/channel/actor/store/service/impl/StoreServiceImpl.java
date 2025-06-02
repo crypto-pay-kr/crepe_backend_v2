@@ -1,9 +1,6 @@
 package dev.crepe.domain.channel.actor.store.service.impl;
 
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.channel.actor.exception.AlreadyEmailException;
-import dev.crepe.domain.channel.actor.exception.AlreadyNicknameException;
-import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
@@ -19,12 +16,10 @@ import dev.crepe.domain.channel.market.like.repository.LikeRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
-import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.s3.service.S3Service;
-import dev.crepe.infra.sms.model.InMemorySmsAuthService;
-import dev.crepe.infra.sms.model.SmsType;
 import dev.crepe.infra.sms.service.SmsManageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 
@@ -50,8 +44,7 @@ public class StoreServiceImpl implements StoreService {
     private final MenuRepository menuRepository;
     private final PasswordEncoder encoder;
     private final S3Service s3Service;
-    private final AccountService accountService;
-    private final SmsManageService smsManageService;
+    private final ExceptionDbService exceptionDbService;
 
 
     // 가맹점 회원가입
@@ -61,6 +54,7 @@ public class StoreServiceImpl implements StoreService {
             StoreSignupRequest request,
             MultipartFile storeImage,
             MultipartFile businessImage) {
+        log.info("가맹점 회원가입 요청 - 이메일: {}", request.getEmail());
 
 //        InMemorySmsAuthService.SmsAuthData smsAuthData = smsManageService.getSmsAuthData(request.getPhoneNumber(), SmsType.SIGN_UP);
 //        String validatePhone = smsAuthData.getPhoneNumber();
@@ -93,23 +87,25 @@ public class StoreServiceImpl implements StoreService {
     // 입력 필드 체크
     private void checkAlreadyField(StoreSignupRequest request) {
         if (actorRepository.existsByEmail(request.getEmail())) {
-            throw new AlreadyEmailException();
+            throw exceptionDbService.getException("ACTOR_003"); // 이미 존재하는 이메일
         }
 
         if (actorRepository.existsByNickName(request.getStoreName())) {
-            throw new AlreadyNicknameException();
+            throw exceptionDbService.getException("ACTOR_004"); // 이미 존재하는 닉네임
         }
 
         if (actorRepository.existsByPhoneNum(request.getPhoneNumber())) {
-            throw new AlreadyPhoneNumberException();
+            throw exceptionDbService.getException("ACTOR_009"); // 이미 존재하는 휴대폰 번호
         }
     }
 
     // 가맹점 이름 변경
     @Override
+    @Transactional
     public ResponseEntity<Void> changeName(ChangeStoreNameRequest request, String userEmail) {
+        log.info("가맹점 이름 변경 시작 - 사용자 이메일: {}", userEmail);
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         store.changeName(request.getNewStoreName());
         actorRepository.save(store);
@@ -119,10 +115,12 @@ public class StoreServiceImpl implements StoreService {
 
     // 가맹점 주소 변경
     @Override
+    @Transactional
     public ResponseEntity<Void> changeAddress(ChangeAddressRequest request, String userEmail) {
+        log.info("가맹점 주소 변경 시작 - 사용자 이메일: {}", userEmail);
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         store.changeStoreAddress(request.getNewAddress());
         actorRepository.save(store);
@@ -134,17 +132,18 @@ public class StoreServiceImpl implements StoreService {
     @Override
     @Transactional
     public String changeStoreImage(MultipartFile storeImage, String userEmail) {
+        log.info("가맹점 대표 이미지 변경 시작 - 사용자 이메일: {}", userEmail);
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         String oldImageUrl = store.getStoreImage();
-        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
-            try {
+        if(oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            try{
                 String oldKey = s3Service.extractKeyFromUrl(oldImageUrl);
-                log.info("Previous store image key: {}", oldKey);
-            } catch (Exception e) {
-                log.warn("Failed to process old image: {}", oldImageUrl, e);
+            }
+            catch (Exception e){
+                throw exceptionDbService.getException("S3_UPLOAD_001");
             }
         }
         String newImageUrl = s3Service.uploadFile(storeImage, "store-images");
@@ -158,18 +157,16 @@ public class StoreServiceImpl implements StoreService {
     @Override
     @Transactional
     public ChangeBusinessInfoResponse changeBusinessInfo(String businessNumber, MultipartFile businessImage, String userEmail) {
-
+        log.info("가맹점 사업자등록증 변경 시작- 사용자 이메일: {}", userEmail);
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         String oldImageUrl = store.getBusinessImage();
-        if(oldImageUrl != null && !oldImageUrl.isEmpty()) {
-            try{
-                String oldKey = s3Service.extractKeyFromUrl(oldImageUrl);
-                log.info("Previous business image key: {}", oldKey);
-            }
-            catch (Exception e){
-                log.warn("Failed to process old business image: {}", oldImageUrl, e);
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            try {
+                s3Service.extractKeyFromUrl(oldImageUrl);
+            } catch (Exception e) {
+                throw exceptionDbService.getException("S3_UPLOAD_001");
             }
         }
         String newImageUrl = s3Service.uploadFile(businessImage, "business-licenses");
@@ -186,9 +183,9 @@ public class StoreServiceImpl implements StoreService {
     @Transactional
     @Override
     public ChangeCoinStatusResponse registerStoreCoin(ChangeCoinStatusRequest request, String userEmail) {
-        // 사용자 이메일로 Actor 조회
+        log.info("가맹점 코인 결제수단 등록 시작 - 사용자 이메일: {}", userEmail);
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         // 요청된 코인 이름(String)을 Coin 엔티티로 변환
         List<Coin> coins = request.getSupportedCoins().stream()
@@ -211,9 +208,10 @@ public class StoreServiceImpl implements StoreService {
     @Transactional
     @Override
     public ChangeStoreStatusResponse changeStoreStatus(ChangeStoreStatusRequest request, String userEmail) {
+        log.info("가맹점 영업중 상태 변경 시작 - 사용자 이메일: {}", userEmail);
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         store.changeStoreStatus(request.getStoreStatus());
         ChangeStoreStatusResponse res = ChangeStoreStatusResponse.builder()
@@ -228,7 +226,7 @@ public class StoreServiceImpl implements StoreService {
     public GetMyStoreAllDetailResponse getMyStoreAllDetails(String userEmail) {
 
         Actor store = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UnauthorizedStoreAccessException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         List<Menu> menus = menuRepository.findAllByStoreId(store.getId());
         List<GetMenuDetailResponse> menuResponse = menus.stream()
@@ -277,7 +275,7 @@ public class StoreServiceImpl implements StoreService {
     public GetOneStoreDetailResponse getOneStoreDetail(Long storeId) {
 
         Actor store = actorRepository.findById(storeId)
-                .orElseThrow(() -> new StoreNotFoundException(storeId));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         Long likeCount = likeRepository.countByStoreAndActiveTrue(store);
 
@@ -311,7 +309,7 @@ public class StoreServiceImpl implements StoreService {
         return actorRepository.findByEmail(email)
                 .filter(BaseEntity -> BaseEntity instanceof Actor)
                 .map(BaseEntity -> ((Actor) BaseEntity).getId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일로 가맹점을 찾을 수 없습니다."));
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
     }
 
 
