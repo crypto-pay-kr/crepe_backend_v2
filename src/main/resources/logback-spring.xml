@@ -75,16 +75,6 @@
         </logger>
         
         <!-- 외부 라이브러리 - 개발시 디버깅용 -->
-        <logger name="org.springframework.web" level="DEBUG"/>
-        <logger name="org.springframework.security" level="DEBUG"/>
-        <logger name="org.hibernate.SQL" level="DEBUG"/>
-        <logger name="org.hibernate.type" level="TRACE"/>
-        
-        <!-- Root Logger -->
-        <root level="DEBUG">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
-        </root>
     </springProfile>
     
     <!-- PROD 환경: INFO와 ERROR만 출력 -->
