@@ -7,23 +7,18 @@ import dev.crepe.domain.admin.service.AdminBankManageService;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.BankSignupDataRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankDashboardResponse;
-import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankService;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
-import dev.crepe.domain.core.account.exception.NotActorAccountOwnerException;
-import dev.crepe.domain.core.account.exception.NotBankAccountException;
 import dev.crepe.domain.core.account.model.entity.Account;
-import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.repository.ProductRepository;
-import dev.crepe.domain.core.product.service.ProductService;
 import dev.crepe.domain.core.product.service.impl.ProductServiceImpl;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -43,10 +38,10 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
     private final BankTokenInfoService bankTokenInfoService;
     private final ProductServiceImpl productService;
     private final AccountService accountService;
-    private final AccountRepository accountRepository;
     private final ProductRepository productRepository;
     private final BankRepository bankRepository;
     private final BankTokenRepository bankTokenRepository;
+    private final ExceptionDbService exceptionDbService;
 
     // 은행 계정 생성
     @Override
@@ -152,7 +147,7 @@ public class AdminBankManageServiceImpl implements AdminBankManageService {
 
         // 소유주가 Bank인지 검증
         if (account.getBank() == null) {
-            throw new NotBankAccountException();
+            throw exceptionDbService.getException("ACCOUNT_011");
         }
 
         accountService.holdAccount(account);

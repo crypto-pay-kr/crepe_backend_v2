@@ -7,7 +7,6 @@ import dev.crepe.domain.admin.dto.response.GetAllSuspendedBankResponse;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
 import dev.crepe.domain.auth.sse.service.impl.AuthServiceImpl;
-import dev.crepe.domain.bank.exception.BankNotFoundException;
 import dev.crepe.domain.bank.model.dto.request.BankDataRequest;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
@@ -17,27 +16,22 @@ import dev.crepe.domain.bank.model.entity.BankStatus;
 import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.util.CheckAlreadyField;
-import dev.crepe.domain.channel.actor.exception.LoginFailedException;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
-import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.global.error.exception.ExceptionDbService;
-import dev.crepe.global.error.exception.model.ExceptionDb;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.global.util.NumberUtil;
 import dev.crepe.infra.s3.service.S3Service;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -100,7 +94,7 @@ public class BankServiceImpl implements BankService {
                 .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         if (!encoder.matches(request.getPassword(), bank.getPassword())) {
-            throw exceptionDbService.getException("ACTOR_005");
+            throw exceptionDbService.getException("BANK_008");
         }
 
         // AuthService를 통해 토큰 생성 및 저장 (중복 로그인 방지 + 실시간 알림)

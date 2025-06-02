@@ -7,7 +7,6 @@ import dev.crepe.domain.auth.role.BankAuth;
 import dev.crepe.domain.bank.model.dto.request.ChangeBankPhoneRequest;
 import dev.crepe.domain.bank.model.dto.response.GetBankInfoDetailResponse;
 import dev.crepe.domain.bank.service.BankService;
-import dev.crepe.domain.channel.actor.exception.LoginFailedException;
 import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
 import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.infra.naver.captcha.service.NaverCaptchaService;
@@ -56,15 +55,8 @@ public class BankController {
                 }
             }
 
-            // BankService 호출 (Service에서 중복 로그인 방지 처리)
             TokenResponse tokenResponse = bankService.login(request).getData();
             return ResponseEntity.ok(tokenResponse);
-
-        } catch (LoginFailedException e) {
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "로그인 실패");
-            return ResponseEntity.badRequest().body(errorResponse);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);

@@ -1,17 +1,10 @@
 package dev.crepe.domain.channel.market;
 
-import java.lang.reflect.Field;
-
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.channel.actor.store.exception.MenuNotFoundException;
-import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
-import dev.crepe.domain.channel.market.order.exception.ExchangePriceNotMatchException;
-import dev.crepe.domain.channel.market.order.exception.OrderNotFoundException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
 import dev.crepe.domain.channel.market.order.model.dto.request.CreateOrderRequest;
@@ -27,8 +20,6 @@ import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.CustomException;
 import dev.crepe.global.error.exception.ExceptionDbService;
-import dev.crepe.global.error.exception.UnauthorizedException;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,14 +29,15 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)

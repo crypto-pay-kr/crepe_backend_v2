@@ -1,10 +1,8 @@
 package dev.crepe.domain.core.util.history.exchange.service.impl;
 
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
-import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
@@ -17,14 +15,15 @@ import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.math.BigDecimal;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service

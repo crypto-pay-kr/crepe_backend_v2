@@ -57,6 +57,7 @@ class JwtAuthenticationFilterTest {
         request.addHeader("Authorization", "Bearer " + token);
         
         when(jwtTokenProvider.resolveToken(request)).thenReturn(token);
+        when(jwtTokenProvider.validateToken(token)).thenReturn(true);
         when(jwtTokenProvider.getAuthentication(token)).thenReturn(mockAuthentication);
         
         // when
@@ -66,6 +67,7 @@ class JwtAuthenticationFilterTest {
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals(mockAuthentication, SecurityContextHolder.getContext().getAuthentication());
         verify(jwtTokenProvider).resolveToken(request);
+        verify(jwtTokenProvider).validateToken(token);
         verify(jwtTokenProvider).getAuthentication(token);
     }
 

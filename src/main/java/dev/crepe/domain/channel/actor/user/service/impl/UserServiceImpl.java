@@ -1,17 +1,13 @@
 package dev.crepe.domain.channel.actor.user.service.impl;
 
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.channel.actor.exception.AlreadyNicknameException;
-import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.channel.actor.user.model.dto.ChangeNicknameRequest;
 import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;
 import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
 import dev.crepe.domain.channel.actor.user.repository.UserRepository;
 import dev.crepe.domain.channel.actor.user.service.UserService;
-import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +25,6 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
-    private final AccountService accountService;
     private final ExceptionDbService exceptionDbService;
 
     // 회원가입
@@ -66,11 +61,11 @@ public class UserServiceImpl implements UserService {
         }
 
         if (actorRepository.existsByNickName(request.getNickname())) {
-            throw new AlreadyNicknameException();
+            throw exceptionDbService.getException("ACTOR_004");
         }
 
         if (actorRepository.existsByPhoneNum(request.getPhoneNumber())) {
-            throw new AlreadyPhoneNumberException();
+            throw exceptionDbService.getException("ACTOR_009");
         }
     }
 
@@ -79,9 +74,9 @@ public class UserServiceImpl implements UserService {
     public void changeNickname(ChangeNicknameRequest request, String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
-        if(userRepository.existsByNickName(request.getNewNickname())) throw  new AlreadyNicknameException();
+        if(userRepository.existsByNickName(request.getNewNickname())) throw  exceptionDbService.getException("ACTOR_004");
 
         actor.changeNickname(request.getNewNickname());
     }
@@ -90,9 +85,8 @@ public class UserServiceImpl implements UserService {
     // 회원 정보 조회
     @Override
     public UserInfoResponse getUserInfo(String userEmail) {
-
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         return UserInfoResponse.builder()
                 .email(actor.getEmail())

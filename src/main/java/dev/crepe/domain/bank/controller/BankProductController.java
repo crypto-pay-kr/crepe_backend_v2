@@ -6,7 +6,6 @@ import dev.crepe.domain.bank.model.dto.response.GetAllProductResponse;
 import dev.crepe.domain.bank.service.BankProductService;
 import dev.crepe.domain.core.product.model.dto.request.RegisterProductRequest;
 import dev.crepe.domain.core.product.model.dto.response.RegisterProductResponse;
-import dev.crepe.domain.core.product.model.entity.Product;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;

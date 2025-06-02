@@ -4,26 +4,18 @@ package dev.crepe.domain.channel.actor.store.service.impl;
 import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
-import dev.crepe.domain.channel.actor.store.exception.UnauthorizedStoreAccessException;
 import dev.crepe.domain.channel.actor.store.model.dto.request.RegisterOrChangeMenuRequest;
 import dev.crepe.domain.channel.actor.store.model.dto.response.GetMenuDetailResponse;
 import dev.crepe.domain.channel.actor.store.model.dto.response.GetMenuListResponse;
-
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
-
 import dev.crepe.domain.channel.actor.store.service.MenuService;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.global.error.exception.ExceptionDbService;
-import dev.crepe.global.error.exception.ResourceNotFoundException;
-import dev.crepe.global.error.exception.UnauthorizedException;
 import dev.crepe.infra.s3.service.S3Service;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 

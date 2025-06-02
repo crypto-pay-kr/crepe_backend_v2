@@ -1,7 +1,5 @@
 package dev.crepe.domain.bank.service.impl;
 
-import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
-import dev.crepe.domain.bank.exception.BankManagerNameMismatchException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
@@ -9,8 +7,6 @@ import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.bank.service.BankAccountManageService;
 import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.service.BankTokenManageService;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
-import dev.crepe.domain.core.account.exception.MissingAccountRequestException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
