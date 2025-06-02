@@ -12,6 +12,7 @@ import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderManageR
 import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderResponse;
 import dev.crepe.domain.channel.actor.store.service.StoreOrderService;
 import dev.crepe.domain.channel.actor.store.service.StoreService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +31,7 @@ public class StoreOrderController {
 
     private final StoreOrderService storeOrderService;
     private final StoreService storeService;
+    private final ExceptionDbService exceptionDbService;
 
     @Operation(summary = "영업중인 가게 조회", description = "유저가 현재 영업 중인 가게를 조회합니다.")
     @GetMapping
@@ -74,21 +76,24 @@ public class StoreOrderController {
         switch (request.getAction().toLowerCase()) {
             case "accept":
                 if (request.getPreparationTime() == null) {
-                    throw new EmptyValueException("error.preparation.time.required");
+                    throw exceptionDbService.getException("STORE_ORDER_001");
                 }
                 response = storeOrderService.acceptOrder(orderId, storeId, request);
                 break;
             case "refuse":
                 if (request.getRefusalReason() == null) {
-                    throw new EmptyValueException("error.refusal.reason.required");
+                    throw exceptionDbService.getException("STORE_ORDER_002");
                 }
                 response = storeOrderService.refuseOrder(orderId, storeId, request);
                 break;
             case "complete":
                 response = storeOrderService.completeOrder(orderId, storeId);
                 break;
+            case "cancel":
+                response = storeOrderService.cancelOrder(orderId, storeId);
+                break;
             default:
-                throw new InvalidActionException(request.getAction());
+                throw exceptionDbService.getException("STORE_ORDER_003");
         }
 
         return ResponseEntity.ok(response);

@@ -20,6 +20,7 @@ import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -53,12 +54,13 @@ public class ActorServiceImpl  implements ActorService {
     private final SmsManageService smsManageService;
     private final Random random = new Random();
     private final AccountService accountService;
+    private final ExceptionDbService exceptionDbService;
 
     @Override
     @Transactional(readOnly = true)
     public boolean isEmailExists(String email) {
         if (actorRepository.existsByEmail(email)) {
-            throw new AlreadyEmailException();
+            throw exceptionDbService.getException("ACTOR_003");
         }
         return false;
     }
@@ -209,11 +211,11 @@ public class ActorServiceImpl  implements ActorService {
                     log.error("사용자를 찾을 수 없음: {}", userEmail);
                     return new EntityNotFoundException("사용자를 찾을 수 없습니다.");
                 });
-        if (!actor.getName().equals(idCardResponse.getName())) {
-            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
-                    actor.getName(), idCardResponse.getName());
-            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
-        }
+//        if (!actor.getName().equals(idCardResponse.getName())) {
+//            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
+//                    actor.getName(), idCardResponse.getName());
+//            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
+//        }
 
         try {
             actor.updateFromIdCard(idCardResponse);

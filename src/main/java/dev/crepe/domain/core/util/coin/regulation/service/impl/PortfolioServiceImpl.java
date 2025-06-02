@@ -6,12 +6,12 @@ import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.service.impl.CoinServiceImpl;
-import dev.crepe.domain.core.util.coin.regulation.exception.InvalidPortfolioException;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,18 +30,19 @@ public class PortfolioServiceImpl implements PortfolioService {
     private final AccountService accountService;
     private final CoinServiceImpl coinService;
     private final PortfolioRepository portfolioRepository;
+    private final ExceptionDbService exceptionDbService;
 
     // 포토폴리오 구성 유효성 검증
     @Override
     public void validatePortfolioConstitute(List<CreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail) {
 
         if (coinInfoList == null || coinInfoList.size() < MIN_PORTFOLIO_SIZE) {
-            throw new InvalidPortfolioException("portfolio.invalid.size", MIN_PORTFOLIO_SIZE);
+            throw exceptionDbService.getException("PORTFOLIO_06");
         }
 
         for (CreateBankTokenRequest.CoinInfo coin : coinInfoList) {
             if (coin.getAmount() == null || coin.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new InvalidPortfolioException("portfolio.invalid.amount", coin.getCoinName());
+                throw exceptionDbService.getException("PORTFOLIO_05");
             }
 
             accountService.findActiveAccountByBankEmailAndCurrency(bankEmail, coin.getCurrency());
@@ -56,12 +57,12 @@ public class PortfolioServiceImpl implements PortfolioService {
     public void revalidatePortfolioConstitute(List<ReCreateBankTokenRequest.CoinInfo> coinInfoList, String bankEmail) {
 
         if (coinInfoList == null || coinInfoList.size() < MIN_PORTFOLIO_SIZE) {
-            throw new InvalidPortfolioException("portfolio.invalid.size", MIN_PORTFOLIO_SIZE);
+            throw exceptionDbService.getException("PORTFOLIO_06");
         }
 
         for (ReCreateBankTokenRequest.CoinInfo coin : coinInfoList) {
             if (coin.getAmount() == null || coin.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-                throw new InvalidPortfolioException("portfolio.invalid.amount", coin.getCoinName());
+               throw exceptionDbService.getException("PORTFOLIO_05");
             }
 
             // 새로운 계좌 추가 시 계좌가 있는지 확인

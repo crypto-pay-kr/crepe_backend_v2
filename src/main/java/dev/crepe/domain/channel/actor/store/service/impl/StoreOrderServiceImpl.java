@@ -12,19 +12,23 @@ import dev.crepe.domain.core.util.history.pay.execption.PayHistoryNotFoundExcept
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.pay.repostiory.PayHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class StoreOrderServiceImpl implements StoreOrderService {
 
-    private  final OrderRepository orderRepository;
+    private final OrderRepository orderRepository;
     private final PayHistoryRepository payHistoryRepository;
     private final PayService payService;
+    private final ExceptionDbService exceptionDbService;
 
 
     //******************************************** 가맹점 주문 조회 start ********************************************/
@@ -42,12 +46,14 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     //******************************************** 가맹점 주문 수락 start ********************************************/
     @Transactional
     public StoreOrderManageResponse acceptOrder(String orderId, Long storeId, StoreOrderActionRequest request) {
-        Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
-                .orElseThrow(InvalidOrderIdException::new);
+        log.info("주문 수락 요청 - 주문 ID: {}, 가게 ID: {}", orderId, storeId);
 
-        int isStatusWaintingOrCompleted = (order.getStatus() == OrderStatus.WAITING || order.getStatus() == OrderStatus.COMPLETED) ? 
+        Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
+                .orElseThrow(() -> exceptionDbService.getException("ORDER_003"));
+
+        int isStatusWaintingOrCompleted = (order.getStatus() == OrderStatus.WAITING || order.getStatus() == OrderStatus.COMPLETED) ?
                 1 : 0;
-        if(isStatusWaintingOrCompleted == 0) {
+        if (isStatusWaintingOrCompleted == 0) {
             return StoreOrderManageResponse.builder()
                     .orderId(orderId)
                     .status(order.getStatus())
@@ -61,10 +67,11 @@ public class StoreOrderServiceImpl implements StoreOrderService {
 
         //결제 상태 업데이트
         PayHistory payHistory = payHistoryRepository.findByOrder(order)
-                .orElseThrow(PayHistoryNotFoundException::new);
+                .orElseThrow(() -> exceptionDbService.getException("PAY_HISTORY_001"));
         payHistory.approve();
         payHistoryRepository.save(payHistory);
 
+        log.info("주문 수락 완료 - 주문 ID: {}, 상태: {}", orderId, order.getStatus());
         return StoreOrderManageResponse.builder()
                 .orderId(orderId)
                 .status(order.getStatus())
@@ -78,15 +85,15 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     //******************************************** 가맹점 주문 수락 end ********************************************/
 
 
-
-
     //******************************************** 가맹점 주문 거절 start ********************************************/
     @Transactional
     public StoreOrderManageResponse refuseOrder(String orderId, Long storeId, StoreOrderActionRequest request) {
-        Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
-                .orElseThrow(InvalidOrderIdException::new);
+        log.info("주문 거절 요청 - 주문 ID: {}, 가게 ID: {}", orderId, storeId);
 
-        if(order.getStatus() != OrderStatus.WAITING) {
+        Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
+                .orElseThrow(() -> exceptionDbService.getException("ORDER_003"));
+
+        if (order.getStatus() != OrderStatus.WAITING) {
             return StoreOrderManageResponse.builder()
                     .orderId(orderId)
                     .status(order.getStatus())
@@ -101,6 +108,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
         //결제 상태 업데이트
         payService.cancelForOrder(order);
 
+        log.info("주문 거절 완료 - 주문 ID: {}, 상태: {}", orderId, order.getStatus());
         return StoreOrderManageResponse.builder()
                 .orderId(orderId)
                 .status(order.getStatus())
@@ -112,25 +120,40 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     //******************************************** 가맹점 주문 거절 end ********************************************/
 
 
+    public StoreOrderManageResponse cancelOrder(String orderId, Long storeId) {
+        log.info("주문 완료 요청 취소- 주문 ID: {}, 가게 ID: {}", orderId, storeId);
+
+        Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
+                .orElseThrow(() -> exceptionDbService.getException("ORDER_003"));
+
+        if (order.getStatus() != OrderStatus.COMPLETED) {
+            throw exceptionDbService.getException("ORDER_004"); // 취소 불가능한 상태
+        }
+
+        order.cancel();
+        orderRepository.save(order);
+
+        log.info("주문 완료 요청 취소 완료 - 주문 ID: {}, 가게 ID: {}", orderId, storeId);
+        return StoreOrderManageResponse.builder()
+                .orderId(order.getId())
+                .status(order.getStatus())
+                .message("주문 완료 요청이 취소되었습니다.")
+                .build();
+    }
 
 
     //******************************************** 주문 프로세스 종료 start ********************************************/
 
     @Transactional
     public StoreOrderManageResponse completeOrder(String orderId, Long storeId) {
+        log.info("주문 완료 요청 - 주문 ID: {}, 가게 ID: {}", orderId, storeId);
+
         Order order = orderRepository.findByIdAndStoreId(orderId, storeId)
-                .orElseThrow(InvalidOrderIdException::new);
+                .orElseThrow(() -> exceptionDbService.getException("ORDER_003"));
 
-
-        // 주문 상태 확인
         if (order.getStatus() != OrderStatus.PAID) {
-            return StoreOrderManageResponse.builder()
-                    .orderId(orderId)
-                    .status(order.getStatus())
-                    .message("완료할 수 없는 주문 상태입니다.")
-                    .build();
+            throw exceptionDbService.getException("ORDER_005");
         }
-
 
         // 주문 완료 처리
         order.complete();
@@ -142,7 +165,6 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                 .message("주문이 종료되었습니다.")
                 .build();
     }
-
 
 
     //******************************************** 주문 프로세스 종료 end ********************************************/

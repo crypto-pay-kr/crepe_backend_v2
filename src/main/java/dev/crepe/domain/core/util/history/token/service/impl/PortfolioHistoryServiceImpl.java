@@ -20,6 +20,7 @@ import dev.crepe.domain.core.util.history.token.repository.PortfolioHistoryDetai
 import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import dev.crepe.domain.core.util.history.token.service.PortfolioHistoryService;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +38,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     private final PortfolioService portfolioService;
     private final PortfolioHistoryDetailService portfolioHistoryDetailService;
     private final TokenHistoryRepository tokenHistoryRepository;
+    private final ExceptionDbService exceptionDbService;
 
 
     // 토큰 포토폴리오 신규 내역 저장
@@ -82,7 +84,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
             });
         } catch (Exception e) {
             log.error("토큰 재발행 요청 이력 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw new PortfolioUpdateFailedException("토큰 재발행 요청 이력 업데이트 중 오류가 발생했습니다.");
+            throw exceptionDbService.getException("PORTFOLIO_02");
         }
     }
 
@@ -103,7 +105,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
 
         } catch (Exception e) {
             log.error("포트폴리오 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw new PortfolioUpdateFailedException("포트폴리오 업데이트 중 오류가 발생했습니다.");
+            throw exceptionDbService.getException("PORTFOLIO_03");
         }
 
     }
@@ -117,7 +119,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
         try {
             // 토큰 발행 내역 조회
             TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                    .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
+                    .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_02"));
 
             // 거절 사유 추가
             tokenHistory.addRejectReason(request.getRejectReason());
@@ -128,7 +130,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
 
         } catch (Exception e) {
             log.error("토큰 히스토리 상태 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw new PortfolioUpdateFailedException("토큰 히스토리 상태 업데이트 중 오류가 발생했습니다.");
+            throw exceptionDbService.getException("PORTFOLIO_04");
         }
     }
 
@@ -139,19 +141,19 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     public void updateTokenHistoryStatus(Long tokenHistoryId, BankTokenStatus status) {
         try {
             TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                    .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
+                    .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_02"));
 
             tokenHistory.updateStatus(status);
             tokenHistoryRepository.save(tokenHistory);
         } catch (Exception e) {
             log.error("토큰 히스토리 상태 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw new PortfolioUpdateFailedException("토큰 히스토리 상태 업데이트 중 오류가 발생했습니다.");
+            throw exceptionDbService.getException("PORTFOLIO_04");
         }
     }
 
     @Override
     public TokenHistory findById(Long tokenHistoryId) {
         return tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> new TokenHistoryNotFoundException(tokenHistoryId));
+                .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_02"));
     }
 }

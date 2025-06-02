@@ -14,6 +14,7 @@ import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
 import dev.crepe.domain.channel.actor.user.repository.UserRepository;
 import dev.crepe.domain.channel.actor.user.service.UserService;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final ActorRepository actorRepository;
     private final PasswordEncoder encoder;
     private final AccountService accountService;
+    private final ExceptionDbService exceptionDbService;
 
     // 회원가입
     @Override
@@ -62,7 +64,7 @@ public class UserServiceImpl implements UserService {
 
     private void checkAlreadyField(UserSignupRequest request) {
         if (actorRepository.existsByEmail(request.getEmail())) {
-            throw new AlreadyEmailException();
+            throw exceptionDbService.getException("ACTOR_003");
         }
 
         if (actorRepository.existsByNickName(request.getNickname())) {
