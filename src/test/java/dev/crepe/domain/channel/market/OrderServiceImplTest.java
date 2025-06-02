@@ -463,9 +463,13 @@ class OrderServiceImplTest {
                 .build();
 
         CreateOrderRequest request = new CreateOrderRequest(
-                clientRate, storeId, userEmail,
+                clientRate,
+                storeId,
+                userEmail,
                 Collections.singletonList(new CreateOrderRequest.OrderDetailRequest(1L, 1)),
-                currency,null,null
+                currency,
+                PaymentType.COIN, // ✅ null 대신 실제 PaymentType 값
+                null // voucherSubscribeId는 null이어도 됨
         );
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
@@ -491,7 +495,6 @@ class OrderServiceImplTest {
         verify(orderRepository, never()).save(any(Order.class));
         verify(payService, never()).payForOrder(any(Order.class));
     }
-
 
 
     // 헬퍼 메서드
