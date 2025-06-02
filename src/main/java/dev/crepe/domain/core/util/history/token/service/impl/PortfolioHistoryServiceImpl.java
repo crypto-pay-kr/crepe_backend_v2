@@ -55,8 +55,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
                     portfolioHistoryDetailService.savePortfolioHistoryDetails(tokenHistory, portfolio)
             );
         } catch (Exception e) {
-            log.error("포트폴리오 히스토리 추가 중 오류 발생: {}", e.getMessage(), e);
-            throw new PortfolioUpdateFailedException("포트폴리오 히스토리 추가 중 오류 발생: " + e.getMessage());
+            throw exceptionDbService.getException("PORTFOLIO_001");
         }
     }
 
@@ -83,8 +82,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
 
             });
         } catch (Exception e) {
-            log.error("토큰 재발행 요청 이력 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw exceptionDbService.getException("PORTFOLIO_02");
+            throw exceptionDbService.getException("PORTFOLIO_002");
         }
     }
 
@@ -104,8 +102,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
             portfolioService.createPortfolios(bankToken, pendingTokenHistory);
 
         } catch (Exception e) {
-            log.error("포트폴리오 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw exceptionDbService.getException("PORTFOLIO_03");
+            throw exceptionDbService.getException("PORTFOLIO_003");
         }
 
     }
@@ -119,7 +116,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
         try {
             // 토큰 발행 내역 조회
             TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                    .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_02"));
+                    .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_002"));
 
             // 거절 사유 추가
             tokenHistory.addRejectReason(request.getRejectReason());
@@ -129,8 +126,7 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
             tokenHistoryRepository.save(tokenHistory);
 
         } catch (Exception e) {
-            log.error("토큰 히스토리 상태 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw exceptionDbService.getException("PORTFOLIO_04");
+            throw exceptionDbService.getException("PORTFOLIO_004");
         }
     }
 
@@ -141,19 +137,18 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     public void updateTokenHistoryStatus(Long tokenHistoryId, BankTokenStatus status) {
         try {
             TokenHistory tokenHistory = tokenHistoryRepository.findById(tokenHistoryId)
-                    .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_02"));
+                    .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_002"));
 
             tokenHistory.updateStatus(status);
             tokenHistoryRepository.save(tokenHistory);
         } catch (Exception e) {
-            log.error("토큰 히스토리 상태 업데이트 중 오류 발생: {}", e.getMessage(), e);
-            throw exceptionDbService.getException("PORTFOLIO_04");
+            throw exceptionDbService.getException("PORTFOLIO_004");
         }
     }
 
     @Override
     public TokenHistory findById(Long tokenHistoryId) {
         return tokenHistoryRepository.findById(tokenHistoryId)
-                .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_02"));
+                .orElseThrow(() -> exceptionDbService.getException("PORTFOLIO_002"));
     }
 }

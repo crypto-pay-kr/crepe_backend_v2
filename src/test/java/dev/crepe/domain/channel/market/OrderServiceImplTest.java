@@ -460,6 +460,7 @@ class OrderServiceImplTest {
         Long storeId = 2L;
         String currency = "BTC";
         BigDecimal clientRate = new BigDecimal("40000000");
+        PaymentType paymentType = PaymentType.COIN; // PaymentType 설정 추가
 
         Actor user = Actor.builder()
                 .email(userEmail)
@@ -473,7 +474,7 @@ class OrderServiceImplTest {
         CreateOrderRequest request = new CreateOrderRequest(
                 clientRate, storeId, userEmail,
                 Collections.singletonList(new CreateOrderRequest.OrderDetailRequest(1L, 1)),
-                currency,null,null
+                currency, paymentType, null // PaymentType 설정 추가
         );
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
@@ -499,8 +500,6 @@ class OrderServiceImplTest {
         verify(orderRepository, never()).save(any(Order.class));
         verify(payService, never()).payForOrder(any(Order.class));
     }
-
-
 
     // 헬퍼 메서드
     private Order createOrder(Actor user, Actor store, String currency) {
