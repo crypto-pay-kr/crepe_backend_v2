@@ -3,9 +3,10 @@ package dev.crepe.domain.core.util.coin.regulation.util;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.core.account.model.entity.Account;
-import dev.crepe.domain.core.util.coin.regulation.exception.InvalidTokenGenerateException;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
+import dev.crepe.global.error.exception.ExceptionDbService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -16,7 +17,10 @@ import java.util.Set;
 
 
 @Component
+@RequiredArgsConstructor
 public class TokenCalculationUtil {
+
+    private final ExceptionDbService exceptionDbService;
 
 
     // CreateBankTokenRequest를 기반으로 총 발행량 계산
@@ -116,25 +120,18 @@ public class TokenCalculationUtil {
 
                 // 같은 코인의 가치가 유통 중인 가치보다 작은지 확인
                 if (newValue.compareTo(circulatingValue) < 0) {
-                    throw new InvalidTokenGenerateException(
-                            "코인 '" + coinName + "'의 가치가 부족합니다. 현재 유통 중인 가치("
-                                    + circulatingValue + ")보다 적어도 같거나 더 많은 가치("
-                                    + newValue + ")가 필요합니다.");
+                    throw exceptionDbService.getException("PORTFOLIO_008");
                 }
             } else {
                 // 기존 코인이 새 포트폴리오에서 완전히 제거된 경우
-                throw new InvalidTokenGenerateException(
-                        "코인 '" + coinName + "'이(가) 포트폴리오에서 제거되었습니다. 현재 유통 중인 가치("
-                                + circulatingValue + ") 이상의 동일 코인이 반드시 포함되어야 합니다.");
+                throw exceptionDbService.getException("PORTFOLIO_007");
             }
         }
 
         // 2. 총 가치 검증 (추가 안전성 검증)
         BigDecimal newTotalValue = calculateTotalPrice(request);
         if (newTotalValue.compareTo(circulatingSupply) < 0) {
-            throw new InvalidTokenGenerateException(
-                    "새 포트폴리오의 총 가치(" + newTotalValue + ")가 현재 유통 중인 토큰량("
-                            + circulatingSupply + ")보다 작습니다.");
+            throw exceptionDbService.getException("BANK_TOKEN_005");
         }
     }
 
@@ -150,9 +147,7 @@ public class TokenCalculationUtil {
 
         // 예상 총 가치가 유통량에 안전계수를 곱한 값보다 작으면 안전하지 않음
         if (expectedTotal.compareTo(circulatingSupply.multiply(safetyFactor)) < 0) {
-            throw new InvalidTokenGenerateException(
-                    "예상 발행량(" + expectedTotal + ")이 유통 중인 토큰량(" +
-                            circulatingSupply.multiply(safetyFactor) + ")보다 부족합니다. 포트폴리오를 재구성해야 합니다.");
+            throw exceptionDbService.getException("BANK_TOKEN_005");
         }
     }
 }
