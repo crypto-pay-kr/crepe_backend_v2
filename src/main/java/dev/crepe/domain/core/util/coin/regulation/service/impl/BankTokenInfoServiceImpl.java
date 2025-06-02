@@ -13,6 +13,7 @@ import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class BankTokenInfoServiceImpl implements BankTokenInfoService {
 
+    private final ExceptionDbService exceptionDbService;
     private final BankTokenRepository bankTokenRepository;
     private final PortfolioRepository portfolioRepository;
     private final AccountRepository accountRepository;
@@ -36,14 +38,14 @@ public class BankTokenInfoServiceImpl implements BankTokenInfoService {
     public TokenInfoResponse getTokenInfo(String currency) {
         // 1. 토큰 조회
         BankToken token = bankTokenRepository.findByCurrency(currency)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 토큰입니다."));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_001"));
 
         // 2. 포트폴리오 조회
         List<Portfolio> portfolios = portfolioRepository.findAllByBankToken_Currency(currency);
 
         // 3. 은행 HTK 계좌 조회 (토큰 잔액 확인용)
         Account tokenAccount = accountRepository.findByBankToken_CurrencyAndActorIsNull(currency)
-                .orElseThrow(AccountNotFoundException::new);
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
 
         // 4. 포트폴리오 내 각 코인별로, 은행 계좌 잔액 조회
         List<Long> coinIds = portfolios.stream()
@@ -79,7 +81,7 @@ public class BankTokenInfoServiceImpl implements BankTokenInfoService {
     @Override
     public void validateTokenNotAlreadyRequested(Long bankId) {
         if (bankTokenRepository.existsByBank_Id(bankId)) {
-            throw new TokenAlreadyRequestedException("이미 발행 요청된 토큰이 존재합니다.");
+            throw exceptionDbService.getException("BANK_TOKEN_002");
         }
     }
 
@@ -92,7 +94,7 @@ public class BankTokenInfoServiceImpl implements BankTokenInfoService {
     @Override
     public BankToken findByBank(Bank bank) {
         return bankTokenRepository.findByBank(bank)
-                .orElseThrow(() -> new BankTokenNotFoundException("해당 은행에 연결된 BankToken이 존재하지 않습니다."));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_001"));
     }
 
     @Override

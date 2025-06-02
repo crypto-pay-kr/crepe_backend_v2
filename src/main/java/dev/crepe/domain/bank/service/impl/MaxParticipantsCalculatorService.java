@@ -1,6 +1,8 @@
 package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.core.product.model.BankProductType;
+import dev.crepe.global.error.exception.ExceptionDbService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -9,7 +11,10 @@ import java.time.LocalDate;
 import java.time.Period;
 
 @Service
+@RequiredArgsConstructor
 public class MaxParticipantsCalculatorService {
+
+    private final ExceptionDbService exceptionDbService;
 
     /**
      * 상품 타입별 최대 가입자수 계산
@@ -28,7 +33,7 @@ public class MaxParticipantsCalculatorService {
                     calculateSavingMaxParticipants(budget, maxMonthlyPayment, baseInterestRate, startDate, endDate);
             case INSTALLMENT ->
                     calculateInstallmentMaxParticipants(budget, maxMonthlyPayment, baseInterestRate, startDate, endDate);
-            default -> throw new IllegalArgumentException("지원하지 않는 상품 타입입니다: " + productType);
+            default -> throw exceptionDbService.getException("PRODUCT_002");
         };
     }
 

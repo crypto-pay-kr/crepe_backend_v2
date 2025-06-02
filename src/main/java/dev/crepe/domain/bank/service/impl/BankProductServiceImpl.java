@@ -60,20 +60,21 @@ public class BankProductServiceImpl implements BankProductService {
 
     @Override
     public RegisterProductResponse registerProduct(String email, MultipartFile productImage, MultipartFile guideFile, RegisterProductRequest request) {
+        log.info("상품 등록 요청: email={}, request={}", email, request);
         Bank bank = bankRepository.findByEmail(email)
-                .orElseThrow(() -> new EntityNotFoundException("은행 계정을 찾을 수 없습니다: " + email));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         BankToken bankToken = bankTokenRepository.findByBank(bank)
-                .orElseThrow(() -> new EntityNotFoundException("은행의 토큰을 찾을 수 없습니다"));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_001"));
 
         Account tokenAccount = accountRepository.findByBankAndBankToken(bank, bankToken)
-                .orElseThrow(() ->new EntityNotFoundException(
-                        String.format("은행의 %s 토큰 계좌를 찾을 수 없습니다", bankToken.getCurrency())));
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_01"));
+
 
         BigDecimal budget = request.getBudget();
 
         if (tokenAccount.getBalance().compareTo(budget) < 0) {
-            throw exceptionDbService.getException("PRODUCT_02");
+            throw exceptionDbService.getException("ACCOUNT_06");
         }
 
         tokenAccount.deductBalance(budget);
@@ -85,7 +86,7 @@ public class BankProductServiceImpl implements BankProductService {
 
         String contentType = guideFile.getContentType();
         if (contentType == null || !contentType.equals("application/pdf")) {
-            throw new InvalidFileTypeException();
+            throw exceptionDbService.getException("S3_UPLOAD_001");
         }
         String guideFileUrl = s3Service.uploadFile(guideFile, "product-guides");
 
@@ -265,8 +266,10 @@ public class BankProductServiceImpl implements BankProductService {
 
     @Override
     public List<GetAllProductResponse> findAllProductsByBankEmail(String email) {
+        log.info("은행 이메일로 상품 조회 요청: email={}", email);
+
         Bank bank = bankRepository.findByEmail(email)
-                .orElseThrow(() -> new BankNotFoundException(email));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         List<Product> products = productRepository.findByBank(bank);
 
@@ -327,10 +330,10 @@ public class BankProductServiceImpl implements BankProductService {
     @Override
     public GetAllProductResponse findProductByIdAndBankEmail(String email, Long productId) {
         Bank bank = bankRepository.findByEmail(email)
-                .orElseThrow(() -> new BankNotFoundException(email));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         Product product = productRepository.findByIdAndBank(productId, bank)
-                .orElseThrow(() -> new EntityNotFoundException("상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> exceptionDbService.getException("PRODUCT_001"));
 
         ObjectMapper objectMapper = new ObjectMapper();
         List<String> parsedJoinConditions = new ArrayList<>();
@@ -381,7 +384,7 @@ public class BankProductServiceImpl implements BankProductService {
     @Override
     public List<GetAllProductResponse> findSuspendedProductsByBankEmail(String email) {
         Bank bank = bankRepository.findByEmail(email)
-                .orElseThrow(() -> new BankNotFoundException(email));
+                .orElseThrow(() -> exceptionDbService.getException("BANK_001"));
 
         List<Product> suspendedProducts = productRepository.findByBankAndStatus(bank, BankProductStatus.SUSPENDED);
 
