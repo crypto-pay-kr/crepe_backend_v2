@@ -5,6 +5,7 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
+import dev.crepe.domain.channel.market.order.exception.OrderNotFoundException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
 import dev.crepe.domain.channel.market.order.model.dto.request.CreateOrderRequest;
@@ -43,7 +44,6 @@ public class OrderServiceImpl implements OrderService {
     private final UpbitExchangeService upbitExchangeService;
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
-
 
 
 //******************************************** 주문 내역 조회 start ******************************************/
@@ -115,15 +115,14 @@ public class OrderServiceImpl implements OrderService {
     public String createOrder(CreateOrderRequest request, String userEmail) {
 
         log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
-
         Actor user = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
+
+       // System.out.println("주문자의 이메일 " + request.getUserEmail());
 
         Actor store = actorRepository.findById(request.getStoreId())
                 .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
-        log.info("환율 검증 - 통화: {}, 환율: {}", request.getCurrency(), request.getExchangeRate());
-        upbitExchangeService.validateRateWithinThreshold(request.getExchangeRate(),request.getCurrency(),BigDecimal.valueOf(1));
         System.out.println("가맹점의 이메일 " + store.getEmail());
 
         // 결제 타입에 따라 필수값 체크
@@ -137,6 +136,9 @@ public class OrderServiceImpl implements OrderService {
                 if (request.getCurrency() == null || request.getExchangeRate() == null) {
                     throw exceptionDbService.getException("ORDER_01");
                 }
+
+                log.info("환율 검증 - 통화: {}, 환율: {}", request.getCurrency(), request.getExchangeRate());
+
                 upbitExchangeService.validateRateWithinThreshold(
                         request.getExchangeRate(),
                         request.getCurrency(),
@@ -190,6 +192,7 @@ public class OrderServiceImpl implements OrderService {
 
         orderDetailRepository.saveAll(orderDetails);
         log.info("주문 상세 저장 완료 - 주문 ID: {}", orders.getId());
+
 
         // 결제 처리
         switch (paymentType) {

@@ -4,6 +4,8 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.product.model.BankProductType;
+
+import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeVoucherDto;
@@ -59,6 +61,7 @@ public class SubscribeServiceImpl implements SubscribeService {
     public List<SubscribeVoucherDto> getAvailableVouchers(String email) {
         Actor user = actorRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException(email));
+
         List<Subscribe> vouchers = subscribeRepository.findByUserAndProduct_TypeAndStatus(
                 user, BankProductType.VOUCHER, SubscribeStatus.ACTIVE
         );
