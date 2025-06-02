@@ -20,6 +20,7 @@ import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorService;
 import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.model.dto.ApiResponse;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.sms.model.InMemorySmsAuthService;
@@ -54,12 +55,13 @@ public class ActorServiceImpl  implements ActorService {
     private final SmsManageService smsManageService;
     private final Random random = new Random();
     private final AccountService accountService;
+    private final ExceptionDbService exceptionDbService;
 
     @Override
     @Transactional(readOnly = true)
     public boolean isEmailExists(String email) {
         if (actorRepository.existsByEmail(email)) {
-            throw new AlreadyEmailException();
+            throw exceptionDbService.getException("ACTOR_003");
         }
         return false;
     }
@@ -67,7 +69,7 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     public boolean isNicknameExists(String nickname) {
         if (actorRepository.existsByNickName(nickname)) {
-            throw new AlreadyNicknameException();
+            throw exceptionDbService.getException("ACTOR_004");
         }
         return false;
     }
@@ -81,7 +83,7 @@ public class ActorServiceImpl  implements ActorService {
         Optional<Actor> actorOptional = actorRepository.findByEmail(request.getEmail());
         if (actorOptional.isEmpty()) {
             log.warn("No user found with email: {}", request.getEmail());
-            throw new LoginFailedException();
+            throw exceptionDbService.getException("ACTOR_002");
         }
 
         Actor actor = actorOptional.get();
@@ -89,7 +91,7 @@ public class ActorServiceImpl  implements ActorService {
 
         if (!encoder.matches(request.getPassword(), actor.getPassword())) {
             log.warn("Password does not match for email: {}", request.getEmail());
-            throw new LoginFailedException();
+            throw exceptionDbService.getException("ACTOR_005");
         }
 
         AuthenticationToken token = authService.createAndSaveToken(actor.getEmail(), actor.getRole());
@@ -107,14 +109,14 @@ public class ActorServiceImpl  implements ActorService {
     public ResponseEntity<Void> changePassword(ChangePasswordRequest request, String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         if(!encoder.matches(request.getOldPassword(), actor.getPassword())) {
-            throw new InvalidPasswordException();
+            throw exceptionDbService.getException("ACTOR_006");
         }
 
         if(request.getOldPassword().equals(request.getNewPassword())) {
-            throw new CannotSamePasswordException();
+            throw exceptionDbService.getException("ACTOR_011");
         }
 
         actor.changePassword(encoder.encode(request.getNewPassword()));
@@ -127,7 +129,7 @@ public class ActorServiceImpl  implements ActorService {
     public ResponseEntity<Void> changePhone(ChangePhoneRequest request, String userEmail) {
 
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         InMemorySmsAuthService.SmsAuthData smsAuthData = smsManageService.getSmsAuthData(request.getPhoneNumber(), SmsType.SIGN_UP);
         String successNewPhone = smsAuthData.getPhoneNumber();
@@ -140,9 +142,8 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     @Transactional
     public ResponseEntity<Void> changeName(ChangeNameRequest request, String userEmail) {
-
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         actor.changeName(request.getNewName());
         return ResponseEntity.ok(null);
@@ -150,9 +151,8 @@ public class ActorServiceImpl  implements ActorService {
 
     @Override
     public ResponseEntity<Void> addOccupationName(AddOccupationRequest request, String userEmail) {
-//        smsManageService.getSmsAuthData(request.getPhoneNumber(),SmsType.SUBSCRIBE_PRODUCT);
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
         actor.addOccupation(request.getOccupation());
         actorRepository.save(actor);
         return ResponseEntity.ok(null);
@@ -195,7 +195,8 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     public GetFinancialSummaryResponse checkIncome(String userEmail) {
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new UserNotFoundException(userEmail));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
+
         if (actor.getAnnualIncome() != null && actor.getTotalAsset() != null) {
             return GetFinancialSummaryResponse.builder()
                     .userId(actor.getId())
@@ -213,18 +214,12 @@ public class ActorServiceImpl  implements ActorService {
     @Transactional
     @Override
     public ResponseEntity<String> updateFromIdCard(String userEmail, IdCardOcrResponse idCardResponse) {
-        log.info("사용자 정보 업데이트 시작 - 이메일: {}", userEmail);
-
         Actor actor = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> {
-                    log.error("사용자를 찾을 수 없음: {}", userEmail);
-                    return new EntityNotFoundException("사용자를 찾을 수 없습니다.");
-                });
-//        if (!actor.getName().equals(idCardResponse.getName())) {
-//            log.error("이름 불일치 - 등록된 이름: {}, 신분증 이름: {}",
-//                    actor.getName(), idCardResponse.getName());
-//            throw new IllegalArgumentException("등록된 이름과 신분증 이름이 일치하지 않습니다.");
-//        }
+                .orElseThrow(()  -> exceptionDbService.getException("ACTOR_002")
+                );
+        if (!actor.getName().equals(idCardResponse.getName())) {
+            throw exceptionDbService.getException("ACTOR_007");
+        }
 
         try {
             actor.updateFromIdCard(idCardResponse);
@@ -247,7 +242,7 @@ public class ActorServiceImpl  implements ActorService {
     @Override
     public ChangeActorStatusResponse changeActorStatus(ChangeActorStatusRequest request) {
         Actor actor = actorRepository.findById(request.getActorId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 Actor를 찾을 수 없습니다."));
+                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
         String message;
         ChangeActorStatusResponse.SuspensionInfo suspensionInfo = null;
@@ -272,7 +267,7 @@ public class ActorServiceImpl  implements ActorService {
                         .reason(suspReq.getReason())
                         .build();
 
-                actor.changeSuspension(suspension); // 메서드명 변경됨
+                actor.changeSuspension(suspension);
 
                 suspensionInfo = ChangeActorStatusResponse.SuspensionInfo.builder()
                         .type(suspReq.getType())
@@ -295,7 +290,7 @@ public class ActorServiceImpl  implements ActorService {
             message = "계정 정지가 해제되었습니다.";
 
         } else {
-            throw new IllegalArgumentException("유효하지 않은 액션입니다: " + request.getAction());
+            throw exceptionDbService.getException("ACTOR_012");
         }
 
         actorRepository.save(actor); // 저장 필수!
