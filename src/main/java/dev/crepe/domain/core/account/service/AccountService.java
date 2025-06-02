@@ -59,4 +59,5 @@ public interface AccountService {
 
     List<Account> getActiveAccountsByBankEmail(String bankEmail);
 
+    String getAccountHolderName(String receiverEmail,String senderEmail, String currency);
 }

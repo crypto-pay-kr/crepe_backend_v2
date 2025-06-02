@@ -15,6 +15,7 @@ public class CheckAlreadyField {
 
     public void validate(BankDataRequest request) {
         if (bankRepository.existsByEmail(request.getBankSignupDataRequest().getEmail())) {
+
             throw exceptionDbService.getException("BANK_005");
         }
 

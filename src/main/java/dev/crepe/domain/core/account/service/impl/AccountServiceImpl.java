@@ -484,5 +484,17 @@ public class AccountServiceImpl implements AccountService {
             throw exceptionDbService.getException("ACCOUNT_010");
         }
     }
+
+    public String getAccountHolderName(String receiverEmail,String senderEmail, String currency) {
+        if (receiverEmail.equals(senderEmail)) {
+           throw exceptionDbService.getException("ACCOUNT_001");
+        }
+
+        Account account = accountRepository.findByActor_EmailAndCoin_Currency(receiverEmail, currency)
+                .orElseGet(() -> accountRepository.findByActor_EmailAndBankToken_Currency(receiverEmail, currency)
+                        .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001")));
+        return account.getActor().getName();
+    }
+
 }
 

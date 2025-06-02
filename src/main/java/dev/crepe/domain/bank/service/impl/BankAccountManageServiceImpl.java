@@ -2,7 +2,6 @@ package dev.crepe.domain.bank.service.impl;
 
 import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
 import dev.crepe.domain.bank.exception.BankManagerNameMismatchException;
-import dev.crepe.domain.bank.exception.BankNameMismatchException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankAccountRequest;
 import dev.crepe.domain.bank.model.dto.response.GetAccountDetailResponse;
 import dev.crepe.domain.bank.model.dto.response.GetCoinAccountInfoResponse;
@@ -21,15 +20,13 @@ import dev.crepe.domain.core.util.coin.regulation.model.dto.response.RemainingCo
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
-import dev.crepe.domain.core.util.history.token.model.entity.PortfolioHistoryDetail;
-import dev.crepe.domain.core.util.history.token.repository.PortfolioHistoryDetailRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -41,8 +38,8 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
     private final AccountService accountService;
     private final BankService bankService;
     private final BankTokenManageService bankTokenManageService;
+    private final ExceptionDbService exceptionDbService;
     private final PortfolioRepository portfolioRepository;
-    private final PortfolioHistoryDetailRepository portfolioHistoryDetailRepository;
 
     // 은행 출금 계좌 등록
     @Transactional
@@ -53,13 +50,13 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
 
         // 조회한 bankName과 요청의 bankName 비교
         if (!request.getManagerName().equals(bank.getManagerName())) {
-            throw new BankManagerNameMismatchException(request.getManagerName(), bank.getManagerName());
+            throw exceptionDbService.getException("BANK_003");
         }
 
         // Address 요청 정보 확인
         GetAddressRequest getAddressRequest = request.getGetAddressRequest();
         if (getAddressRequest == null) {
-            throw new MissingAccountRequestException();
+            throw exceptionDbService.getException("REQUEST_001");
         }
 
         // 계좌 등록 요청 전송
@@ -76,12 +73,12 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
         Bank bank = bankService.findBankInfoByEmail(bankEmail);
 
         if (!request.getManagerName().equals(bank.getManagerName())) {
-            throw new BankManagerNameMismatchException(request.getManagerName(), bank.getManagerName());
+            throw exceptionDbService.getException("BANK_003");
         }
 
         GetAddressRequest getAddressRequest = request.getGetAddressRequest();
         if (getAddressRequest == null) {
-            throw new MissingAccountRequestException();
+            throw exceptionDbService.getException("REQUEST_001");
         }
 
         accountService.reRegisterAddress( bankEmail, request.getGetAddressRequest());
@@ -126,7 +123,7 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
         List<Account> accounts = accountService.getAccountsByBankEmail(bank.getEmail());
 
         if (accounts.isEmpty()) {
-            throw new AccountNotFoundException(bankEmail);
+            throw exceptionDbService.getException("ACCOUNT_001");
         }
 
         // 각 Account 정보를 매핑하여 GetAllAccountInfoResponse 생성
@@ -153,7 +150,7 @@ public class BankAccountManageServiceImpl implements BankAccountManageService {
     public void holdBankAccount(Account account) {
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.HOLD) {
-            throw new AlreadyHoldAddressException(account.getAccountAddress());
+            throw exceptionDbService.getException("ACCOUNT_010");
         }
         accountService.holdAccount(account);
     }

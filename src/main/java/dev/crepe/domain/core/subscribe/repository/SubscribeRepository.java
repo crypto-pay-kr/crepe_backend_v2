@@ -41,4 +41,10 @@ public interface SubscribeRepository extends JpaRepository<Subscribe,Long> {
             "JOIN sh.subscribe s " +
             "WHERE s.product.id = :productId")
     BigDecimal sumAmountByProductId(@Param("productId") Long productId);
+
+    List<Subscribe> findByUserAndProduct_TypeAndStatus(
+            Actor user,
+            BankProductType type,
+            SubscribeStatus status
+    );
 }

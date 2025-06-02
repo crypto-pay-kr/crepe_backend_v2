@@ -92,7 +92,6 @@ public class Subscribe extends BaseEntity {
     private String voucherCode;
 
 
-
     /**
      * 예치 (잔액 증가)
      */
@@ -124,6 +123,16 @@ public class Subscribe extends BaseEntity {
 
     public void setAppliedPreferentialRates(String json) {
         this.appliedPreferentialRates = json;
+    }
+
+    public void withdraw(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("차감 금액은 0보다 커야 합니다.");
+        }
+        if (this.balance.compareTo(amount) < 0) {
+            throw new IllegalStateException("잔액이 부족합니다.");
+        }
+        this.balance = this.balance.subtract(amount);
     }
 
 

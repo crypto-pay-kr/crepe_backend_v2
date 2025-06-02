@@ -2,15 +2,17 @@ package dev.crepe.domain.channel.actor.model.entity;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.ActorStatus;
 import dev.crepe.domain.channel.actor.model.ActorSuspension;
 import dev.crepe.domain.channel.actor.model.Gender;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.channel.market.like.model.entity.Like;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
+import dev.crepe.global.encrypt.converter.EncryptedPhoneConverter;
+import dev.crepe.global.encrypt.converter.EncryptedStringConverter;
 import dev.crepe.infra.naver.ocr.id.entity.dto.IdCardOcrResponse;
 import dev.crepe.infra.naver.ocr.id.util.PersonalNumberParser;
 import jakarta.persistence.Column;
@@ -49,15 +51,18 @@ public class Actor extends BaseEntity {
     private String password;
 
     @Column(nullable = false)
+    @Convert(converter = EncryptedStringConverter.class)
     private String name;
 
     @Column(name="nick_name")
     private String nickName;
 
     @Column(name="phone_number", nullable = false)
+    @Convert(converter = EncryptedPhoneConverter.class)
     private String phoneNum;
 
     @Column
+    @Convert(converter = EncryptedStringConverter.class)
     private String birth;
 
     @Enumerated(EnumType.STRING)
@@ -78,8 +83,9 @@ public class Actor extends BaseEntity {
     @Column(nullable = false)
     private UserRole role;
 
+    @Enumerated(EnumType.STRING)
     @Column(name="store_type")
-    private String storeType;
+    private StoreType storeType;
 
     @Column(name="store_address")
     private String storeAddress;
