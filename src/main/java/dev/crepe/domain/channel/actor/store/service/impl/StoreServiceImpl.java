@@ -240,7 +240,7 @@ public class StoreServiceImpl implements StoreService {
 
         GetMyStoreAllDetailResponse res =
                 GetMyStoreAllDetailResponse.builder().storeId(store.getId()).email(store.getEmail()).likeCount(likeRepository.countByStoreAndActiveTrue(store)).storeName(store.getName())
-                .storeAddress(store.getStoreAddress()).storeStatus(store.getStatus()).storeImageUrl(store.getStoreImage())
+                .storeAddress(store.getStoreAddress()).storeStatus(store.getStatus()).storeImageUrl(store.getStoreImage()).storeNickname(store.getNickName())
                 .coinList(store.getCoinList()).menuList(menuResponse).isLiked(isLiked).build();
 
         return res;
@@ -257,6 +257,7 @@ public class StoreServiceImpl implements StoreService {
                         .storeId(store.getId())
                         .storeName(store.getName())
                         .storeImage(store.getStoreImage())
+                        .storeNickname(store.getNickName())
                         .likeCount(likeRepository.countByStoreAndActiveTrue(store))
                         .storeType(store.getStoreType())
                         .coinList(store.getCoinList())
@@ -294,6 +295,7 @@ public class StoreServiceImpl implements StoreService {
                 .storeName(store.getName())
                 .storeAddress(store.getStoreAddress())
                 .storeImageUrl(store.getStoreImage())
+                .storeNickname(store.getNickName())
                 .coinList(store.getCoinList())
                 .menuList(menuResponse)
                 .isLiked(isLiked)

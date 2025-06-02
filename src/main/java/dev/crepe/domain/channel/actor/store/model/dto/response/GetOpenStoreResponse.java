@@ -19,6 +19,7 @@ public class GetOpenStoreResponse {
     private Long storeId;
     private String storeName;
     private String storeImage;
+    private String storeNickname;
     private Long likeCount;
     private StoreType storeType;
     private List<Coin> coinList;

@@ -38,6 +38,7 @@ public class PayHistoryReaderService {
                             order.getCreatedAt(),
                             detailSummary,
                             payHistory.getTotalAmount(),
+                            order.getStore().getNickName(),
                             order.getCurrency(),
                             order.getTotalPrice(),
                             payHistory.getStatus().name()
