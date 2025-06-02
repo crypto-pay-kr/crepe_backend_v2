@@ -7,6 +7,7 @@ import dev.crepe.domain.channel.actor.model.ActorStatus;
 import dev.crepe.domain.channel.actor.model.ActorSuspension;
 import dev.crepe.domain.channel.actor.model.Gender;
 import dev.crepe.domain.channel.actor.store.model.StoreStatus;
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.channel.market.like.model.entity.Like;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.core.product.model.dto.eligibility.Occupation;
@@ -78,8 +79,9 @@ public class Actor extends BaseEntity {
     @Column(nullable = false)
     private UserRole role;
 
+    @Enumerated(EnumType.STRING)
     @Column(name="store_type")
-    private String storeType;
+    private StoreType storeType;
 
     @Column(name="store_address")
     private String storeAddress;

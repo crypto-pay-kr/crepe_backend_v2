@@ -12,4 +12,6 @@ public interface PayService {
 
     void refundForOrder(Long payId, Long id);
 
+    void payWithVoucher(Order order, Long subscribeId);
+
 }

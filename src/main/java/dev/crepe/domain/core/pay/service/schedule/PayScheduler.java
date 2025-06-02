@@ -30,6 +30,7 @@ public class PayScheduler {
     public void checkPendingDeposit() {
 
         LocalDateTime threeDaysAgo = LocalDateTime.now().minusDays(3);
+
         List<TransactionHistory> scheduledPayments = transactionHistoryRepository.findByStatusAndTypeAndCreatedAtBefore(
                 TransactionStatus.PENDING, TransactionType.PAY,threeDaysAgo
         );
@@ -52,5 +53,7 @@ public class PayScheduler {
                 log.error(" 입금 처리 실패", e);
             }
         }
+
+
     }
 }

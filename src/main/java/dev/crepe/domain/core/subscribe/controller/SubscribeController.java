@@ -2,6 +2,12 @@ package dev.crepe.domain.core.subscribe.controller;
 
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
+import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
+import dev.crepe.domain.core.product.model.BankProductType;
+import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
+import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeVoucherDto;
+import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
 import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
@@ -26,6 +32,7 @@ public class SubscribeController {
 
     private final SubscribeService subscribeService;
     private final SubscribeTerminateService subscribeTerminateService;
+
 
 
     @GetMapping("/my")
@@ -53,5 +60,13 @@ public class SubscribeController {
     public ResponseEntity<?> terminate(@PathVariable Long subscribeId, AppAuthentication auth) {
         TerminatePreviewDto result = subscribeTerminateService.TerminationPreview(auth.getUserEmail(),subscribeId);
         return ResponseEntity.ok(result);
+    }
+
+    // 내가 가입한 상품권 조회
+    @GetMapping("/vouchers")
+    @UserAuth
+    public ResponseEntity<List<SubscribeVoucherDto>> getAvailableVouchers(AppAuthentication auth) {
+        List<SubscribeVoucherDto> response = subscribeService.getAvailableVouchers(auth.getUserEmail());
+        return ResponseEntity.ok(response);
     }
 }

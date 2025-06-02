@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.util.history.subscribe.repository;
 
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
+import dev.crepe.domain.core.util.history.pay.model.PayType;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.model.dto.SubscribeHistoryDto;
 import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
@@ -58,5 +59,7 @@ public interface SubscribeHistoryRepository extends JpaRepository<SubscribeHisto
     Slice<SubscribeHistory> findAllBySubscribe_IdOrderByCreatedAtDesc(Long subscribeId, Pageable pageable);
 
     List<SubscribeHistory> findBySubscribe_User_Email(String email);
+
+
 }
 

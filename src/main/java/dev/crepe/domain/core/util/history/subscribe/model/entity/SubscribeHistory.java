@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.util.history.subscribe.model.entity;
 
+import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.global.base.BaseEntity;
@@ -41,4 +42,9 @@ public class SubscribeHistory extends BaseEntity {
 
     @Column(name = "after_account_balance", precision = 18, scale = 8)
     private BigDecimal afterAccountBalance;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id")
+    private Order order;
+
 }
