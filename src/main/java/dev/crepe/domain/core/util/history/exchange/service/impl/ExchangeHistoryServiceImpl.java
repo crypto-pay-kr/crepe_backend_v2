@@ -14,6 +14,7 @@ import dev.crepe.domain.core.util.history.exchange.service.ExchangeHistoryServic
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
 import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -35,6 +36,7 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
     private final SubscribeHistoryRepository subscribeHistoryRepository;
     private final TransactionHistoryService txhService;
     private final TransactionHistoryRepository txhRepo;
+    private final ExceptionDbService exceptionDbService;
     @Override
     public GetTransactionHistoryResponse getExchangeHistory(ExchangeHistory ex, Account userAccount) {
         boolean isSender = ex.getFromAccount().getId().equals(userAccount.getId());
@@ -121,6 +123,8 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
 
             if (!subscribe.getProduct().getBankToken().getCurrency().equalsIgnoreCase(currency)) continue;
 
+            Account account = accountRepository.findByActor_EmailAndBankToken_Currency(email,currency)
+                    .orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
             BigDecimal amount = sh.getEventType()== SubscribeHistoryType.TERMINATION
                     ? sh.getAmount()
                     : sh.getAmount().negate();
@@ -129,7 +133,7 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
                     .type("SUBSCRIBE")
                     .status("ACCEPTED")
                     .amount(amount)
-                    .afterBalance(sh.getAfterAccountBalance())
+                    .afterBalance(account.getBalance())
                     .transferredAt(sh.getCreatedAt())
                     .build());
         }
