@@ -15,4 +15,4 @@ RUN ./gradlew bootjar
 RUN cp ./build/libs/*.jar app.jar
 RUN chmod +x ./app.jar
 
-ENTRYPOINT ["java", "-Xms512m", "-Xmx2g", "-XX:+UseG1GC", "-XX:+UseContainerSupport", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-XX:+UseG1GC", "-XX:+UseContainerSupport", "-jar", "app.jar"]
