@@ -1,11 +1,9 @@
 package dev.crepe.domain.core.account.model.entity;
 
-import dev.crepe.domain.admin.dto.request.RejectAddressRequest;
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.core.account.exception.InsufficientBalanceException;
-import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
-import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
+import dev.crepe.domain.core.account.exception.InsufficientBalanceException;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.global.base.BaseEntity;
@@ -13,7 +11,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter

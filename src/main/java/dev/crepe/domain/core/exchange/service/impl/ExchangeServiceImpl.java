@@ -1,7 +1,5 @@
 package dev.crepe.domain.core.exchange.service.impl;
 
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
-import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
@@ -12,12 +10,12 @@ import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
 import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.history.exchange.model.entity.ExchangeHistory;
 import dev.crepe.domain.core.util.history.exchange.repositroy.ExchangeHistoryRepository;
-import dev.crepe.domain.core.util.history.exchange.service.ExchangeHistoryService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.math.BigDecimal;
 import java.util.List;
 

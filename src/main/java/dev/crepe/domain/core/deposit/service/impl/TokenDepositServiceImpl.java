@@ -1,12 +1,10 @@
 package dev.crepe.domain.core.deposit.service.impl;
 
-import dev.crepe.domain.core.account.exception.NotEnoughAmountException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.deposit.exception.ExceedMonthlyLimitException;
 import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.product.model.entity.Product;
-import dev.crepe.domain.core.subscribe.exception.UserAccountNotFoundException;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
 import dev.crepe.domain.core.util.history.subscribe.model.SubscribeHistoryType;
@@ -182,11 +180,11 @@ public class TokenDepositServiceImpl implements TokenDepositService {
     public void depositSavingBeforeSubscribe(String userEmail, Subscribe subscribe, BigDecimal amount) {
         Product product = subscribe.getProduct();
         Account account = accountRepository.findByActor_EmailAndBankTokenId(userEmail, product.getBankToken().getId())
-                .orElseThrow(UserAccountNotFoundException::new);
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
 
         // 계좌 잔액 부족
         if (account.getBalance().compareTo(amount) < 0) {
-            throw new NotEnoughAmountException("잔액이 부족합니다");
+            throw exceptionDbService.getException("ACCOUNT_006");
         }
 
         // 예치 한도 초과 체크 (예치 최대 한도 초과시 예외 처리)

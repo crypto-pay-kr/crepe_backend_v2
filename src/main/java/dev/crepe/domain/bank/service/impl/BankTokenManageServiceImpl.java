@@ -1,6 +1,5 @@
 package dev.crepe.domain.bank.service.impl;
 
-import dev.crepe.domain.bank.exception.BankNameMismatchException;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.response.GetTokenAccountInfoResponse;
@@ -10,17 +9,13 @@ import dev.crepe.domain.bank.service.BankService;
 import dev.crepe.domain.bank.service.BankTokenManageService;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.service.AccountService;
-import dev.crepe.domain.core.util.coin.regulation.exception.BankTokenNotFoundException;
-import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
-import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoResponse;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.coin.regulation.repository.BankTokenRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.BankTokenInfoService;
+import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenPriceService;
 import dev.crepe.domain.core.util.coin.regulation.service.TokenSetupService;
-import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
-import dev.crepe.domain.core.util.history.subscribe.model.entity.SubscribeHistory;
 import dev.crepe.domain.core.util.history.subscribe.repository.SubscribeHistoryRepository;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;

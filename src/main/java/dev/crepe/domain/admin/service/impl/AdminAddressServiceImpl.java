@@ -1,21 +1,13 @@
 package dev.crepe.domain.admin.service.impl;
 
 
-import dev.crepe.domain.admin.dto.request.RejectAddressRequest;
 import dev.crepe.domain.admin.dto.response.GetPendingWithdrawAddressListResponse;
-import dev.crepe.domain.admin.exception.AlreadyApprovedAddressException;
-import dev.crepe.domain.admin.exception.AlreadyHoldAddressException;
-import dev.crepe.domain.admin.exception.AlreadyRejectedAddressException;
 import dev.crepe.domain.admin.service.AdminAddressService;
-import dev.crepe.domain.bank.service.BankAccountManageService;
-import dev.crepe.domain.channel.actor.service.ActorAccountService;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
-import dev.crepe.domain.core.account.exception.NotActorAccountOwnerException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.account.service.AccountService;
-import io.swagger.v3.oas.annotations.Operation;
+import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +24,7 @@ public class AdminAddressServiceImpl implements AdminAddressService {
 
     private final AccountRepository accountRepository;
     private final AccountService accountService;
-
+    private final ExceptionDbService exceptionDbService;
     // 계좌 등록 요청 목록 조회
     @Override
     @Transactional(readOnly = true)
@@ -74,10 +66,10 @@ public class AdminAddressServiceImpl implements AdminAddressService {
     @Transactional
     public String approveAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(AccountNotFoundException::new);
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.ACTIVE) {
-            throw new AlreadyApprovedAddressException(account.getAccountAddress());
+            throw exceptionDbService.getException("ACCOUNT_002");
         }
         account.approveAddress();
         return  account.getAccountAddress();
@@ -88,10 +80,10 @@ public class AdminAddressServiceImpl implements AdminAddressService {
     @Transactional
     public void rejectAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException());
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.REJECTED) {
-            throw new AlreadyRejectedAddressException(account.getAccountAddress());
+            throw exceptionDbService.getException("ADDRESS_004");
         }
         account.adminRejectAddress();
     }
@@ -101,11 +93,12 @@ public class AdminAddressServiceImpl implements AdminAddressService {
     @Transactional
     public void unRegisterAddress(Long accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException());
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
 
         if (account.getAddressRegistryStatus() == AddressRegistryStatus.NOT_REGISTERED) {
-            throw new AlreadyRejectedAddressException(account.getAccountAddress());
+            throw exceptionDbService.getException("ADDRESS_003");
         }
+
         account.adminUnRegisterAddress();
     }
 
@@ -113,12 +106,7 @@ public class AdminAddressServiceImpl implements AdminAddressService {
     // 일반 유저 계좌 정지 (코인 + 토큰)
     @Override
     public void holdActorAddress(Long accountId) {
-
         Account account = accountService.getAccountById(accountId);
-        // 소유주가 Actor인지 검증
-        if (account.getActor() == null) {
-            throw new NotActorAccountOwnerException();
-        }
 
         accountService.holdAccount(account);
 

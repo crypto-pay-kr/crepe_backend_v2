@@ -1,15 +1,13 @@
 package dev.crepe.domain.channel.actor.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.crepe.domain.admin.dto.response.GetAllProductResponse;
 import dev.crepe.domain.admin.dto.response.GetProductDetailResponse;
 import dev.crepe.domain.channel.actor.model.dto.request.ActorEligibilityRequest;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.service.ActorSubscribeService;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
-import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.account.service.AccountService;
+import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;

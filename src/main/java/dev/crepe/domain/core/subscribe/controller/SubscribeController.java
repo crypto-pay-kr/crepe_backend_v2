@@ -2,15 +2,10 @@ package dev.crepe.domain.core.subscribe.controller;
 
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.UserAuth;
-import dev.crepe.domain.channel.actor.model.entity.Actor;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
-import dev.crepe.domain.core.product.model.BankProductType;
-import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
-import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeVoucherDto;
-import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
-import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeResponseDto;
+import dev.crepe.domain.core.subscribe.model.dto.response.SubscribeVoucherDto;
 import dev.crepe.domain.core.subscribe.model.dto.response.TerminatePreviewDto;
+import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.service.SubscribeService;
 import dev.crepe.domain.core.util.history.subscribe.model.dto.SubscribeHistoryDto;
 import io.swagger.v3.oas.annotations.Operation;

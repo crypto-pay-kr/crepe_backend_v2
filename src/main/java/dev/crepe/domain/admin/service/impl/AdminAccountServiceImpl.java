@@ -1,22 +1,16 @@
 package dev.crepe.domain.admin.service.impl;
 
 import dev.crepe.domain.admin.dto.response.GetAccountInfoResponse;
-
 import dev.crepe.domain.admin.dto.response.GetAllTransactionHistoryResponse;
 import dev.crepe.domain.admin.service.AdminAccountService;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-
-import dev.crepe.domain.core.account.service.AccountService;
-import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
 import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import dev.crepe.domain.core.util.history.exchange.model.entity.ExchangeHistory;
 import dev.crepe.domain.core.util.history.exchange.repositroy.ExchangeHistoryRepository;
 import dev.crepe.domain.core.util.history.exchange.service.ExchangeHistoryService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -28,7 +22,6 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

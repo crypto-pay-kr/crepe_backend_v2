@@ -1,11 +1,9 @@
 package dev.crepe.domain.core.account;
 
+import dev.crepe.domain.auth.UserRole;
 import dev.crepe.domain.bank.model.entity.Bank;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.core.account.exception.AccountNotFoundException;
-import dev.crepe.domain.core.account.exception.DuplicateAccountException;
-import dev.crepe.domain.core.account.exception.TagRequiredException;
 import dev.crepe.domain.core.account.model.AddressRegistryStatus;
 import dev.crepe.domain.core.account.model.dto.request.GetAddressRequest;
 import dev.crepe.domain.core.account.model.dto.response.GetAddressResponse;
@@ -18,7 +16,6 @@ import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.global.error.exception.CustomException;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.util.SecurityUtil;
-
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,10 +31,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-
-import dev.crepe.domain.auth.UserRole;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceImplTest {

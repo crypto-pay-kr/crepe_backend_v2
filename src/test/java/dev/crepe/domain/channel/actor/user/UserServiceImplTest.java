@@ -1,25 +1,16 @@
 package dev.crepe.domain.channel.actor.user;
 
 import dev.crepe.domain.auth.UserRole;
-import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
-import dev.crepe.domain.auth.sse.service.AuthService;
-import dev.crepe.domain.channel.actor.exception.AlreadyEmailException;
-import dev.crepe.domain.channel.actor.exception.AlreadyNicknameException;
-import dev.crepe.domain.channel.actor.exception.AlreadyPhoneNumberException;
-import dev.crepe.domain.channel.actor.model.dto.request.LoginRequest;
-import dev.crepe.domain.channel.actor.model.dto.response.TokenResponse;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.channel.actor.service.ActorService;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.channel.actor.user.model.dto.ChangeNicknameRequest;
 import dev.crepe.domain.channel.actor.user.model.dto.UserInfoResponse;
 import dev.crepe.domain.channel.actor.user.model.dto.UserSignupRequest;
 import dev.crepe.domain.channel.actor.user.repository.UserRepository;
 import dev.crepe.domain.channel.actor.user.service.impl.UserServiceImpl;
-import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.global.error.exception.CustomException;
 import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.global.error.exception.model.ExceptionStatus;
 import dev.crepe.global.model.dto.ApiResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -116,18 +107,23 @@ class UserServiceImplTest {
                 "testUser"
         );
 
+        String exceptionCode = "ACTOR_004";
+        CustomException expectedException = new CustomException(exceptionCode, ExceptionStatus.BAD_REQUEST, "이미 존재하는 닉네임입니다");
+
         when(actorRepository.existsByEmail(anyString())).thenReturn(false);
         when(actorRepository.existsByNickName("testUser")).thenReturn(true);
+        when(exceptionDbService.getException(exceptionCode)).thenReturn(expectedException);
 
         // when & then
-        assertThrows(AlreadyNicknameException.class, () -> userService.signup(request));
+        CustomException thrown = assertThrows(CustomException.class, () -> userService.signup(request));
+        assertEquals(exceptionCode, thrown.getCode());
         verify(actorRepository, never()).save(any(Actor.class));
+        verify(exceptionDbService).getException(exceptionCode);
     }
 
     @Test
     @DisplayName("이미 존재하는 전화번호로 회원가입 시도 시 예외 발생")
     void signup_WithExistingPhoneNumber() {
-        // given
         UserSignupRequest request = new UserSignupRequest(
                 "test@example.com",
                 "Password123!",
@@ -136,13 +132,19 @@ class UserServiceImplTest {
                 "testUser"
         );
 
+        String exceptionCode = "ACTOR_009";
+        CustomException expectedException = new CustomException(exceptionCode, ExceptionStatus.BAD_REQUEST, "이미 존재하는 전화번호입니다");
+
         when(actorRepository.existsByEmail(anyString())).thenReturn(false);
         when(actorRepository.existsByNickName(anyString())).thenReturn(false);
         when(actorRepository.existsByPhoneNum("01012345678")).thenReturn(true);
+        when(exceptionDbService.getException(exceptionCode)).thenReturn(expectedException);
 
         // when & then
-        assertThrows(AlreadyPhoneNumberException.class, () -> userService.signup(request));
+        CustomException thrown = assertThrows(CustomException.class, () -> userService.signup(request));
+        assertEquals(exceptionCode, thrown.getCode());
         verify(actorRepository, never()).save(any(Actor.class));
+        verify(exceptionDbService).getException(exceptionCode);
     }
 
     @Test
@@ -178,10 +180,15 @@ class UserServiceImplTest {
         String email = "nonexistent@example.com";
         ChangeNicknameRequest request = new ChangeNicknameRequest("newNickname");
 
+        String exceptionCode = "ACTOR_002"; // 존재하지 않는 사용자 코드
+        CustomException expectedException = new CustomException(exceptionCode, ExceptionStatus.NOT_FOUND, "존재하지 않는 사용자입니다");
+
         when(actorRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(exceptionDbService.getException(exceptionCode)).thenThrow(expectedException);
 
         // when & then
-        assertThrows(UserNotFoundException.class, () -> userService.changeNickname(request, email));
+        CustomException thrown = assertThrows(CustomException.class, () -> userService.changeNickname(request, email));
+        assertEquals(exceptionCode, thrown.getCode());
         verify(userRepository, never()).existsByNickName(anyString());
     }
 
@@ -200,11 +207,16 @@ class UserServiceImplTest {
                 .role(UserRole.USER)
                 .build();
 
+        String exceptionCode = "ACTOR_004"; // 이미 존재하는 닉네임 코드
+        CustomException expectedException = new CustomException(exceptionCode, ExceptionStatus.BAD_REQUEST, "이미 존재하는 닉네임입니다");
+
         when(actorRepository.findByEmail(email)).thenReturn(Optional.of(actor));
         when(userRepository.existsByNickName(existingNickname)).thenReturn(true);
+        when(exceptionDbService.getException(exceptionCode)).thenThrow(expectedException);
 
         // when & then
-        assertThrows(AlreadyNicknameException.class, () -> userService.changeNickname(request, email));
+        CustomException thrown = assertThrows(CustomException.class, () -> userService.changeNickname(request, email));
+        assertEquals(exceptionCode, thrown.getCode());
     }
 
     @Test
@@ -239,9 +251,15 @@ class UserServiceImplTest {
     void getUserInfo_UserNotFound() {
         // given
         String email = "nonexistent@example.com";
+        String exceptionCode = "ACTOR_002";
+        CustomException expectedException = new CustomException(exceptionCode, ExceptionStatus.BAD_REQUEST, "사용자를 찾을 수 없습니다");
+
         when(actorRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(exceptionDbService.getException(exceptionCode)).thenReturn(expectedException);
 
         // when & then
-        assertThrows(UserNotFoundException.class, () -> userService.getUserInfo(email));
+        CustomException thrown = assertThrows(CustomException.class, () -> userService.getUserInfo(email));
+        assertEquals(exceptionCode, thrown.getCode());
+        verify(exceptionDbService).getException(exceptionCode);
     }
 }
