@@ -3,10 +3,7 @@ package dev.crepe.domain.channel.market.order.service.impl;
 
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
-import dev.crepe.domain.channel.actor.store.exception.MenuNotFoundException;
-import dev.crepe.domain.channel.actor.store.exception.StoreNotFoundException;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
-import dev.crepe.domain.channel.actor.user.exception.UserNotFoundException;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.channel.market.order.exception.OrderNotFoundException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
@@ -22,8 +19,7 @@ import dev.crepe.domain.core.pay.PaymentType;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.ExceptionDbService;
-import dev.crepe.global.error.exception.NotSingleObjectException;
-import dev.crepe.global.error.exception.UnauthorizedException;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -140,7 +136,9 @@ public class OrderServiceImpl implements OrderService {
                 if (request.getCurrency() == null || request.getExchangeRate() == null) {
                     throw exceptionDbService.getException("ORDER_01");
                 }
+
                 log.info("환율 검증 - 통화: {}, 환율: {}", request.getCurrency(), request.getExchangeRate());
+
                 upbitExchangeService.validateRateWithinThreshold(
                         request.getExchangeRate(),
                         request.getCurrency(),
@@ -154,6 +152,7 @@ public class OrderServiceImpl implements OrderService {
             }
             default -> throw exceptionDbService.getException("ORDER_03");
         }
+
 
         Map<Long, Menu> menuMap = request.getOrderDetails().stream()
                 .map(detail -> menuRepository.findById(detail.getMenuId())
@@ -182,7 +181,6 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderRepository.save(orders);
-        log.info("주문 저장 완료 - 주문 ID: {}", orders.getId());
 
         List<OrderDetail> orderDetails = request.getOrderDetails().stream()
                 .map(detail -> OrderDetail.builder()
@@ -201,6 +199,7 @@ public class OrderServiceImpl implements OrderService {
             case VOUCHER -> payService.payWithVoucher(orders, request.getVoucherSubscribeId());
             case COIN -> payService.payForOrder(orders);
         }
+
         log.info("결제 처리 완료 - 주문 ID: {}", orders.getId());
 
         return orders.getId();

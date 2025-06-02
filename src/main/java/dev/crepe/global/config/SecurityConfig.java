@@ -33,7 +33,7 @@ public class SecurityConfig {
             "/api-docs/**", "/swagger-resources/**",
 
             // 기타
-            "/captcha", "/verify", "/setup"
+            "/captcha", "/verify", "/setup", "/health"
 
     };
 

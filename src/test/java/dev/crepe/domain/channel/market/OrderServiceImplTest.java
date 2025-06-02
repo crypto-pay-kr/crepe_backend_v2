@@ -1,4 +1,4 @@
-
+package dev.crepe.domain.channel.market;
 
 import java.lang.reflect.Field;
 
@@ -22,6 +22,7 @@ import dev.crepe.domain.channel.market.order.repository.OrderDetailRepository;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
 import dev.crepe.domain.channel.market.order.service.impl.OrderServiceImpl;
 import dev.crepe.domain.channel.market.order.util.OrderIdGenerator;
+import dev.crepe.domain.core.pay.PaymentType;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.CustomException;
@@ -257,6 +258,8 @@ class OrderServiceImplTest {
         String currency = "BTC";
         BigDecimal exchangeRate = new BigDecimal("40000000");
         String generatedOrderId = "TEST_ORDER_ID_12345";
+        Long voucherSubscribeId = 100L;
+        PaymentType paymentType = PaymentType.COIN;
 
         Actor user = Actor.builder()
                 .email(userEmail)
@@ -295,7 +298,7 @@ class OrderServiceImplTest {
         );
 
         CreateOrderRequest request = new CreateOrderRequest(
-                exchangeRate, storeId, userEmail, orderDetails, currency
+                exchangeRate, storeId, userEmail, orderDetails, currency, paymentType, voucherSubscribeId
         );
 
         try (MockedStatic<OrderIdGenerator> mockedGenerator = Mockito.mockStatic(OrderIdGenerator.class)) {
@@ -341,8 +344,9 @@ class OrderServiceImplTest {
     void createOrder_UserNotFound() {
         // given
         String userEmail = "nonexistent@example.com";
+
         CreateOrderRequest request = new CreateOrderRequest(
-                BigDecimal.TEN, 1L, userEmail, Collections.emptyList(), "BTC"
+                BigDecimal.TEN, 1L, userEmail, Collections.emptyList(), "BTC",null,null
         );
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
@@ -365,8 +369,10 @@ class OrderServiceImplTest {
         // given
         String userEmail = "user@example.com";
         Long storeId = 99L;
+        Long voucherSubscribeId = 100L;
+        PaymentType paymentType = PaymentType.COIN;
         CreateOrderRequest request = new CreateOrderRequest(
-                BigDecimal.TEN, storeId, userEmail, Collections.emptyList(), "BTC"
+                BigDecimal.TEN, storeId, userEmail, Collections.emptyList(), "BTC",null,null
         );
 
         Actor user = Actor.builder()
@@ -401,6 +407,8 @@ class OrderServiceImplTest {
         Long nonExistentMenuId = 99L;
         String currency = "BTC";
         BigDecimal exchangeRate = BigDecimal.TEN;
+        Long voucherSubscribeId = 100L;
+        PaymentType paymentType = PaymentType.COIN;
 
         Actor user = Actor.builder()
                 .email(userEmail)
@@ -422,8 +430,9 @@ class OrderServiceImplTest {
         );
 
         CreateOrderRequest request = new CreateOrderRequest(
-                exchangeRate, storeId, userEmail, orderDetails, currency
+                exchangeRate, storeId, userEmail, orderDetails, currency, paymentType, voucherSubscribeId
         );
+
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
         when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
@@ -464,7 +473,7 @@ class OrderServiceImplTest {
         CreateOrderRequest request = new CreateOrderRequest(
                 clientRate, storeId, userEmail,
                 Collections.singletonList(new CreateOrderRequest.OrderDetailRequest(1L, 1)),
-                currency
+                currency,null,null
         );
 
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
