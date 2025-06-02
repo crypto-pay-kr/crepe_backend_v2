@@ -18,6 +18,7 @@ public class GetOneStoreDetailResponse {
     private String storeName;
     private String storeAddress;
     private String storeImageUrl;
+    private String storeNickname;
     private List<Coin> coinList;
     private boolean isLiked;
     private List<GetMenuDetailResponse> menuList;
