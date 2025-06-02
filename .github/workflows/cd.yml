@@ -1,0 +1,74 @@
+name: CD
+
+# main 브랜치에서 PR push 시 실행한다는 조건문
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  
+jobs:
+  build:
+    environment: dev
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+      # JDK는 17버전으로 사용
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'adopt'
+      
+      # application.yml 파일을 Github에 올리지 않기 때문에 Git Secrets를 이용하여 추가
+    - name: Make test properties
+      env:
+        PROPERTIES: ${{ secrets.PROPERTIES_DEV }}
+      run: |
+        mkdir -p ./src/test/resources && cd "$_"
+        touch ./application.yml
+        echo $PROPERTIES | base64 --decode > application.yml
+      shell: bash
+      
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+      
+    - name: Build with Gradle Wrapper
+      run: ./gradlew clean build -x test
+
+      # 사전에 정의해둔 Dockerfile을 통해 서버 파일을 이미지화
+    - name: Docker build
+      env:
+        USERNAME: ${{ secrets.DOCKER_PROD_USERNAME }}
+        REPO: ${{ secrets.DOCKER_PROD_REPO }}
+      run: |
+        docker build -t $USERNAME/$REPO:${GITHUB_SHA::7} -t $USERNAME/$REPO:latest .
+
+      # 앞서 만든 이미지를 도커 허브 레포지토리에 저장
+    - name: Docker push
+      env:
+        USERNAME: ${{ secrets.DOCKER_PROD_USERNAME }}
+        PASSWORD: ${{ secrets.DOCKER_PROD_PASSWORD }}
+        REPO: ${{ secrets.DOCKER_PROD_REPO }}
+      run: |
+        docker login -u $USERNAME -p $PASSWORD
+        docker push $USERNAME/$REPO:${GITHUB_SHA::7}
+        docker push $USERNAME/$REPO:latest
+
+      # 인스턴스에 직접 접근 후 배포를 하기 위한 SSH Remote 명령어
+    - name: SSH Remote Commands
+      uses: appleboy/ssh-action@master
+      env:
+        REPO: ${{ secrets.DOCKER_PROD_REPO }}
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ec2-user
+        key: ${{ secrets.SERVER_HOST_PEM }}
+        proxy_host: ${{ secrets.BASTION_HOST }}
+        proxy_username: ubuntu
+        proxy_key: ${{ secrets.BASTION_PEM_KEY }}
+        envs: GITHUB_SHA,REPO
+        script: |
+          ./deploy_prod.sh ${{ secrets.DOCKER_PROD_USERNAME }} $REPO ${GITHUB_SHA::7}
