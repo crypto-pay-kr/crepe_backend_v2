@@ -5,7 +5,11 @@ import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
+import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.dto.GetTransactionHistoryResponse;
+import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
+import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import dev.crepe.domain.core.util.history.exchange.model.entity.ExchangeHistory;
 import dev.crepe.domain.core.util.history.exchange.repositroy.ExchangeHistoryRepository;
 import dev.crepe.domain.core.util.history.exchange.service.ExchangeHistoryService;
@@ -30,7 +34,8 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
     private final ExchangeHistoryRepository exchangeHistoryRepository;
     private final AccountRepository accountRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
-
+    private final TransactionHistoryService txhService;
+    private final TransactionHistoryRepository txhRepo;
     @Override
     public GetTransactionHistoryResponse getExchangeHistory(ExchangeHistory ex, Account userAccount) {
         boolean isSender = ex.getFromAccount().getId().equals(userAccount.getId());
@@ -129,6 +134,21 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
                     .transferredAt(sh.getCreatedAt())
                     .build());
         }
+
+
+        List<Account> tokenAccounts = userAccounts.stream()
+                .filter(acc -> acc.getBankToken() != null &&
+                        acc.getBankToken().getCurrency().equalsIgnoreCase(currency))
+                .toList();
+
+        tokenAccounts.forEach(acc -> {
+            List<TransactionHistory> txList = txhRepo.findByAccount_Id(acc.getId());
+            txList.stream()
+                    .filter(tx -> tx.getType() == TransactionType.TRANSFER)
+                    .map(txhService::getTransactionHistory)
+                    .forEach(resultList::add);
+        });
+
 
 
         resultList.sort(Comparator.comparing(GetTransactionHistoryResponse::getTransferredAt).reversed());

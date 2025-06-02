@@ -30,6 +30,7 @@ public class TransactionHistoryServiceImpl implements TransactionHistoryService 
         return GetTransactionHistoryResponse.builder()
                 .type(tx.getType().name())
                 .status(tx.getStatus().name())
+                .name(tx.getTransactionId())
                 .amount(tx.getAmount())
                 .afterBalance(tx.getAfterBalance())
                 .transferredAt(tx.getUpdatedAt())
