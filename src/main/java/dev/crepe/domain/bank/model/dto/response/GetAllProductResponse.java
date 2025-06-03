@@ -1,5 +1,6 @@
 package dev.crepe.domain.bank.model.dto.response;
 
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.dto.response.GetPreferentialConditionResponse;
 import lombok.AllArgsConstructor;
@@ -23,6 +24,7 @@ public class GetAllProductResponse {
     private BigDecimal budget;
     private LocalDate startDate;
     private LocalDate endDate;
+    private StoreType storeType;
     private Float baseInterestRate;
     private BigDecimal maxMonthlyPayment;
     private Integer maxParticipants;

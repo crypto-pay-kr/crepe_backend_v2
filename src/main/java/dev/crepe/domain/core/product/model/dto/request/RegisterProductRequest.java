@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.product.model.dto.request;
 
+import dev.crepe.domain.channel.actor.store.model.StoreType;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.entity.Tag;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -39,6 +40,9 @@ public class RegisterProductRequest {
    @Schema(description = "우대 금리 조건")
    private PreferentialRateConditionDto preferentialRateCondition;
 
+   @Schema(description = "가게 유형")
+   private StoreType storeType;
+
    @Schema(description = "상품 시작일", example = "2025-05-18")
    private LocalDate startDate;
 
@@ -51,3 +55,6 @@ public class RegisterProductRequest {
    @Schema(description = "상품 설명", example = "청년층을 위한 특별 우대금리 적금 상품입니다.")
    private String description;
 }
+
+
+
