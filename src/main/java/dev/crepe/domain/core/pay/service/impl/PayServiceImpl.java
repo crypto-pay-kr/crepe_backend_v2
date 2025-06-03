@@ -117,9 +117,9 @@ public class PayServiceImpl implements PayService {
         Actor user = order.getUser();
         Actor store = order.getStore();
 
-
-        // 2. 결제 요청 금액
-        BigDecimal totalAmount = BigDecimal.valueOf(order.getTotalPrice());
+        // 2. 결제할 총 금액 계산 (원화 가격 / 코인 환율 = 코인 수량), 소수점 최대 8자리까지 반올림
+        BigDecimal totalAmount = BigDecimal.valueOf(order.getTotalPrice())
+                .divide(order.getExchangeRate(), 8, RoundingMode.HALF_UP);
 
         // 3. 상품권 유효 검사
         Subscribe subscribe = findValidVoucherForPayment(user, order.getStore().getStoreType(), totalAmount, subscribeId);

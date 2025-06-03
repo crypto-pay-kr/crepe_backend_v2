@@ -49,4 +49,17 @@ public class OrderController {
         String orderId = orderService.createOrder(orderRequest, auth.getUserEmail());
         return ResponseEntity.ok(orderId);
     }
+
+
+    // 주문 가능한 결제 수단 조회
+    @GetMapping("/available-currency")
+    @UserAuth
+    @Operation(summary = "주문 가능한 계좌 조회", description = "사용자가 주문 가능한 결제수단을 조회합니다.", security = @SecurityRequirement(name = "bearer-jwt"))
+    public ResponseEntity<List<String>> getAvailableCurrency(
+            @RequestParam Long storeId,
+            AppAuthentication auth) {
+        List<String> currencies = orderService.getAvailableCurrency(auth.getUserEmail(), storeId);
+        return ResponseEntity.ok(currencies);
+    }
+
 }
