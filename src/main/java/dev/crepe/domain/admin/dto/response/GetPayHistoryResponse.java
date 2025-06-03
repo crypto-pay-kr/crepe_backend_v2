@@ -20,6 +20,7 @@ public class GetPayHistoryResponse {
     private LocalDateTime payDate;
     private String orderDetail;
     private BigDecimal payCoinAmount;
+    private String storeNickname;
     private String coinCurrency;
     private int payKRWAmount;
     private String payType;

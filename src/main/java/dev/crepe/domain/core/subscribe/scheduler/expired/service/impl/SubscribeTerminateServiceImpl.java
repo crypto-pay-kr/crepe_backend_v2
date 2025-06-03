@@ -40,7 +40,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         // 이미 해지된 상품인지 검사
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw exceptionDbService.getException("SUBSCRIBE_01");
+            throw exceptionDbService.getException("SUBSCRIBE_001");
         }
 
 
@@ -49,7 +49,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
 
         // 예치금 확인
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw exceptionDbService.getException("SUBSCRIBE_02");
+            throw exceptionDbService.getException("SUBSCRIBE_002");
         }
 
         // 가입 개월 계산
@@ -59,7 +59,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate) ;
 
         if (totalMonths <= 0) {
-            throw exceptionDbService.getException("SUBSCRIBE_03");
+            throw exceptionDbService.getException("SUBSCRIBE_003");
         }
 
         // 이자 계산
@@ -72,7 +72,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
             case INSTALLMENT -> {
                 preTaxInterest = calculateInstallmentInterest(subscribe, interestRate);
             }
-            default -> throw exceptionDbService.getException("PRODUCT_01");
+            default -> throw exceptionDbService.getException("PRODUCT_002");
         }
 
         // 세후 이자 계산
@@ -182,14 +182,14 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                 .orElseThrow(()->exceptionDbService.getException("SUBSCRIBE_004"));
 
         if (subscribe.getStatus() == SubscribeStatus.EXPIRED) {
-            throw exceptionDbService.getException("SUBSCRIBE_01");
+            throw exceptionDbService.getException("SUBSCRIBE_001");
         }
 
         Product product = subscribe.getProduct();
         BigDecimal balance = subscribe.getBalance();
 
         if (balance.compareTo(BigDecimal.ZERO) <= 0) {
-            throw exceptionDbService.getException("SUBSCRIBE_02");
+            throw exceptionDbService.getException("SUBSCRIBE_002");
         }
 
         LocalDate startDate = subscribe.getSubscribeDate().toLocalDate();
@@ -197,7 +197,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
         int totalMonths = (int) ChronoUnit.MONTHS.between(startDate, endDate);
 
         if (totalMonths <= 0) {
-            throw exceptionDbService.getException("SUBSCRIBE_03");
+            throw exceptionDbService.getException("SUBSCRIBE_003");
         }
 
         BigDecimal interestRate = BigDecimal.valueOf(product.getBaseInterestRate())
@@ -210,7 +210,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                     .divide(BigDecimal.valueOf(12), 10, RoundingMode.DOWN)
                     .multiply(BigDecimal.valueOf(totalMonths));
             case INSTALLMENT -> preTaxInterest = calculateInstallmentInterest(subscribe, interestRate);
-            default -> throw exceptionDbService.getException("PRODUCT_01");
+            default -> throw exceptionDbService.getException("PRODUCT_002");
         }
 
         BigDecimal postTaxInterest = preTaxInterest.multiply(BigDecimal.valueOf(0.846)); // 1 - 0.154

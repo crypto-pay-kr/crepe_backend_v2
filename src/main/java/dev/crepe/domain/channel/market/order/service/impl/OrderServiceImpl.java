@@ -6,7 +6,6 @@ import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
 import dev.crepe.domain.channel.actor.store.repository.StoreRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
-import dev.crepe.domain.channel.market.order.exception.OrderNotFoundException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
 import dev.crepe.domain.channel.market.order.model.dto.request.CreateOrderRequest;
@@ -136,7 +135,7 @@ public class OrderServiceImpl implements OrderService {
         switch (paymentType) {
             case COIN -> {
                 if (request.getCurrency() == null || request.getExchangeRate() == null) {
-                    throw exceptionDbService.getException("ORDER_001");
+                    throw exceptionDbService.getException("ORDER_006");
                 }
                 upbitExchangeService.validateRateWithinThreshold(
                         request.getExchangeRate(),
@@ -146,10 +145,10 @@ public class OrderServiceImpl implements OrderService {
             }
             case VOUCHER -> {
                 if (request.getVoucherSubscribeId() == null) {
-                    throw exceptionDbService.getException("ORDER_002");
+                    throw exceptionDbService.getException("ORDER_007");
                 }
             }
-            default -> throw exceptionDbService.getException("ORDER_003");
+            default -> throw exceptionDbService.getException("ORDER_008");
         }
 
 

@@ -21,6 +21,7 @@ public class GetMyStoreAllDetailResponse {
     private String storeName;
     private String storeAddress;
     private String storeImageUrl;
+    private String storeNickname;
     private boolean isLiked;
     private List<Coin> coinList;
     private List<GetMenuDetailResponse> menuList;

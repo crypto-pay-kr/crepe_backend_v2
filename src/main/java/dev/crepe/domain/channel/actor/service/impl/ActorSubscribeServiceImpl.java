@@ -70,29 +70,29 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 .orElseThrow(()->exceptionDbService.getException("ACTOR_002"));
 
         Product product = productRepository.findById(request.getProductId())
-                .orElseThrow(()->exceptionDbService.getException("PRODUCT_03"));
+                .orElseThrow(()->exceptionDbService.getException("PRODUCT_001"));
 
         if (product.getStatus().equals(BankProductStatus.WAITING)) {
-            throw exceptionDbService.getException("PRODUCT_10");
+            throw exceptionDbService.getException("PRODUCT_009");
         }
 
         LocalDate today = LocalDate.now();
         if (product.getStartDate() != null && today.isBefore(product.getStartDate())) {
-            throw exceptionDbService.getException("PRODUCT_04");
+            throw exceptionDbService.getException("PRODUCT_003");
         }
         if (product.getEndDate() != null && today.isAfter(product.getEndDate())) {
-            throw exceptionDbService.getException("PRODUCT_05");
+            throw exceptionDbService.getException("PRODUCT_004");
         }
 
         if (subscribeRepository.existsByUserAndProduct(user, product)) {
-            throw exceptionDbService.getException("PRODUCT_07");
+            throw exceptionDbService.getException("PRODUCT_006");
         }
 
         Integer subscribeNum = subscribeRepository.countByProductIdAndStatus(request.getProductId(), SubscribeStatus.ACTIVE);
 
         if (product.getMaxParticipants() != null) {
             if (subscribeNum != null && subscribeNum >= product.getMaxParticipants()) {
-                throw exceptionDbService.getException("PRODUCT_06");
+                throw exceptionDbService.getException("PRODUCT_005");
             }
         }
 
@@ -106,7 +106,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
 
         // 예금 상품일 경우, 초기 납입액 필수 체크
         if (product.getType() == BankProductType.SAVING && initialAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw exceptionDbService.getException("PRODUCT_11");
+            throw exceptionDbService.getException("PRODUCT_010");
         }
 
         // 3. 구독 엔티티 생성
@@ -216,29 +216,29 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
     public void checkEligibility(Actor user, Product product) {
         LocalDate now = LocalDate.now();
         if (product.getEndDate() != null && now.isAfter(product.getEndDate())) {
-            throw exceptionDbService.getException("PRODUCT_08");
+            throw exceptionDbService.getException("PRODUCT_007");
         }
         // 상품의 가입 조건 파싱
         EligibilityCriteria eligibilityCriteria;
         try {
             eligibilityCriteria = objectMapper.readValue(product.getJoinCondition(), EligibilityCriteria.class);
         } catch (IOException e) {
-            throw exceptionDbService.getException("PRODUCT_09");
+            throw exceptionDbService.getException("PRODUCT_008");
         }
 
         // 연령 확인
         if (!checkAgeEligibility(user, eligibilityCriteria)) {
-            throw exceptionDbService.getException("ELIGIBILITY_01");
+            throw exceptionDbService.getException("ELIGIBILITY_001");
         }
 
         // 직업 확인
         if (!checkOccupationEligibility(user, eligibilityCriteria)) {
-            throw exceptionDbService.getException("ELIGIBILITY_02");
+            throw exceptionDbService.getException("ELIGIBILITY_002");
         }
 
         // 소득 수준 확인
         if (!checkIncomeEligibility(user, eligibilityCriteria)) {
-            throw exceptionDbService.getException("ELIGIBILITY_03");
+            throw exceptionDbService.getException("ELIGIBILITY_003");
         }
     }
 
@@ -524,7 +524,7 @@ public class ActorSubscribeServiceImpl implements ActorSubscribeService {
                 return group;
             }
         }
-        throw exceptionDbService.getException("ELIGIBILITY_04");
+        throw exceptionDbService.getException("ELIGIBILITY_004");
     }
 
     private IncomeLevel determineIncomeLevel(BigDecimal annualIncome) {

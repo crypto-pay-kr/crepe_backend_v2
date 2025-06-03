@@ -1,6 +1,7 @@
 package dev.crepe.domain.auth.sse.controller;
 
 import dev.crepe.domain.auth.UserRole;
+import dev.crepe.domain.auth.jwt.model.entity.JwtToken;
 import dev.crepe.domain.auth.jwt.util.AuthenticationToken;
 import dev.crepe.domain.auth.jwt.util.JwtAuthentication;
 import dev.crepe.domain.auth.jwt.util.JwtTokenProvider;
@@ -18,6 +19,7 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @RestController
@@ -148,15 +150,25 @@ public class AuthEventController {
 
             UserRole userRole = UserRole.valueOf(userRoleStr);
 
-            // 저장된 토큰과 일치하는지 확인
-            if (!authService.isValidToken(userEmail, refreshToken)) {
+            Optional<JwtToken> storedTokenOpt = authService.getUserToken(userEmail);
+            if (storedTokenOpt.isEmpty()) {
+                log.warn("저장된 토큰을 찾을 수 없음 - 사용자: {}", userEmail);
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(createResponse(false, "No stored token found", null));
+            }
+
+            JwtToken storedToken = storedTokenOpt.get();
+            if (!refreshToken.equals(storedToken.getRefreshToken())) {
                 log.warn("저장된 리프레시 토큰과 불일치 - 사용자: {}", userEmail);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(createResponse(false, "Refresh token mismatch", null));
             }
 
-            // 토큰 재발급 (리프레시 토큰은 재발급하지 않음)
+            // ✅ 새로운 액세스 토큰 생성 (리프레시 토큰은 유지)
             String newAccessToken = jwtTokenProvider.createAccessToken(userEmail, userRole);
+
+            // ✅ 저장된 토큰의 액세스 토큰만 업데이트
+            storedToken.updateTokens(newAccessToken, refreshToken);
 
             // 재발급 성공 알림
             notificationService.notifyTokenRefreshed(userEmail);
@@ -165,7 +177,7 @@ public class AuthEventController {
             tokenData.put("accessToken", newAccessToken);
             tokenData.put("refreshToken", refreshToken); // 기존 리프레시 토큰 유지
             tokenData.put("userEmail", userEmail);
-            tokenData.put("userRole", userRole.name()); // ✅ name() 사용
+            tokenData.put("userRole", userRole.name());
             tokenData.put("expirationSeconds", jwtTokenProvider.getTokenExpirationSeconds(newAccessToken));
 
             log.info("토큰 재발급 성공 - 사용자: {}, 새 토큰 만료 시간: {}초, 리프레시 토큰 유지",

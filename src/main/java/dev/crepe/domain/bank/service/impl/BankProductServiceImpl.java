@@ -10,6 +10,7 @@ import dev.crepe.domain.bank.service.BankProductService;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.product.model.BankProductStatus;
+import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
 import dev.crepe.domain.core.product.model.dto.eligibility.EligibilityCriteria;
 import dev.crepe.domain.core.product.model.dto.eligibility.IncomeLevel;
@@ -100,6 +101,11 @@ public class BankProductServiceImpl implements BankProductService {
                 request.getEndDate()
         );
 
+        boolean isVoucher = BankProductType.VOUCHER.equals(request.getType());
+        if (isVoucher && request.getStoreType() == null) {
+            throw exceptionDbService.getException("PRODUCT_002");
+        }
+
         // 상품 엔티티 생성
         Product product = Product.builder()
                 .bank(bank)
@@ -112,6 +118,7 @@ public class BankProductServiceImpl implements BankProductService {
                 .budget(budget)
                 .startDate(request.getStartDate())
                 .endDate(request.getEndDate())
+                .storeType(isVoucher ? request.getStoreType() : null)
                 .joinCondition(joinConditionJson)
                 .baseInterestRate(request.getBaseRate().floatValue())
                 .maxMonthlyPayment(request.getMaxMonthlyPayment())
@@ -166,10 +173,16 @@ public class BankProductServiceImpl implements BankProductService {
 
         Product saved = productRepository.save(product);
 
-        return RegisterProductResponse.builder()
+        RegisterProductResponse.RegisterProductResponseBuilder responseBuilder = RegisterProductResponse.builder()
                 .productId(saved.getId())
                 .productName(saved.getProductName())
-                .type(saved.getType()).build();
+                .type(saved.getType());
+
+        if (BankProductType.VOUCHER.equals(saved.getType())) {
+            responseBuilder.storeType(saved.getStoreType());
+        }
+
+        return responseBuilder.build();
 
     }
 
@@ -301,6 +314,7 @@ public class BankProductServiceImpl implements BankProductService {
                             .budget(product.getBudget())
                             .startDate(product.getStartDate())
                             .endDate(product.getEndDate())
+                            .storeType(product.getType().equals(BankProductType.VOUCHER) ? product.getStoreType() : null)
                             .baseInterestRate(product.getBaseInterestRate())
                             .maxMonthlyPayment(product.getMaxMonthlyPayment())
                             .maxParticipants(product.getMaxParticipants())
