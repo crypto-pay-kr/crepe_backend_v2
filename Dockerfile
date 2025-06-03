@@ -15,4 +15,4 @@ RUN ./gradlew bootjar
 RUN cp ./build/libs/*.jar app.jar
 RUN chmod +x ./app.jar
 
-ENTRYPOINT ["java", "-XX:+UseG1GC", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
