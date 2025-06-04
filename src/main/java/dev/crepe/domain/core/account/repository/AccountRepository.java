@@ -62,6 +62,22 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     // 2. 특정 이메일을 가진 유저의 BankToken 계좌 조회
     List<Account> findByActor_EmailAndBankTokenIdIsNotNull(String email);
 
+
+    @Query("""
+    SELECT a FROM Account a
+    WHERE a.actor.email = :email
+    AND a.accountAddress IS NOT NULL
+    """)
+    List<Account> findByActor_EmailAndAddress(@Param("email") String email);
+
+    @Query("""
+    SELECT a FROM Account a
+    WHERE a.actor.id = :actorId
+    AND a.coin.id IN :coinIds
+    AND a.accountAddress IS NOT NULL
+    """)
+    List<Account> findByActor_IdAndCoin_IdInAndAddress(@Param("actorId") Long actorId, @Param("coinIds") List<Long> coinIds);
+
     // AccountRepository.java
     @Query("""
     SELECT a FROM Account a
@@ -77,4 +93,10 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 """)
     List<Account> findByStoreIdAndBankTokenIsNotNull(@Param("storeId") Long storeId);
 
+    @Query("""
+    SELECT COUNT(a) > 0 FROM Account a
+    WHERE a.actor.email = :email
+    AND a.coin.id = :coinId
+    """)
+    boolean existsByActorEmailAndCoinId(@Param("email") String email, @Param("coinId") Long coinId);
 }

@@ -223,46 +223,29 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public List<String> getAvailableCurrency(String userEmail, Long storeId) {
-        log.info("주문 가능한 결제 수단 조회 시작 - 주문자 이메일: {}", userEmail);
-        // 1. 사용자 계좌 조회
-        List<Account> userAccounts = accountRepository.findByActor_EmailAndAddressRegistryStatus(
-                userEmail, AddressRegistryStatus.ACTIVE);
+        log.info("주문 가능한 결제 수단 조회 시작 - 가게 ID: {}", storeId);
 
-        // 2. 가게 계좌 조회
+        // 1. 가게 계좌 조회
         List<Coin> storeCoins = storeRepository.findById(storeId)
                 .orElseThrow(() -> exceptionDbService.getException("STORE_001"))
                 .getCoinList();
 
-        List<Long> storeCoinIds = storeCoins.stream()
-                .map(Coin::getId)
-                .collect(Collectors.toList());
-
-        List<Account> storeAccounts = accountRepository.findByActor_IdAndCoin_IdInAndAddressRegistryStatus(
-                storeId, storeCoinIds, AddressRegistryStatus.ACTIVE);
-
-        // 3. 가게의 bankToken 계좌 조회
-        List<Account> storeBankTokenAccounts = accountRepository.findByStoreIdAndBankTokenIsNotNull(storeId);
-
-        // 4. 사용자와 가게 계좌의 공통 Coin ID를 기준으로 Currency 반환
-        Set<Long> activeUserCoinIds = userAccounts.stream()
-                .filter(account -> account.getCoin() != null)
-                .map(account -> account.getCoin().getId())
-                .collect(Collectors.toSet());
-
-        List<String> currencies = storeAccounts.stream()
-                .filter(account -> account.getCoin() != null && activeUserCoinIds.contains(account.getCoin().getId()))
-                .map(account -> account.getCoin().getCurrency())
+        List<String> coinCurrencies = storeCoins.stream()
+                .map(Coin::getCurrency)
                 .distinct()
                 .collect(Collectors.toList());
 
-        // 5. 가게의 bankToken 계좌의 Currency 추가
+        // 2. 가게의 BankToken 계좌 조회
+        List<Account> storeBankTokenAccounts = accountRepository.findByStoreIdAndBankTokenIsNotNull(storeId);
+
         List<String> bankTokenCurrencies = storeBankTokenAccounts.stream()
                 .map(account -> account.getBankToken().getCurrency())
                 .distinct()
                 .collect(Collectors.toList());
 
-        currencies.addAll(bankTokenCurrencies);
-        log.info("주문 가능한 결제수단 반환 완료 - 반환된 심볼 수: {}", currencies.size());
-        return currencies.stream().distinct().collect(Collectors.toList());
+        // 3. 결제수단 반환
+        coinCurrencies.addAll(bankTokenCurrencies);
+        log.info("주문 가능한 결제수단 반환 완료 - 반환된 심볼 수: {}", coinCurrencies.size());
+        return coinCurrencies.stream().distinct().collect(Collectors.toList());
     }
 }

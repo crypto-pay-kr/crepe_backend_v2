@@ -190,11 +190,11 @@ public class StoreServiceImpl implements StoreService {
                 .map(coinName -> {
                     Coin coin = coinRepository.findByCurrency(coinName);
 
-                    // 사용자 이메일과 코인 ID를 기반으로 ACTIVE 상태의 계좌 확인
-                    boolean hasActiveAccount = accountRepository.existsByActorEmailAndCoinIdAndAddressRegistryStatus(
-                            userEmail, coin.getId(), AddressRegistryStatus.ACTIVE);
+                    // 사용자 이메일과 코인 ID를 기반으로 계좌 확인
+                    boolean hasAccount = accountRepository.existsByActorEmailAndCoinId(
+                            userEmail, coin.getId());
 
-                    if (!hasActiveAccount) {
+                    if (!hasAccount) {
                         throw exceptionDbService.getException("ACCOUNT_005");
                     }
 
