@@ -1,8 +1,6 @@
 package dev.crepe.domain.channel.actor.store.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import dev.crepe.global.error.exception.InvalidEnumValueException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -21,14 +19,5 @@ public enum RefusalReason {
         return description;
     }
 
-    @JsonCreator
-    public static RefusalReason fromDescription(String description) {
-        for (RefusalReason reason : values()) {
-            if (reason.getDescription().equals(description)) {
-                return reason;
-            }
-        }
-        throw new InvalidEnumValueException("RefusalReason", description);
-    }
 }
 

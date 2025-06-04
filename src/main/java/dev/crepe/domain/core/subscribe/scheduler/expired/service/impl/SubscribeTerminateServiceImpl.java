@@ -2,6 +2,7 @@ package dev.crepe.domain.core.subscribe.scheduler.expired.service.impl;
 
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.scheduler.expired.service.SubscribeTerminateService;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
@@ -29,6 +30,7 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
     private final AccountRepository accountRepository;
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final AccountService accountService;
     private final ExceptionDbService exceptionDbService;
 
 
@@ -86,8 +88,8 @@ public class SubscribeTerminateServiceImpl implements SubscribeTerminateService 
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
                 .orElseThrow(()-> exceptionDbService.getException("BANK_001"));
 
-        bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
 
+        accountService.validateAndReduceNonAvailableBalance(bankTokenAccount, postTaxInterest);
 
         // 사용자 토큰 계좌에 원금 + 세후 이자 지급
         Account userTokenAccount = accountRepository.findByActor_EmailAndBankTokenId(

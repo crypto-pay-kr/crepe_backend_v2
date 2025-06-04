@@ -490,5 +490,33 @@ public class AccountServiceImpl implements AccountService {
         return account.getActor().getName();
     }
 
+
+    @Transactional
+    @Override
+    public void validateAndDeductBalance(Account account, BigDecimal amount) {
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw exceptionDbService.getException("ACCOUNT_006");
+        }
+        account.deductBalance(amount);
+    }
+
+    @Transactional
+    @Override
+    public void validateAndReduceAmount(Account account, BigDecimal amount) {
+        if (account.getBalance().compareTo(amount) < 0) {
+            throw exceptionDbService.getException("ACCOUNT_006");
+        }
+        account.reduceAmount(amount);
+    }
+
+    @Transactional
+    @Override
+    public void validateAndReduceNonAvailableBalance(Account account, BigDecimal amount) {
+        if (account.getNonAvailableBalance().compareTo(amount) < 0) {
+            throw exceptionDbService.getException("ACCOUNT_006");
+        }
+        account.reduceNonAvailableBalance(amount);
+    }
+
 }
 

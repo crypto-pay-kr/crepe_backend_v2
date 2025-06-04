@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.transfer.service.scheduler;
 
 import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.transfer.model.dto.response.CheckWithdrawResponse;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
@@ -23,6 +24,7 @@ public class WithdrawScheduler {
 
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final UpbitWithdrawService upbitWithdrawService;
+    private final AccountService accountService;
 
     /**
      * 3분마다 실행되며, 출금이 완료되면 입금내역에 입금 되었다고 표시됨
@@ -40,7 +42,7 @@ public class WithdrawScheduler {
 
                     Account account = payment.getAccount();
                     // 실제 출금 처리
-                    account.deductBalance(payment.getAmount().abs());
+                    accountService.validateAndDeductBalance(account, payment.getAmount().abs());
                     // 거래 상태 및 잔액 업데이트
                     payment.acceptedTransactionStatus();
                     payment.updateAfterBalance(account.getBalance());

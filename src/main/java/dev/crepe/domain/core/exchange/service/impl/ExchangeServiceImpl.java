@@ -59,10 +59,10 @@ public class ExchangeServiceImpl implements ExchangeService {
         // 5. 자금 이동 (코인 → 토큰 환전)
         // 은행 입장 : 코인 수량 증가, 토큰 보유량 감소
         accounts.getBankCoinAccount().addAmount(request.getCoinAmount());
-        accounts.getBankTokenAccount().reduceAmount(request.getTokenAmount());
+        accountService.validateAndReduceAmount(accounts.getBankTokenAccount(), request.getTokenAmount());
 
         // 사용자 입장 : 코인 수량 감소, HTK 수량 증가
-        accounts.getActorCoinAccount().reduceAmount(request.getCoinAmount());
+        accountService.validateAndReduceAmount(accounts.getActorCoinAccount(), request.getCoinAmount());
         accounts.getActorTokenAccount().addAmount(request.getTokenAmount());
 
         // 6. 환전 내역 저장
@@ -111,9 +111,9 @@ public class ExchangeServiceImpl implements ExchangeService {
         // 4. 자금 이동 (토큰 -> 코인)
         // 은행 입장 : 토큰 보유량 증가, 코인 수량감소
         accounts.getBankTokenAccount().addAmount(request.getTokenAmount());
-        accounts.getBankCoinAccount().reduceAmount(request.getCoinAmount());
+        accountService.validateAndReduceAmount(accounts.getBankCoinAccount(), request.getCoinAmount());
         // 유저입장 : 토큰 보유량 감소, 코인 수량 증가
-        accounts.getActorTokenAccount().reduceAmount(request.getTokenAmount());
+        accountService.validateAndReduceAmount(accounts.getActorTokenAccount(), request.getTokenAmount());
         accounts.getActorCoinAccount().addAmount(request.getCoinAmount());
 
         // 5. 환전 기록 저장
