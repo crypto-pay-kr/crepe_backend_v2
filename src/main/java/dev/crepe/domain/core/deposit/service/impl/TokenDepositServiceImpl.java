@@ -2,7 +2,7 @@ package dev.crepe.domain.core.deposit.service.impl;
 
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
-import dev.crepe.domain.core.deposit.exception.ExceedMonthlyLimitException;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.deposit.service.TokenDepositService;
 import dev.crepe.domain.core.product.model.entity.Product;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
@@ -28,6 +28,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
     private final AccountRepository accountRepository;
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
+    private final AccountService accountService;
     private final ExceptionDbService exceptionDbService;
     @Transactional
     public String depositToProduct(String userEmail, Long subscribeId, BigDecimal amount) {
@@ -70,7 +71,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         BigDecimal discountedAmount = amount.multiply(discountRatio);
 
         // 4. 계좌 잔액 차감
-        account.reduceAmount(discountedAmount);
+        accountService.validateAndReduceAmount(account, discountedAmount);
 
         // 5. 상품에 amount 추가
         subscribe.deposit(amount);
@@ -99,7 +100,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         }
 
         // 6. 해당 bankToken 계좌에서 amount 차감
-        account.reduceAmount(amount);
+        accountService.validateAndReduceAmount(account, amount);
 
         // 7. 상품에 amount 추가
         subscribe.deposit(amount);
@@ -122,7 +123,7 @@ public class TokenDepositServiceImpl implements TokenDepositService {
 
         // 3. 해당 bankToken 계좌에서 amount 차감
         // Account bankTokenAccount = getBankTokenAccount(account.getActor().getEmail(), product.getBankToken().getId());
-        account.reduceAmount(amount);
+        accountService.validateAndReduceAmount(account, amount);
 
         // 4. 상품에 amount 추가
         subscribe.deposit(amount);
@@ -190,10 +191,10 @@ public class TokenDepositServiceImpl implements TokenDepositService {
         // 예치 한도 초과 체크 (예치 최대 한도 초과시 예외 처리)
         if (product.getMaxMonthlyPayment() != null &&
                 amount.compareTo(product.getMaxMonthlyPayment()) > 0) {
-            throw new ExceedMonthlyLimitException();
+            throw exceptionDbService.getException("PRODUCT_002");
         }
 
-        account.reduceAmount(amount);
+        accountService.validateAndReduceAmount(account, amount);
         subscribe.deposit(amount); // balance 반영
 
         // 예치 거래내역 저장

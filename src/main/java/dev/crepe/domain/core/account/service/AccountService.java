@@ -9,6 +9,7 @@ import dev.crepe.domain.core.account.model.dto.response.GetBankTokenInfoResponse
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -18,6 +19,7 @@ public interface AccountService {
 
 
     void createBasicAccounts(String email);
+
     void createBasicBankAccounts(Bank bank);
 
     void createBankTokenAccount(BankToken bankToken);
@@ -27,15 +29,19 @@ public interface AccountService {
     void activeBankTokenAccount(BankToken bankToken, TokenHistory tokenHistory);
 
     List<GetBalanceResponse> getBalanceList(String userEmail);
+
     GetBalanceResponse getBalanceByCurrency(String userEmail, String currency);
 
     Account getAccountById(Long accountId);
 
     void submitAccountRegistrationRequest(GetAddressRequest request, String email);
+
     GetAddressResponse getAddressByCurrency(String currency, String email);
+
     void reRegisterAddress(String email, GetAddressRequest request);
 
     String getAccountOwnerName(String email, String currency);
+
     List<Account> getAccountsByBankEmail(String bankEmail);
 
     Account findBankTokenAccount(Long bankId, BankToken bankToken);
@@ -59,5 +65,11 @@ public interface AccountService {
 
     List<Account> getActiveAccountsByBankEmail(String bankEmail);
 
-    String getAccountHolderName(String receiverEmail,String senderEmail, String currency);
+    String getAccountHolderName(String receiverEmail, String senderEmail, String currency);
+
+    void validateAndDeductBalance(Account account, BigDecimal amount);
+
+    void validateAndReduceAmount(Account account, BigDecimal amount);
+
+    void validateAndReduceNonAvailableBalance(Account account, BigDecimal amount);
 }

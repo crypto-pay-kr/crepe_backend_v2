@@ -5,6 +5,7 @@ import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetTransferRequest;
 import dev.crepe.domain.core.transfer.service.TransferService;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 public class TransferServiceImpl  implements TransferService {
 
     private final AccountRepository accountRepository;
+    private final AccountService accountService;
     private final ExceptionDbService exceptionDbService;
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final ActorRepository actorRepository;
@@ -49,7 +51,7 @@ public class TransferServiceImpl  implements TransferService {
             throw exceptionDbService.getException("ACCOUNT_006");
         }
 
-        senderAccount.reduceAmount(request.getAmount());
+        accountService.validateAndReduceAmount(senderAccount, request.getAmount());
         receiverAccount.addAmount(request.getAmount());
 
 

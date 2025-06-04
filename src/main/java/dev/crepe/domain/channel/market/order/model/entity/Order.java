@@ -78,7 +78,7 @@ public class Order extends BaseEntity {
     public void accept(PreparationTime preparationTime) {
 
         this.status = OrderStatus.PAID;
-        this.readyAt = this.getUpdatedAt().plusMinutes(preparationTime.getMinutes());
+        this.readyAt = LocalDateTime.now().plusMinutes(preparationTime.getMinutes());
     }
 
     // 주문 거절

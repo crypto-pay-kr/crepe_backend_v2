@@ -1,8 +1,6 @@
 package dev.crepe.domain.channel.actor.store.model;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
-import dev.crepe.global.error.exception.InvalidEnumValueException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -26,14 +24,5 @@ public enum PreparationTime {
         return description;
     }
 
-    @JsonCreator
-    public static PreparationTime fromDescription(String description) {
-        for (PreparationTime time : values()) {
-            if (time.getDescription().equals(description)) {
-                return time;
-            }
-        }
-        throw new InvalidEnumValueException("PreparationTime", description);
-    }
 
 }

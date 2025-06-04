@@ -9,6 +9,7 @@ import dev.crepe.domain.bank.repository.BankRepository;
 import dev.crepe.domain.bank.service.BankProductService;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.model.BankProductStatus;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.eligibility.AgeGroup;
@@ -48,6 +49,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BankProductServiceImpl implements BankProductService {
     private final BankTokenRepository bankTokenRepository;
+    private final AccountService accountService;
     private final AccountRepository accountRepository;
     private final BankRepository bankRepository;
     private final S3Service s3Service;
@@ -75,7 +77,8 @@ public class BankProductServiceImpl implements BankProductService {
             throw exceptionDbService.getException("ACCOUNT_006");
         }
 
-        tokenAccount.deductBalance(budget);
+
+        accountService.validateAndDeductBalance(tokenAccount, budget);
         tokenAccount.addNonAvailableBalance(budget);
 
         accountRepository.save(tokenAccount);

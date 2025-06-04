@@ -12,6 +12,7 @@ import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.subscribe.model.SubscribeStatus;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.subscribe.repository.SubscribeRepository;
+import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
@@ -45,6 +46,7 @@ public class PayServiceImpl implements PayService {
     private final ExceptionDbService exceptionDbService;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
     private final SubscribeRepository subscribeRepository;
+    private final CoinRepository coinRepository;
 
     @Override
     @Transactional
@@ -70,7 +72,7 @@ public class PayServiceImpl implements PayService {
         }
 
         // 4. 유저 계좌에서 결제 금액 차감
-        userAccount.deductBalance(totalAmount);
+        accountService.validateAndDeductBalance(userAccount, totalAmount);
 
         // 5. 결제 내역(PayHistory) 생성 - 아직 승인되지 않은 상태
         PayHistory payHistory = PayHistory.builder()
@@ -190,21 +192,38 @@ public class PayServiceImpl implements PayService {
     @Transactional
     public void cancelForOrder(Order order) {
         log.info("주문 취소 내역 생성");
-        // 1. 유저 및 스토어 계정 조회
-        Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(
-                        order.getUser().getEmail(), order.getCurrency())
-                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
-        Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(
-                        order.getStore().getEmail(), order.getCurrency())
-                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
+        // 1. 유효한 통화 목록 조회
+        List<String> validCurrencies = coinRepository.findAllCurrencies();
 
-        // 2. 기존 결제 정보 조회
+        // 2. 결제 타입 확인
+        String orderCurrency = order.getCurrency();
+        boolean isVoucherPayment = !validCurrencies.contains(orderCurrency);
+
+        // 3. 기존 결제 정보 조회
         PayHistory payHistory = payHistoryRepository.findByOrder(order)
-                .orElseThrow(()-> exceptionDbService.getException("PAY_HISTORY_001"));
+                .orElseThrow(() -> exceptionDbService.getException("PAY_HISTORY_001"));
 
-        // 3. 유저 계정에 결제했던 금액 다시 추가
-        userAccount.addAmount(payHistory.getTotalAmount());
+            if (isVoucherPayment) {
+                // VOUCHER 결제인 경우
+                Subscribe subscribe = order.getVoucher();
+
+                if (subscribe == null) {
+                    throw exceptionDbService.getException("SUBSCRIBE_005");
+                }
+
+            // 상품권 잔액 복원
+            subscribe.addAmount(payHistory.getTotalAmount());
+            subscribeRepository.save(subscribe);
+        } else {
+            // 코인 결제인 경우
+            Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(
+                            order.getUser().getEmail(), order.getCurrency())
+                    .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
+
+            userAccount.addAmount(payHistory.getTotalAmount());
+            accountRepository.save(userAccount);
+        }
 
         // 4. 결제 상태를 'CANCELED'로 변경 후 저장
         payHistory.cancel();
@@ -215,7 +234,7 @@ public class PayServiceImpl implements PayService {
 
         // 6. 유저, 가맹점의 거래 타입을 'FAILED'로 변경
         for (TransactionHistory history : historyList) {
-                history.cancelTransactionType();
+            history.cancelTransactionType();
             transactionHistoryRepository.save(history);
         }
     }

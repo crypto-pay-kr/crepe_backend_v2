@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.account.repository.AccountRepository;
+import dev.crepe.domain.core.account.service.AccountService;
 import dev.crepe.domain.core.product.model.BankProductType;
 import dev.crepe.domain.core.product.model.dto.interest.DepositPreferentialRate;
 import dev.crepe.domain.core.product.model.dto.interest.FreeDepositCountPreferentialRate;
@@ -49,6 +50,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
     private final SubscribeRepository subscribeRepository;
     private final SubscribeHistoryRepository subscribeHistoryRepository;
     private final PotentialPreferentialConditionRepository potentialPreferentialConditionRepository;
+    private final AccountService accountService;
     private final ExceptionDbService exceptionDbService;
 
 
@@ -132,7 +134,7 @@ public class SubscribeExpiredServiceImpl implements SubscribeExpiredService {
                 .findByBankTokenIdAndActorIsNull(product.getBankToken().getId())
                 .orElseThrow(()-> exceptionDbService.getException("BANK_001"));
 
-        bankTokenAccount.reduceNonAvailableBalance(postTaxInterest);
+        accountService.validateAndReduceNonAvailableBalance(bankTokenAccount, postTaxInterest);
 
 
         BigDecimal totalPayout = balance.add(postTaxInterest);
