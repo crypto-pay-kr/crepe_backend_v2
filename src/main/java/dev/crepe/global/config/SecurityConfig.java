@@ -44,6 +44,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(req -> req
                         .requestMatchers(PUBLIC_URI).permitAll()
                         .requestMatchers(ADMIN_URI).hasAuthority("ADMIN")
@@ -66,8 +67,7 @@ public class SecurityConfig {
                                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
                                 })
-                )
-                .addFilterBefore(jwtAuthenticationFilter , UsernamePasswordAuthenticationFilter.class);
+                );
         return http.build();
     }
 
