@@ -27,4 +27,6 @@ public interface OrderService {
     // 유저 주문 조회
     Page<Order> getOrdersByUserEmail(String userEmail, Pageable pageable);
 
+    List<String> getAvailableCurrency(String userEmail, Long storeId);
+
 }

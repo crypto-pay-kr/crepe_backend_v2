@@ -20,6 +20,7 @@ public interface StoreService {
     String changeStoreImage(MultipartFile storeImage, String email);
     ChangeBusinessInfoResponse changeBusinessInfo(String businessNumber, MultipartFile businessImage, String email);
     ChangeCoinStatusResponse registerStoreCoin(ChangeCoinStatusRequest request, String email);
+    List<String> getSupportedCoins(String userEmail);
     ChangeStoreStatusResponse changeStoreStatus(ChangeStoreStatusRequest request, String email);
     GetMyStoreAllDetailResponse getMyStoreAllDetails(String email);
 
