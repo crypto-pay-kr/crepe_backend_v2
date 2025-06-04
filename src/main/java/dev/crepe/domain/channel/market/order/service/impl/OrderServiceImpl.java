@@ -4,6 +4,7 @@ package dev.crepe.domain.channel.market.order.service.impl;
 import dev.crepe.domain.channel.actor.model.entity.Actor;
 import dev.crepe.domain.channel.actor.repository.ActorRepository;
 import dev.crepe.domain.channel.actor.store.repository.MenuRepository;
+import dev.crepe.domain.channel.actor.store.repository.StoreRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.OrderType;
@@ -14,8 +15,12 @@ import dev.crepe.domain.channel.market.order.model.entity.OrderDetail;
 import dev.crepe.domain.channel.market.order.repository.OrderDetailRepository;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
 import dev.crepe.domain.channel.market.order.service.OrderService;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
+import dev.crepe.domain.core.account.model.entity.Account;
+import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.pay.PaymentType;
 import dev.crepe.domain.core.pay.service.PayService;
+import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 
@@ -29,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -40,6 +46,8 @@ public class OrderServiceImpl implements OrderService {
     private final OrderDetailRepository orderDetailRepository;
     private final MenuRepository menuRepository;
     private final ActorRepository actorRepository;
+    private final AccountRepository accountRepository;
+    private final StoreRepository storeRepository;
     private final UpbitExchangeService upbitExchangeService;
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
@@ -64,9 +72,6 @@ public class OrderServiceImpl implements OrderService {
 
 
 //******************************************** 주문 내역 조회 end ********************************************/
-
-
-
 
 
 //******************************************** 주문 상세 내역 조회 start **************************************/
@@ -108,7 +113,6 @@ public class OrderServiceImpl implements OrderService {
 //******************************************** 주문 생성 start ************************************************/
 
 
-
     @Override
     @Transactional
     public String createOrder(CreateOrderRequest request, String userEmail) {
@@ -116,8 +120,6 @@ public class OrderServiceImpl implements OrderService {
         log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
         Actor user = actorRepository.findByEmail(userEmail)
                 .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
-
-       // System.out.println("주문자의 이메일 " + request.getUserEmail());
 
         Actor store = actorRepository.findById(request.getStoreId())
                 .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
@@ -135,9 +137,6 @@ public class OrderServiceImpl implements OrderService {
                 if (request.getCurrency() == null || request.getExchangeRate() == null) {
                     throw exceptionDbService.getException("ORDER_006");
                 }
-
-                log.info("환율 검증 - 통화: {}, 환율: {}", request.getCurrency(), request.getExchangeRate());
-
                 upbitExchangeService.validateRateWithinThreshold(
                         request.getExchangeRate(),
                         request.getCurrency(),
@@ -169,11 +168,7 @@ public class OrderServiceImpl implements OrderService {
                 .totalPrice(totalPrice)
                 .status(OrderStatus.WAITING)
                 .type(OrderType.TAKE_OUT)
-                .currency(
-                        paymentType == PaymentType.VOUCHER
-                                ? "KRW"
-                                : request.getCurrency()
-                )
+                .currency(request.getCurrency())
                 .exchangeRate(request.getExchangeRate())
                 .user(user)
                 .store(store)
@@ -211,7 +206,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Page<Order> getOrdersByUserId(Long userId, Pageable pageable) {
-        return orderRepository.findByUserId(userId,pageable);
+        return orderRepository.findByUserId(userId, pageable);
     }
 
     @Override
@@ -221,7 +216,53 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public Page<Order> getOrdersByUserEmail(String userEmail, Pageable pageable) {
-        return orderRepository.findByUserEmail(userEmail,pageable);
+        return orderRepository.findByUserEmail(userEmail, pageable);
 
+    }
+
+
+    @Override
+    public List<String> getAvailableCurrency(String userEmail, Long storeId) {
+        log.info("주문 가능한 결제 수단 조회 시작 - 주문자 이메일: {}", userEmail);
+        // 1. 사용자 계좌 조회
+        List<Account> userAccounts = accountRepository.findByActor_EmailAndAddressRegistryStatus(
+                userEmail, AddressRegistryStatus.ACTIVE);
+
+        // 2. 가게 계좌 조회
+        List<Coin> storeCoins = storeRepository.findById(storeId)
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"))
+                .getCoinList();
+
+        List<Long> storeCoinIds = storeCoins.stream()
+                .map(Coin::getId)
+                .collect(Collectors.toList());
+
+        List<Account> storeAccounts = accountRepository.findByActor_IdAndCoin_IdInAndAddressRegistryStatus(
+                storeId, storeCoinIds, AddressRegistryStatus.ACTIVE);
+
+        // 3. 가게의 bankToken 계좌 조회
+        List<Account> storeBankTokenAccounts = accountRepository.findByStoreIdAndBankTokenIsNotNull(storeId);
+
+        // 4. 사용자와 가게 계좌의 공통 Coin ID를 기준으로 Currency 반환
+        Set<Long> activeUserCoinIds = userAccounts.stream()
+                .filter(account -> account.getCoin() != null)
+                .map(account -> account.getCoin().getId())
+                .collect(Collectors.toSet());
+
+        List<String> currencies = storeAccounts.stream()
+                .filter(account -> account.getCoin() != null && activeUserCoinIds.contains(account.getCoin().getId()))
+                .map(account -> account.getCoin().getCurrency())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 5. 가게의 bankToken 계좌의 Currency 추가
+        List<String> bankTokenCurrencies = storeBankTokenAccounts.stream()
+                .map(account -> account.getBankToken().getCurrency())
+                .distinct()
+                .collect(Collectors.toList());
+
+        currencies.addAll(bankTokenCurrencies);
+        log.info("주문 가능한 결제수단 반환 완료 - 반환된 심볼 수: {}", currencies.size());
+        return currencies.stream().distinct().collect(Collectors.toList());
     }
 }

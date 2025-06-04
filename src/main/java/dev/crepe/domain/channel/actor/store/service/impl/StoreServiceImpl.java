@@ -12,6 +12,8 @@ import dev.crepe.domain.channel.actor.store.service.StoreService;
 import dev.crepe.domain.channel.market.like.model.entity.Like;
 import dev.crepe.domain.channel.market.like.repository.LikeRepository;
 import dev.crepe.domain.channel.market.menu.model.entity.Menu;
+import dev.crepe.domain.core.account.model.AddressRegistryStatus;
+import dev.crepe.domain.core.account.repository.AccountRepository;
 import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
 import dev.crepe.global.error.exception.ExceptionDbService;
@@ -38,6 +40,7 @@ public class StoreServiceImpl implements StoreService {
     private final CoinRepository coinRepository;
     private final LikeRepository likeRepository;
     private final MenuRepository menuRepository;
+    private final AccountRepository accountRepository;
     private final PasswordEncoder encoder;
     private final S3Service s3Service;
     private final ExceptionDbService exceptionDbService;
@@ -134,11 +137,10 @@ public class StoreServiceImpl implements StoreService {
                 .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
         String oldImageUrl = store.getStoreImage();
-        if(oldImageUrl != null && !oldImageUrl.isEmpty()) {
-            try{
+        if (oldImageUrl != null && !oldImageUrl.isEmpty()) {
+            try {
                 String oldKey = s3Service.extractKeyFromUrl(oldImageUrl);
-            }
-            catch (Exception e){
+            } catch (Exception e) {
                 throw exceptionDbService.getException("S3_UPLOAD_001");
             }
         }
@@ -166,7 +168,7 @@ public class StoreServiceImpl implements StoreService {
             }
         }
         String newImageUrl = s3Service.uploadFile(businessImage, "business-licenses");
-        store.changeBusiness(businessNumber,newImageUrl);
+        store.changeBusiness(businessNumber, newImageUrl);
         ChangeBusinessInfoResponse res = ChangeBusinessInfoResponse.builder()
                 .businessNumber(businessNumber)
                 .businessImg(newImageUrl)
@@ -185,10 +187,21 @@ public class StoreServiceImpl implements StoreService {
 
         // 요청된 코인 이름(String)을 Coin 엔티티로 변환
         List<Coin> coins = request.getSupportedCoins().stream()
-                .map(coinName -> coinRepository.findByCurrency(coinName))
+                .map(coinName -> {
+                    Coin coin = coinRepository.findByCurrency(coinName);
+
+                    // 사용자 이메일과 코인 ID를 기반으로 ACTIVE 상태의 계좌 확인
+                    boolean hasActiveAccount = accountRepository.existsByActorEmailAndCoinIdAndAddressRegistryStatus(
+                            userEmail, coin.getId(), AddressRegistryStatus.ACTIVE);
+
+                    if (!hasActiveAccount) {
+                        throw exceptionDbService.getException("ACCOUNT_005");
+                    }
+
+                    return coin;
+                })
                 .collect(Collectors.toList());
 
-        // Actor 엔티티에 변환된 Coin 리스트 설정
         store.changeSupportedCoins(coins);
 
         // 응답 생성
@@ -197,6 +210,17 @@ public class StoreServiceImpl implements StoreService {
                 .build();
 
         return res;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<String> getSupportedCoins(String userEmail) {
+        Actor store = actorRepository.findByEmail(userEmail)
+                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
+
+        return store.getCoinList().stream()
+                .map(Coin::getCurrency)
+                .collect(Collectors.toList());
     }
 
 
@@ -240,6 +264,7 @@ public class StoreServiceImpl implements StoreService {
 
         GetMyStoreAllDetailResponse res =
                 GetMyStoreAllDetailResponse.builder().storeId(store.getId()).email(store.getEmail()).likeCount(likeRepository.countByStoreAndActiveTrue(store)).storeName(store.getName())
+
                 .storeAddress(store.getStoreAddress()).storeStatus(store.getStatus()).storeImageUrl(store.getStoreImage()).storeNickname(store.getNickName())
                 .coinList(store.getCoinList()).menuList(menuResponse).isLiked(isLiked).build();
 
@@ -250,7 +275,7 @@ public class StoreServiceImpl implements StoreService {
     // 영업중인 모든 가게 조회
     @Override
     public List<GetOpenStoreResponse> getAllOpenStoreList() {
-        List<Actor> actor  = storeRepository.findByDataStatusTrueAndStatus(StoreStatus.OPEN);
+        List<Actor> actor = storeRepository.findByDataStatusTrueAndStatus(StoreStatus.OPEN);
 
         return actor.stream()
                 .map(store -> GetOpenStoreResponse.builder()

@@ -24,6 +24,9 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByActor_EmailAndBankToken_Currency(String email, String currency);
     Optional<Account> findByBankToken_CurrencyAndActorIsNull(String currency);
     Optional<Account> findByBank_EmailAndCoin_Currency(String email, String currency);
+    boolean existsByActorEmailAndCoinIdAndAddressRegistryStatus(String email, Long coinId, AddressRegistryStatus status);
+    List<Account> findByActor_EmailAndAddressRegistryStatus(String email, AddressRegistryStatus status);
+    List<Account> findByActor_IdAndCoin_IdInAndAddressRegistryStatus(Long actorId, List<Long> coinIds, AddressRegistryStatus status);
     List<Account> findByActor_Email(String email);
     List<Account> findByActor_Id(Long id);
     Page<Account> findByActor_Id(Long id, Pageable pageable);
@@ -31,7 +34,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Page<Account> findByActorIsNotNullAndAddressRegistryStatusInAndCoinIsNotNull(List<AddressRegistryStatus> status, Pageable pageable);
     Page<Account> findByActorIsNullAndAddressRegistryStatusInAndCoinIsNotNull(List<AddressRegistryStatus> status, Pageable pageable);
     Optional<Account> findByActor_EmailAndBankTokenId(String email, Long bankTokenId);
-    boolean existsByActorAndBankToken(Actor actor, BankToken bankToken);
     Optional<Account> findByBankAndBankTokenAndAddressRegistryStatus(
             Bank bank,
             BankToken bankToken,
@@ -44,10 +46,7 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
             String currency,
             AddressRegistryStatus status
     );
-
     Optional<Account> findByBankIdAndBankTokenAndActorIsNull(Long bankId, BankToken bankToken);
-
-    Optional<Account> findByBankAndCoin(Bank bank, Coin coin);
 
     Optional<Account> findByBankAndBankToken(Bank bank, BankToken bankToken);
 
@@ -56,10 +55,6 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
     Optional<Account> findByBankTokenIdAndActorIsNull(Long bankTokenId);
   
     List<Account> findByBank_IdAndCoin_IdIn(Long BankId, List<Long> coinIds);
-
-    List<Account> findAllByActor_EmailAndBankToken_Id(String email, Long bankTokenId);
-
-
 
     // 1. BankToken이 연결된 모든 계좌 조회
     List<Account> findByBankTokenIdIsNotNullAndBankIdIsNotNull();
@@ -75,5 +70,11 @@ public interface AccountRepository extends JpaRepository<Account, Long> {
 """)
     Optional<Account> findByActorAndBankToken(@Param("actor") Actor actor, @Param("bankToken") BankToken bankToken);
 
+    @Query("""
+    SELECT a FROM Account a
+    WHERE a.actor.id = :storeId
+    AND a.bankToken IS NOT NULL
+""")
+    List<Account> findByStoreIdAndBankTokenIsNotNull(@Param("storeId") Long storeId);
 
 }
