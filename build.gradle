@@ -29,6 +29,8 @@ dependencies {
 
     // **데이터베이스**
     implementation 'com.h2database:h2'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
     runtimeOnly 'com.mysql:mysql-connector-j'
 
     // **Spring Boot Starter**

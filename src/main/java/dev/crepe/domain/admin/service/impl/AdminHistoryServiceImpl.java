@@ -4,25 +4,26 @@ package dev.crepe.domain.admin.service.impl;
 import dev.crepe.domain.admin.dto.response.GetPayHistoryResponse;
 import dev.crepe.domain.admin.dto.response.GetSettlementHistoryResponse;
 import dev.crepe.domain.admin.service.AdminHistoryService;
-
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.channel.market.order.service.OrderService;
-import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
-import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
-import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
 import dev.crepe.domain.core.util.history.business.service.TransactionHistoryService;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.pay.service.PayHistoryService;
+import dev.crepe.infra.redis.service.RedisHistoryService;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class AdminHistoryServiceImpl implements AdminHistoryService {
@@ -30,9 +31,15 @@ public class AdminHistoryServiceImpl implements AdminHistoryService {
     private final OrderService orderService;
     private final PayHistoryService payHistoryService;
     private final TransactionHistoryService transactionHistoryService;
+    private final RedisHistoryService redisHistoryService;
 
     // 유저 ID 기반으로 모든 결제 내역 조회
     @Override
+    @Cacheable(
+            value = "payHistory",
+            key = "#userId + ':' + (#type != null ? #type : 'ALL') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize",
+            unless = "#result == null or #result.isEmpty()"
+    )
     public Page<GetPayHistoryResponse> getPayHistoriesByUserId(Long userId, String type, Pageable pageable) {
         Page<Order> orders = orderService.getOrdersByUserId(userId, pageable);
 
@@ -65,6 +72,11 @@ public class AdminHistoryServiceImpl implements AdminHistoryService {
 
 
     @Override
+    @Cacheable(
+            value = "settlementHistory",
+            key = "#storeId + ':' + (#status != null ? #status.name() : 'ALL') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize",
+            unless = "#result == null or #result.isEmpty()"
+    )
     public Page<GetSettlementHistoryResponse> getSettlementHistoriesByUserId(Long storeId, TransactionStatus status, Pageable pageable) {
 
         Page<TransactionHistory> transactionHistories = transactionHistoryService.getSettlementHistory(status, storeId, pageable);
@@ -84,6 +96,14 @@ public class AdminHistoryServiceImpl implements AdminHistoryService {
     @Override
     public void reSettlement(Long historyId) {
         transactionHistoryService.reSettlement(historyId);
+        redisHistoryService.evictAllHistoryCache();
+    }
+
+
+    public boolean isCacheHealthy() {
+        boolean isHealthy = redisHistoryService.isCacheAvailable();
+        log.info("💊 Redis 캐시 상태 확인: {}", isHealthy ? "정상" : "비정상");
+        return isHealthy;
     }
 
 }
