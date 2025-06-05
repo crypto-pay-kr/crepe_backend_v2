@@ -122,7 +122,7 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
             Subscribe subscribe = sh.getSubscribe();
 
             if (!subscribe.getProduct().getBankToken().getCurrency().equalsIgnoreCase(currency)) continue;
-
+            if ("PAYMENT".equalsIgnoreCase(sh.getEventType().name())) continue;
             Account account = accountRepository.findByActor_EmailAndBankToken_Currency(email,currency)
                     .orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
             BigDecimal amount = sh.getEventType()== SubscribeHistoryType.TERMINATION
@@ -152,6 +152,16 @@ public class ExchangeHistoryServiceImpl implements ExchangeHistoryService {
                     .forEach(resultList::add);
         });
 
+
+        tokenAccounts.forEach(acc -> {
+            List<TransactionHistory> txList = txhRepo.findByAccount_Id(acc.getId());
+            txList.stream()
+                    .filter(tx ->
+                            tx.getType() == TransactionType.PAY
+                    )
+                    .map(txhService::getTransactionHistory)
+                    .forEach(resultList::add);
+        });
 
 
         resultList.sort(Comparator.comparing(GetTransactionHistoryResponse::getTransferredAt).reversed());
