@@ -14,6 +14,7 @@ import dev.crepe.domain.core.util.history.pay.repostiory.PayHistoryRepository;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
     private final EnumValidationService enumValidationService;
+    private final RedisTemplate<String, String> redisTemplate;
 
 
     //******************************************** 가맹점 주문 조회 start ********************************************/
@@ -36,7 +38,26 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     public List<StoreOrderResponse> getAllList(Long storeId) {
         return orderRepository.findByStoreId(storeId).stream()
                 .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
-                .map(Order::toStoreOrderResponse)
+                .map(order -> {
+                    String clientOrderNumber = redisTemplate.opsForValue().get("order_number:" + storeId + ":" + order.getId());
+                    return StoreOrderResponse.builder()
+                            .orderId(order.getId())
+                            .clientOrderNumber(clientOrderNumber) // Redis에서 조회한 값 추가
+                            .totalPrice(order.getTotalPrice())
+                            .status(order.getStatus())
+                            .orderType(order.getType().name())
+                            .createdAt(order.getCreatedAt())
+                            .updatedAt(order.getUpdatedAt())
+                            .readyAt(order.getReadyAt())
+                            .orderDetails(order.getOrderDetails().stream()
+                                    .map(detail -> StoreOrderResponse.OrderDetailResponse.builder()
+                                            .menuName(detail.getMenu().getName())
+                                            .menuCount(detail.getMenuCount())
+                                            .menuPrice(detail.getMenu().getPrice())
+                                            .build())
+                                    .toList())
+                            .build();
+                })
                 .toList();
     }
 

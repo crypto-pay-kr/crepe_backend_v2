@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 public class CreateOrderResponse {
 
     private String orderId;
+    private String clientOrderNumber;
     private int totalPrice;
     private String orderStatus;
     private String orderType;

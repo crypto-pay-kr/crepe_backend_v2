@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Map;
 
 public interface OrderService {
 
@@ -18,7 +19,7 @@ public interface OrderService {
     CreateOrderResponse getOrderDetails(String orderId, String userEmail);
 
     // 주문 생성
-    String createOrder(CreateOrderRequest request, String userEmail);
+    Map<String, String> createOrder(CreateOrderRequest request, String userEmail);
 
     // 관리자 주문 조회
     Page<Order> getOrdersByUserId(Long userId, Pageable pageable);

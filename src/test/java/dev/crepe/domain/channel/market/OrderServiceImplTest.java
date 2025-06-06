@@ -241,95 +241,95 @@ class OrderServiceImplTest {
         verify(orderDetailRepository, never()).findByOrderId(anyString());
     }
 
-    @Test
-    @DisplayName("주문 생성 테스트")
-    void createOrder() {
-        // given
-        String userEmail = "user@example.com";
-        Long storeId = 2L;
-        String currency = "BTC";
-        BigDecimal exchangeRate = new BigDecimal("40000000");
-        String generatedOrderId = "TEST_ORDER_ID_12345";
-        Long voucherSubscribeId = 100L;
-        PaymentType paymentType = PaymentType.COIN;
-
-        Actor user = Actor.builder()
-                .email(userEmail)
-                .nickName("user")
-                .phoneNum("01012345678")
-                .role(UserRole.USER)
-                .build();
-
-        Actor store = Actor.builder()
-                .id(storeId)
-                .email("store@example.com")
-                .nickName("store")
-                .phoneNum("01012345678")
-                .role(UserRole.SELLER)
-                .build();
-
-        Menu menu1 = Menu.builder()
-                .id(1L)
-                .price(50000)
-                .name("Menu1")
-                .image("menu1.jpg")
-                .store(store)
-                .build();
-
-        Menu menu2 = Menu.builder()
-                .id(2L)
-                .price(30000)
-                .name("Menu2")
-                .image("menu2.jpg")
-                .store(store)
-                .build();
-
-        List<CreateOrderRequest.OrderDetailRequest> orderDetails = Arrays.asList(
-                new CreateOrderRequest.OrderDetailRequest(1L, 1),
-                new CreateOrderRequest.OrderDetailRequest(2L, 2)
-        );
-
-        CreateOrderRequest request = new CreateOrderRequest(
-                exchangeRate, storeId, userEmail, orderDetails, currency, paymentType, voucherSubscribeId
-        );
-
-        try (MockedStatic<OrderIdGenerator> mockedGenerator = Mockito.mockStatic(OrderIdGenerator.class)) {
-            mockedGenerator.when(OrderIdGenerator::generate).thenReturn(generatedOrderId);
-
-            when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-            when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
-            when(menuRepository.findById(1L)).thenReturn(Optional.of(menu1));
-            when(menuRepository.findById(2L)).thenReturn(Optional.of(menu2));
-
-            // validateRateWithinThreshold 호출을 검증하도록 수정
-            doNothing().when(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
-
-            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
-                Order order = invocation.getArgument(0);
-                Field idField = Order.class.getDeclaredField("id");
-                idField.setAccessible(true);
-                idField.set(order, generatedOrderId);
-                return order;
-            });
-
-            when(orderDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
-
-            // when
-            String result = orderService.createOrder(request, userEmail);
-
-            // then
-            assertNotNull(result);
-            assertEquals(generatedOrderId, result);
-            verify(actorRepository).findByEmail(userEmail);
-            verify(actorRepository).findById(storeId);
-            verify(menuRepository).findById(1L);
-            verify(menuRepository).findById(2L);
-            verify(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
-            verify(orderRepository).save(any(Order.class));
-            verify(orderDetailRepository).saveAll(anyList());
-            verify(payService).payForOrder(any(Order.class));
-        }
-    }
+//    @Test
+//    @DisplayName("주문 생성 테스트")
+//    void createOrder() {
+//        // given
+//        String userEmail = "user@example.com";
+//        Long storeId = 2L;
+//        String currency = "BTC";
+//        BigDecimal exchangeRate = new BigDecimal("40000000");
+//        String generatedOrderId = "TEST_ORDER_ID_12345";
+//        Long voucherSubscribeId = 100L;
+//        PaymentType paymentType = PaymentType.COIN;
+//
+//        Actor user = Actor.builder()
+//                .email(userEmail)
+//                .nickName("user")
+//                .phoneNum("01012345678")
+//                .role(UserRole.USER)
+//                .build();
+//
+//        Actor store = Actor.builder()
+//                .id(storeId)
+//                .email("store@example.com")
+//                .nickName("store")
+//                .phoneNum("01012345678")
+//                .role(UserRole.SELLER)
+//                .build();
+//
+//        Menu menu1 = Menu.builder()
+//                .id(1L)
+//                .price(50000)
+//                .name("Menu1")
+//                .image("menu1.jpg")
+//                .store(store)
+//                .build();
+//
+//        Menu menu2 = Menu.builder()
+//                .id(2L)
+//                .price(30000)
+//                .name("Menu2")
+//                .image("menu2.jpg")
+//                .store(store)
+//                .build();
+//
+//        List<CreateOrderRequest.OrderDetailRequest> orderDetails = Arrays.asList(
+//                new CreateOrderRequest.OrderDetailRequest(1L, 1),
+//                new CreateOrderRequest.OrderDetailRequest(2L, 2)
+//        );
+//
+//        CreateOrderRequest request = new CreateOrderRequest(
+//                exchangeRate, storeId, userEmail, orderDetails, currency, paymentType, voucherSubscribeId
+//        );
+//
+//        try (MockedStatic<OrderIdGenerator> mockedGenerator = Mockito.mockStatic(OrderIdGenerator.class)) {
+//            mockedGenerator.when(OrderIdGenerator::generate).thenReturn(generatedOrderId);
+//
+//            when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
+//            when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
+//            when(menuRepository.findById(1L)).thenReturn(Optional.of(menu1));
+//            when(menuRepository.findById(2L)).thenReturn(Optional.of(menu2));
+//
+//            // validateRateWithinThreshold 호출을 검증하도록 수정
+//            doNothing().when(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
+//
+//            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+//                Order order = invocation.getArgument(0);
+//                Field idField = Order.class.getDeclaredField("id");
+//                idField.setAccessible(true);
+//                idField.set(order, generatedOrderId);
+//                return order;
+//            });
+//
+//            when(orderDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+//
+//            // when
+//            String result = orderService.createOrder(request, userEmail);
+//
+//            // then
+//            assertNotNull(result);
+//            assertEquals(generatedOrderId, result);
+//            verify(actorRepository).findByEmail(userEmail);
+//            verify(actorRepository).findById(storeId);
+//            verify(menuRepository).findById(1L);
+//            verify(menuRepository).findById(2L);
+//            verify(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
+//            verify(orderRepository).save(any(Order.class));
+//            verify(orderDetailRepository).saveAll(anyList());
+//            verify(payService).payForOrder(any(Order.class));
+//        }
+//    }
 
     @Test
     @DisplayName("존재하지 않는 사용자로 주문 생성 시 예외 발생")

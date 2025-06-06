@@ -28,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,8 +50,10 @@ public class OrderServiceImpl implements OrderService {
     private final AccountRepository accountRepository;
     private final StoreRepository storeRepository;
     private final UpbitExchangeService upbitExchangeService;
+    private final OrderNumberServiceImpl orderNumberService;
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
+    private final RedisTemplate<String, String> redisTemplate;
 
 
 //******************************************** 주문 내역 조회 start ******************************************/
@@ -89,6 +92,8 @@ public class OrderServiceImpl implements OrderService {
             throw exceptionDbService.getException("ACTOR_001");
         }
 
+        String clientOrderNumber = redisTemplate.opsForValue().get("order_number:" + orderId);
+
         // orderId로 OrderDetail 조회
         List<OrderDetail> orderDetails = orderDetailRepository.findByOrderId(orderId);
         if (orderDetails.size() != 1) {
@@ -97,6 +102,7 @@ public class OrderServiceImpl implements OrderService {
 
         return CreateOrderResponse.builder()
                 .orderId(order.getId())
+                .clientOrderNumber(clientOrderNumber)
                 .totalPrice(order.getTotalPrice())
                 .orderStatus(order.getStatus().name())
                 .orderType(order.getType().name())
@@ -115,7 +121,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public String createOrder(CreateOrderRequest request, String userEmail) {
+    public Map<String, String> createOrder(CreateOrderRequest request, String userEmail) {
 
         log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
         Actor user = actorRepository.findByEmail(userEmail)
@@ -185,6 +191,11 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
 
         orderDetailRepository.saveAll(orderDetails);
+
+        // Redis에 clientOrderNumber 저장
+        String clientOrderNumber = orderNumberService.getNextOrderNumber(store.getId());
+        redisTemplate.opsForValue().set("order_number:" + store.getId() + ":" + orders.getId(), clientOrderNumber);
+
         log.info("주문 상세 저장 완료 - 주문 ID: {}", orders.getId());
 
 
@@ -196,7 +207,10 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("결제 처리 완료 - 주문 ID: {}", orders.getId());
 
-        return orders.getId();
+        return Map.of(
+                "orderId", orders.getId(),
+                "clientOrderNumber", clientOrderNumber
+        );
 
     }
 

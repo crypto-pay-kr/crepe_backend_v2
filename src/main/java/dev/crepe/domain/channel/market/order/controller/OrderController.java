@@ -5,6 +5,7 @@ import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.market.order.model.dto.request.CreateOrderRequest;
 import dev.crepe.domain.channel.market.order.model.dto.response.CreateOrderResponse;
 import dev.crepe.domain.channel.market.order.service.OrderService;
+import dev.crepe.domain.channel.market.order.service.impl.OrderNumberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/orders")
@@ -22,6 +24,7 @@ import java.util.List;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderNumberServiceImpl orderNumberService;
 
     // 사용자의 주문 목록 조회
     @GetMapping
@@ -45,9 +48,9 @@ public class OrderController {
     @PostMapping("/create")
     @UserAuth
     @Operation(summary = "주문 생성", description = "새로운 주문을 생성합니다.", security = @SecurityRequirement(name = "bearer-jwt"))
-    public ResponseEntity<String> createOrder(@RequestBody CreateOrderRequest orderRequest, AppAuthentication auth) {
-        String orderId = orderService.createOrder(orderRequest, auth.getUserEmail());
-        return ResponseEntity.ok(orderId);
+    public  ResponseEntity<Map<String, String>> createOrder(@RequestBody CreateOrderRequest orderRequest, AppAuthentication auth) {
+        Map<String, String> response = orderService.createOrder(orderRequest, auth.getUserEmail());
+        return ResponseEntity.ok(response);
     }
 
 
