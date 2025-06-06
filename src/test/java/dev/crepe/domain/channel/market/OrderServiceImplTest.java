@@ -20,6 +20,7 @@ import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.CustomException;
 import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.infra.redis.service.RedisOrderNumberService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -68,7 +66,7 @@ class OrderServiceImplTest {
     private ExceptionDbService exceptionDbService;
 
     @Mock
-    private OrderIdGenerator orderIdGenerator;
+    private RedisOrderNumberService redisOrderNumberService;
 
     @Test
     @DisplayName("사용자 주문 목록 조회 테스트")
@@ -166,10 +164,13 @@ class OrderServiceImplTest {
         OrderDetail orderDetail = createOrderDetail(1L, order, menu);
         List<OrderDetail> orderDetails = Collections.singletonList(orderDetail);
         String orderId = order.getId();
+        String clientOrderNumber = "1";
 
-        // Remove unnecessary stubbing
         when(orderRepository.findById(orderId)).thenReturn(Optional.of(order));
         when(orderDetailRepository.findByOrderId(orderId)).thenReturn(orderDetails);
+
+        // RedisOrderNumberService Mock 설정
+        when(redisOrderNumberService.getOrderNumber(store.getId(), orderId)).thenReturn(clientOrderNumber);
 
         // when
         CreateOrderResponse result = orderService.getOrderDetails(orderId, userEmail);
@@ -177,9 +178,11 @@ class OrderServiceImplTest {
         // then
         assertNotNull(result);
         assertEquals(orderId, result.getOrderId());
+        assertEquals(clientOrderNumber, result.getClientOrderNumber());
         assertEquals(1, result.getOrderDetails().size());
         verify(orderRepository).findById(orderId);
         verify(orderDetailRepository).findByOrderId(orderId);
+        verify(redisOrderNumberService).getOrderNumber(store.getId(), orderId);
     }
 
     @Test
@@ -241,95 +244,100 @@ class OrderServiceImplTest {
         verify(orderDetailRepository, never()).findByOrderId(anyString());
     }
 
-//    @Test
-//    @DisplayName("주문 생성 테스트")
-//    void createOrder() {
-//        // given
-//        String userEmail = "user@example.com";
-//        Long storeId = 2L;
-//        String currency = "BTC";
-//        BigDecimal exchangeRate = new BigDecimal("40000000");
-//        String generatedOrderId = "TEST_ORDER_ID_12345";
-//        Long voucherSubscribeId = 100L;
-//        PaymentType paymentType = PaymentType.COIN;
-//
-//        Actor user = Actor.builder()
-//                .email(userEmail)
-//                .nickName("user")
-//                .phoneNum("01012345678")
-//                .role(UserRole.USER)
-//                .build();
-//
-//        Actor store = Actor.builder()
-//                .id(storeId)
-//                .email("store@example.com")
-//                .nickName("store")
-//                .phoneNum("01012345678")
-//                .role(UserRole.SELLER)
-//                .build();
-//
-//        Menu menu1 = Menu.builder()
-//                .id(1L)
-//                .price(50000)
-//                .name("Menu1")
-//                .image("menu1.jpg")
-//                .store(store)
-//                .build();
-//
-//        Menu menu2 = Menu.builder()
-//                .id(2L)
-//                .price(30000)
-//                .name("Menu2")
-//                .image("menu2.jpg")
-//                .store(store)
-//                .build();
-//
-//        List<CreateOrderRequest.OrderDetailRequest> orderDetails = Arrays.asList(
-//                new CreateOrderRequest.OrderDetailRequest(1L, 1),
-//                new CreateOrderRequest.OrderDetailRequest(2L, 2)
-//        );
-//
-//        CreateOrderRequest request = new CreateOrderRequest(
-//                exchangeRate, storeId, userEmail, orderDetails, currency, paymentType, voucherSubscribeId
-//        );
-//
-//        try (MockedStatic<OrderIdGenerator> mockedGenerator = Mockito.mockStatic(OrderIdGenerator.class)) {
-//            mockedGenerator.when(OrderIdGenerator::generate).thenReturn(generatedOrderId);
-//
-//            when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
-//            when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
-//            when(menuRepository.findById(1L)).thenReturn(Optional.of(menu1));
-//            when(menuRepository.findById(2L)).thenReturn(Optional.of(menu2));
-//
-//            // validateRateWithinThreshold 호출을 검증하도록 수정
-//            doNothing().when(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
-//
-//            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
-//                Order order = invocation.getArgument(0);
-//                Field idField = Order.class.getDeclaredField("id");
-//                idField.setAccessible(true);
-//                idField.set(order, generatedOrderId);
-//                return order;
-//            });
-//
-//            when(orderDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
-//
-//            // when
-//            String result = orderService.createOrder(request, userEmail);
-//
-//            // then
-//            assertNotNull(result);
-//            assertEquals(generatedOrderId, result);
-//            verify(actorRepository).findByEmail(userEmail);
-//            verify(actorRepository).findById(storeId);
-//            verify(menuRepository).findById(1L);
-//            verify(menuRepository).findById(2L);
-//            verify(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
-//            verify(orderRepository).save(any(Order.class));
-//            verify(orderDetailRepository).saveAll(anyList());
-//            verify(payService).payForOrder(any(Order.class));
-//        }
-//    }
+    @Test
+    @DisplayName("주문 생성 테스트")
+    void createOrder() {
+        // given
+        String userEmail = "user@example.com";
+        Long storeId = 2L;
+        String currency = "BTC";
+        BigDecimal exchangeRate = new BigDecimal("40000000");
+        String generatedOrderId = "TEST_ORDER_ID_12345";
+        Long voucherSubscribeId = 100L;
+        PaymentType paymentType = PaymentType.COIN;
+        String clientOrderNumber = "1";
+
+        Actor user = Actor.builder()
+                .email(userEmail)
+                .nickName("user")
+                .phoneNum("01012345678")
+                .role(UserRole.USER)
+                .build();
+
+        Actor store = Actor.builder()
+                .id(storeId)
+                .email("store@example.com")
+                .nickName("store")
+                .phoneNum("01012345678")
+                .role(UserRole.SELLER)
+                .build();
+
+        Menu menu1 = Menu.builder()
+                .id(1L)
+                .price(50000)
+                .name("Menu1")
+                .image("menu1.jpg")
+                .store(store)
+                .build();
+
+        Menu menu2 = Menu.builder()
+                .id(2L)
+                .price(30000)
+                .name("Menu2")
+                .image("menu2.jpg")
+                .store(store)
+                .build();
+
+        List<CreateOrderRequest.OrderDetailRequest> orderDetails = Arrays.asList(
+                new CreateOrderRequest.OrderDetailRequest(1L, 1),
+                new CreateOrderRequest.OrderDetailRequest(2L, 2)
+        );
+
+        CreateOrderRequest request = new CreateOrderRequest(
+                exchangeRate, storeId, userEmail, orderDetails, currency, paymentType, voucherSubscribeId
+        );
+
+        try (MockedStatic<OrderIdGenerator> mockedGenerator = Mockito.mockStatic(OrderIdGenerator.class)) {
+            mockedGenerator.when(OrderIdGenerator::generate).thenReturn(generatedOrderId);
+
+            when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.of(user));
+            when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
+            when(menuRepository.findById(1L)).thenReturn(Optional.of(menu1));
+            when(menuRepository.findById(2L)).thenReturn(Optional.of(menu2));
+
+            doNothing().when(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
+
+            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
+                Order order = invocation.getArgument(0);
+                Field idField = Order.class.getDeclaredField("id");
+                idField.setAccessible(true);
+                idField.set(order, generatedOrderId);
+                return order;
+            });
+
+            when(orderDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
+
+            // RedisOrderNumberService Mock 설정
+            when(redisOrderNumberService.generateOrderNumber(storeId, generatedOrderId)).thenReturn(clientOrderNumber);
+
+            // when
+            Map<String, String> result = orderService.createOrder(request, userEmail);
+
+            // then
+            assertNotNull(result);
+            assertEquals(generatedOrderId, result.get("orderId"));
+            assertEquals(clientOrderNumber, result.get("clientOrderNumber"));
+            verify(actorRepository).findByEmail(userEmail);
+            verify(actorRepository).findById(storeId);
+            verify(menuRepository).findById(1L);
+            verify(menuRepository).findById(2L);
+            verify(upbitExchangeService).validateRateWithinThreshold(exchangeRate, currency, BigDecimal.valueOf(1));
+            verify(orderRepository).save(any(Order.class));
+            verify(orderDetailRepository).saveAll(anyList());
+            verify(redisOrderNumberService).generateOrderNumber(storeId, generatedOrderId);
+            verify(payService).payForOrder(any(Order.class));
+        }
+    }
 
     @Test
     @DisplayName("존재하지 않는 사용자로 주문 생성 시 예외 발생")

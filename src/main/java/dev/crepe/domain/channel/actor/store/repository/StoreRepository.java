@@ -12,6 +12,5 @@ public interface StoreRepository extends JpaRepository<Actor, Long> {
 
     List<Actor> findByDataStatusTrueAndStatus(StoreStatus status);
     Optional<Actor> findByIdAndDataStatusTrueAndStatus(Long id, StoreStatus status);
-    List<Long> findAllStoreIds();
 }
 

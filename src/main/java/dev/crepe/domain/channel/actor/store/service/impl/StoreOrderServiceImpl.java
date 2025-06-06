@@ -12,6 +12,7 @@ import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.pay.repostiory.PayHistoryRepository;
 import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.infra.redis.service.RedisOrderNumberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -30,7 +31,8 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
     private final EnumValidationService enumValidationService;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisOrderNumberService redisOrderNumberService;
+
 
 
     //******************************************** 가맹점 주문 조회 start ********************************************/
@@ -39,10 +41,10 @@ public class StoreOrderServiceImpl implements StoreOrderService {
         return orderRepository.findByStoreId(storeId).stream()
                 .sorted((o1, o2) -> o2.getCreatedAt().compareTo(o1.getCreatedAt()))
                 .map(order -> {
-                    String clientOrderNumber = redisTemplate.opsForValue().get("order_number:" + storeId + ":" + order.getId());
+                    String clientOrderNumber = redisOrderNumberService.getOrderNumber(storeId, order.getId());
                     return StoreOrderResponse.builder()
                             .orderId(order.getId())
-                            .clientOrderNumber(clientOrderNumber) // Redis에서 조회한 값 추가
+                            .clientOrderNumber(clientOrderNumber)
                             .totalPrice(order.getTotalPrice())
                             .status(order.getStatus())
                             .orderType(order.getType().name())
@@ -60,7 +62,6 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                 })
                 .toList();
     }
-
     //******************************************** 가맹점 주문 조회 end ********************************************/
 
 

@@ -24,6 +24,7 @@ import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 
+import dev.crepe.infra.redis.service.RedisOrderNumberService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -50,11 +51,9 @@ public class OrderServiceImpl implements OrderService {
     private final AccountRepository accountRepository;
     private final StoreRepository storeRepository;
     private final UpbitExchangeService upbitExchangeService;
-    private final OrderNumberServiceImpl orderNumberService;
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
-    private final RedisTemplate<String, String> redisTemplate;
-
+    private final RedisOrderNumberService redisOrderNumberService;
 
 //******************************************** 주문 내역 조회 start ******************************************/
 
@@ -92,13 +91,13 @@ public class OrderServiceImpl implements OrderService {
             throw exceptionDbService.getException("ACTOR_001");
         }
 
-        String clientOrderNumber = redisTemplate.opsForValue().get("order_number:" + orderId);
-
         // orderId로 OrderDetail 조회
         List<OrderDetail> orderDetails = orderDetailRepository.findByOrderId(orderId);
         if (orderDetails.size() != 1) {
             throw exceptionDbService.getException("ORDER_003");
         }
+
+        String clientOrderNumber = redisOrderNumberService.getOrderNumber(order.getStore().getId(), order.getId());
 
         return CreateOrderResponse.builder()
                 .orderId(order.getId())
@@ -180,7 +179,7 @@ public class OrderServiceImpl implements OrderService {
                 .store(store)
                 .build();
 
-        orderRepository.save(orders);
+
 
         List<OrderDetail> orderDetails = request.getOrderDetails().stream()
                 .map(detail -> OrderDetail.builder()
@@ -190,11 +189,13 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .collect(Collectors.toList());
 
+        orderRepository.save(orders);
         orderDetailRepository.saveAll(orderDetails);
 
-        // Redis에 clientOrderNumber 저장
-        String clientOrderNumber = orderNumberService.getNextOrderNumber(store.getId());
-        redisTemplate.opsForValue().set("order_number:" + store.getId() + ":" + orders.getId(), clientOrderNumber);
+        // 주문 번호 생성
+        String clientOrderNumber = redisOrderNumberService.generateOrderNumber(
+                store.getId(), orders.getId()
+        );
 
         log.info("주문 상세 저장 완료 - 주문 ID: {}", orders.getId());
 

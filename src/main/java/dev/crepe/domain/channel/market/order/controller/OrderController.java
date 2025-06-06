@@ -5,7 +5,6 @@ import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.market.order.model.dto.request.CreateOrderRequest;
 import dev.crepe.domain.channel.market.order.model.dto.response.CreateOrderResponse;
 import dev.crepe.domain.channel.market.order.service.OrderService;
-import dev.crepe.domain.channel.market.order.service.impl.OrderNumberServiceImpl;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -24,7 +23,6 @@ import java.util.Map;
 public class OrderController {
 
     private final OrderService orderService;
-    private final OrderNumberServiceImpl orderNumberService;
 
     // 사용자의 주문 목록 조회
     @GetMapping
