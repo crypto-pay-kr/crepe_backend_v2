@@ -108,6 +108,15 @@ public class StoreSellerController {
         return new ResponseEntity<>(res, HttpStatus.OK);
     }
 
+    @Operation(summary = "가맹점 결제수단 조회", description = "가맹점에서 지원하는 결제수단 목록을 조회합니다.")
+    @GetMapping("/supported/coins")
+    @SellerAuth
+    @SecurityRequirement(name = "bearer-jwt")
+    public ResponseEntity<List<String>> getSupportedCoins(AppAuthentication auth) {
+        List<String> supportedCoins = storeService.getSupportedCoins(auth.getUserEmail());
+        return new ResponseEntity<>(supportedCoins, HttpStatus.OK);
+    }
+
     /**
      * 가게 영업중 상태 변경
      */

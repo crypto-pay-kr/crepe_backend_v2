@@ -34,8 +34,9 @@ public class ActorExchangeController {
     @ActorAuth
     @PostMapping("/token")
     public ResponseEntity<String> requestExchangeToToken(@RequestBody CreateExchangeRequest request,
-                                                         AppAuthentication auth) {
-        actorExchangeService.requestExchangeToToken(auth.getUserEmail(), request );
+                                                         AppAuthentication auth,
+                                                         @RequestHeader("Trace-Id") String traceId) {
+        actorExchangeService.requestExchangeToToken(auth.getUserEmail(), request ,traceId);
         return ResponseEntity.ok("코인에서 토큰으로 환전 요청이 완료되었습니다");
     }
 
@@ -47,8 +48,9 @@ public class ActorExchangeController {
     @ActorAuth
     @PostMapping("/coin")
     public ResponseEntity<String> requestExchangeToCoin(@RequestBody CreateExchangeRequest request,
-                                                        AppAuthentication auth) {
-        actorExchangeService.requestExchangeToCoin(auth.getUserEmail(), request );
+                                                        AppAuthentication auth
+                                                        ,@RequestHeader("Trace-Id") String traceId) {
+        actorExchangeService.requestExchangeToCoin(auth.getUserEmail(), request, traceId);
         return ResponseEntity.ok("토큰에서 코인으로 환전 요청이 완료되었습니다");
     }
 

@@ -88,6 +88,7 @@ public class BankTokenManageServiceImpl implements BankTokenManageService {
 
         BankToken bankToken = bankTokenInfoService.findByBank(bank);
 
+
         if (tokenHistoryService.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING).isPresent()) {
             throw exceptionDbService.getException("BANK_TOKEN_002");
         }

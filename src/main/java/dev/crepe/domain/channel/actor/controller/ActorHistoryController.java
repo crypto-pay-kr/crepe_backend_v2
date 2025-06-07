@@ -9,8 +9,11 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import org.springframework.data.domain.Slice;
+import org.springframework.http.CacheControl;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
 
 
 @RestController
@@ -22,8 +25,8 @@ public class ActorHistoryController {
     private final ActorHistoryService actorHistoryService;
 
     @Operation(
-            summary = " 내역 조회",
-            description = "유저, 가맹점의 특정 코인 내역을 조회합니다.",
+            summary = "거래내역 조회",
+            description = "유저, 가맹점의 특정 코인 거래내역을 조회합니다.",
             security = @SecurityRequirement(name = "bearer-jwt")
     )
     @ActorAuth
@@ -34,9 +37,21 @@ public class ActorHistoryController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
+        long startTime = System.currentTimeMillis();
+
         Slice<GetTransactionHistoryResponse> response = actorHistoryService.getNonRegulationHistory(
                 auth.getUserEmail(), currency, page, size);
-        return ResponseEntity.ok(response);
+
+        long endTime = System.currentTimeMillis();
+        long responseTime = endTime - startTime;
+
+        // 응답 시간과 캐시 정보를 헤더에 추가
+        return ResponseEntity.ok()
+                .header("X-Response-Time", String.valueOf(responseTime))
+                .header("X-Cache-Enabled", "true")
+                .header("X-Total-Elements", String.valueOf(response.getContent().size()))
+                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(30)))
+                .body(response);
     }
 
 

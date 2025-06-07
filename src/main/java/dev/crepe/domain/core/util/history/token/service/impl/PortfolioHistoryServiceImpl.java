@@ -3,20 +3,11 @@ package dev.crepe.domain.core.util.history.token.service.impl;
 import dev.crepe.domain.admin.dto.request.RejectBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.CreateBankTokenRequest;
 import dev.crepe.domain.bank.model.dto.request.ReCreateBankTokenRequest;
-import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
-import dev.crepe.domain.core.util.coin.non_regulation.repository.CoinRepository;
-import dev.crepe.domain.core.util.coin.regulation.exception.PendingBankTokenExistsException;
-import dev.crepe.domain.core.util.coin.regulation.exception.PortfolioUpdateFailedException;
-import dev.crepe.domain.core.util.coin.regulation.exception.TokenHistoryNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
-import dev.crepe.domain.core.util.coin.regulation.model.entity.Portfolio;
-import dev.crepe.domain.core.util.coin.regulation.repository.PortfolioRepository;
 import dev.crepe.domain.core.util.coin.regulation.service.PortfolioService;
 import dev.crepe.domain.core.util.history.token.model.TokenRequestType;
-import dev.crepe.domain.core.util.history.token.model.entity.PortfolioHistoryDetail;
 import dev.crepe.domain.core.util.history.token.model.entity.TokenHistory;
-import dev.crepe.domain.core.util.history.token.repository.PortfolioHistoryDetailRepository;
 import dev.crepe.domain.core.util.history.token.repository.TokenHistoryRepository;
 import dev.crepe.domain.core.util.history.token.service.PortfolioHistoryService;
 import dev.crepe.domain.core.util.history.token.service.TokenHistoryService;
@@ -93,8 +84,9 @@ public class PortfolioHistoryServiceImpl implements PortfolioHistoryService {
     public void updatePortfolio(BankToken bankToken) {
         try {
             // BankToken의 id 를 통해 PENDING 상태인 tokenhistory 내역 가져오기
-            TokenHistory pendingTokenHistory = tokenHistoryService.findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING)
-                    .orElseThrow(() -> new PendingBankTokenExistsException(bankToken.getName()));
+            TokenHistory pendingTokenHistory = tokenHistoryService
+                    .findByBankTokenAndStatus(bankToken, BankTokenStatus.PENDING)
+                    .orElseThrow(() -> exceptionDbService.getException("BANK_TOKEN_002"));
 
             // 기존 포토폴리오 삭제
             portfolioService.clearPortfolios(bankToken);

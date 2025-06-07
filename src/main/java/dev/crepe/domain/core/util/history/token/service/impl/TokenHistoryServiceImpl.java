@@ -1,7 +1,6 @@
 package dev.crepe.domain.core.util.history.token.service.impl;
 
 import dev.crepe.domain.bank.model.entity.Bank;
-import dev.crepe.domain.core.util.coin.regulation.exception.TokenHistoryNotFoundException;
 import dev.crepe.domain.core.util.coin.regulation.model.BankTokenStatus;
 import dev.crepe.domain.core.util.coin.regulation.model.entity.BankToken;
 import dev.crepe.domain.core.util.history.token.model.TokenRequestType;

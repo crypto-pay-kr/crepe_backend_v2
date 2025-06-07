@@ -1,14 +1,13 @@
 package dev.crepe.domain.channel.actor.store.service.impl;
 
+import dev.crepe.domain.channel.actor.store.EnumValidationService;
 import dev.crepe.domain.channel.actor.store.model.dto.request.StoreOrderActionRequest;
 import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderManageResponse;
 import dev.crepe.domain.channel.actor.store.model.dto.response.StoreOrderResponse;
 import dev.crepe.domain.channel.actor.store.service.StoreOrderService;
-import dev.crepe.domain.channel.market.order.exception.InvalidOrderIdException;
 import dev.crepe.domain.channel.market.order.model.OrderStatus;
 import dev.crepe.domain.channel.market.order.model.entity.Order;
 import dev.crepe.domain.channel.market.order.repository.OrderRepository;
-import dev.crepe.domain.core.util.history.pay.execption.PayHistoryNotFoundException;
 import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.history.pay.model.entity.PayHistory;
 import dev.crepe.domain.core.util.history.pay.repostiory.PayHistoryRepository;
@@ -29,6 +28,7 @@ public class StoreOrderServiceImpl implements StoreOrderService {
     private final PayHistoryRepository payHistoryRepository;
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
+    private final EnumValidationService enumValidationService;
 
 
     //******************************************** 가맹점 주문 조회 start ********************************************/
@@ -60,6 +60,8 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                     .message("이미 처리된 주문입니다.")
                     .build();
         }
+
+        enumValidationService.validatePreparationTime(request.getPreparationTime());
 
         // 주문 상태 업데이트
         order.accept(request.getPreparationTime());
@@ -100,6 +102,9 @@ public class StoreOrderServiceImpl implements StoreOrderService {
                     .message("이미 처리된 주문입니다.")
                     .build();
         }
+
+        enumValidationService.validateRefusalReason(request.getRefusalReason());
+
         //주문 상태 업데이트
         order.refuse();
         orderRepository.save(order);

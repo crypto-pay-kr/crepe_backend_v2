@@ -2,10 +2,7 @@ package dev.crepe.domain.channel.actor.store.model.dto.request;
 
 import dev.crepe.domain.channel.actor.store.model.StoreType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,7 +31,7 @@ public class StoreSignupRequest {
     @Schema(description = "전화번호 (010으로 시작하는 11자리)", example = "01012345678")
     private String phoneNumber;
 
-    @NotBlank
+    @NotNull
     @Schema(description = "가게 유형", example = "크레페")
     private StoreType storeType;
 

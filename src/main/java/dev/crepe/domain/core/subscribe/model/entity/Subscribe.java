@@ -135,5 +135,12 @@ public class Subscribe extends BaseEntity {
         this.balance = this.balance.subtract(amount);
     }
 
+    public void addAmount(BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("추가 금액은 0보다 커야 합니다.");
+        }
+        this.balance = this.balance.add(amount);
+    }
+
 
 }

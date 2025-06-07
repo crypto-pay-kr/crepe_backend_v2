@@ -18,7 +18,7 @@ public interface OrderService {
     CreateOrderResponse getOrderDetails(String orderId, String userEmail);
 
     // 주문 생성
-    String createOrder(CreateOrderRequest request, String userEmail);
+    String createOrder(CreateOrderRequest request, String userEmail, String traceId);
 
     // 관리자 주문 조회
     Page<Order> getOrdersByUserId(Long userId, Pageable pageable);
@@ -26,5 +26,7 @@ public interface OrderService {
 
     // 유저 주문 조회
     Page<Order> getOrdersByUserEmail(String userEmail, Pageable pageable);
+
+    List<String> getAvailableCurrency(String userEmail, Long storeId);
 
 }
