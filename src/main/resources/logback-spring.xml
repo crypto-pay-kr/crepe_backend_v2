@@ -64,9 +64,6 @@
             <appender-ref ref="FILE"/>
             <appender-ref ref="JSON_FILE"/>
         </logger>
-        <!-- 외부 라이브러리 - 최소한만 -->
-        <logger name="org.springframework.web" level="TRACE"/>
-        <logger name="org.springframework.security" level="TRACE"/>
     </springProfile>
     <!-- PROD 환경: INFO와 ERROR만 출력 -->
     <springProfile name="prod">
