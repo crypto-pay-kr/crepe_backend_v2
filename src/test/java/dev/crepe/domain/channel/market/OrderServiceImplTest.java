@@ -20,6 +20,7 @@ import dev.crepe.domain.core.pay.service.PayService;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.CustomException;
 import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.global.util.RedisDeduplicationUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,10 +32,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -69,6 +67,8 @@ class OrderServiceImplTest {
 
     @Mock
     private OrderIdGenerator orderIdGenerator;
+    @Mock
+    private RedisDeduplicationUtil redisDeduplicationUtil;
 
     @Test
     @DisplayName("사용자 주문 목록 조회 테스트")
@@ -314,8 +314,11 @@ class OrderServiceImplTest {
 
             when(orderDetailRepository.saveAll(anyList())).thenAnswer(invocation -> invocation.getArgument(0));
 
+            lenient().doNothing().when(redisDeduplicationUtil).checkAndStoreIfDuplicate(anyString());
+
+            String traceId = UUID.randomUUID().toString();
             // when
-            String result = orderService.createOrder(request, userEmail);
+            String result = orderService.createOrder(request, userEmail,traceId);
 
             // then
             assertNotNull(result);
@@ -344,9 +347,11 @@ class OrderServiceImplTest {
         when(actorRepository.findByEmail(userEmail)).thenReturn(Optional.empty());
         when(exceptionDbService.getException("ACTOR_002"))
                 .thenReturn(new CustomException("ACTOR_002", null, null));
+        lenient().doNothing().when(redisDeduplicationUtil).checkAndStoreIfDuplicate(anyString());
 
+        String traceId = UUID.randomUUID().toString();
         // when & then
-        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail,traceId));
         assertEquals("ACTOR_002", exception.getCode());
 
         verify(actorRepository).findByEmail(userEmail);
@@ -378,9 +383,11 @@ class OrderServiceImplTest {
         when(actorRepository.findById(storeId)).thenReturn(Optional.empty());
         when(exceptionDbService.getException("STORE_001"))
                 .thenReturn(new CustomException("STORE_001", null, null));
+        lenient().doNothing().when(redisDeduplicationUtil).checkAndStoreIfDuplicate(anyString());
 
+        String traceId = UUID.randomUUID().toString();
         // when & then
-        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail,traceId));
         assertEquals("STORE_001", exception.getCode());
 
 
@@ -430,10 +437,11 @@ class OrderServiceImplTest {
         when(actorRepository.findById(storeId)).thenReturn(Optional.of(store));
         when(menuRepository.findById(nonExistentMenuId))
                 .thenThrow(new CustomException("MENU_001", null, null));
+        lenient().doNothing().when(redisDeduplicationUtil).checkAndStoreIfDuplicate(anyString());
 
-
+        String traceId = UUID.randomUUID().toString();
         // when & then
-        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail,traceId));
         assertEquals("MENU_001", exception.getCode());
 
         verify(actorRepository).findByEmail(userEmail);
@@ -480,9 +488,11 @@ class OrderServiceImplTest {
         doThrow(exceptionDbService.getException("EXCHANGE_002"))
                 .when(upbitExchangeService)
                 .validateRateWithinThreshold(clientRate, currency, BigDecimal.valueOf(1));
+        lenient().doNothing().when(redisDeduplicationUtil).checkAndStoreIfDuplicate(anyString());
 
+        String traceId = UUID.randomUUID().toString();
         // when & then
-        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail));
+        CustomException exception = assertThrows(CustomException.class, () -> orderService.createOrder(request, userEmail,traceId));
         assertEquals("EXCHANGE_002", exception.getCode());
 
         verify(actorRepository).findByEmail(userEmail);

@@ -5,7 +5,7 @@ import dev.crepe.domain.core.util.coin.regulation.model.dto.request.TokenInfoRes
 
 public interface ActorExchangeService {
 
-    void requestExchangeToCoin(String email, CreateExchangeRequest request);
-    void requestExchangeToToken(String email, CreateExchangeRequest request);
+    void requestExchangeToCoin(String email, CreateExchangeRequest request, String traceId);
+    void requestExchangeToToken(String email, CreateExchangeRequest request,String traceId);
     TokenInfoResponse getBankTokenInfo(String currency);
 }
