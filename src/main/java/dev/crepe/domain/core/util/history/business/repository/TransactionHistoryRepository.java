@@ -1,6 +1,7 @@
 package dev.crepe.domain.core.util.history.business.repository;
 
 import dev.crepe.domain.channel.market.order.model.entity.Order;
+import dev.crepe.domain.core.account.model.entity.Account;
 import dev.crepe.domain.core.subscribe.model.entity.Subscribe;
 import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
@@ -103,4 +104,6 @@ public interface TransactionHistoryRepository extends JpaRepository<TransactionH
     List<PayStatusCountDto> countTotalByStatus(@Param("email") String email);
 
     TransactionHistory getTransactionHistoryById(Long id);
+
+    boolean existsByAccountAndStatusAndType(Account account, TransactionStatus status, TransactionType type);
 }

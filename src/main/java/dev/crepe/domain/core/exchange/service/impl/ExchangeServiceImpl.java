@@ -137,13 +137,13 @@ public class ExchangeServiceImpl implements ExchangeService {
         String fromCurrency = request.getFromCurrency();
         String toCurrency = request.getToCurrency();
 
-        Account actorCoinAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, isCoinToToken ? fromCurrency: toCurrency)
+        Account actorCoinAccount = accountRepository.findCoinAccountWithLock(email, isCoinToToken ? fromCurrency: toCurrency)
                 .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
-        Account actorTokenAccount = accountRepository.findByActor_EmailAndBankToken_Currency(email, isCoinToToken ? toCurrency: fromCurrency)
+        Account actorTokenAccount = accountRepository.findTokenAccountWithLock(email, isCoinToToken ? toCurrency: fromCurrency)
                 .orElseGet(() -> accountService.getOrCreateTokenAccount(email, toCurrency));
 
-        Account bankTokenAccount = accountRepository.findByBankToken_CurrencyAndActorIsNull(
+        Account bankTokenAccount = accountRepository.findBankTokenAccountWithLock(
                         isCoinToToken ? toCurrency : fromCurrency)
                 .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
@@ -154,7 +154,7 @@ public class ExchangeServiceImpl implements ExchangeService {
                 .map(p -> p.getCoin().getId())
                 .toList();
 
-        List<Account> bankCoinAccounts = accountRepository.findByBank_IdAndCoin_IdIn(bankTokenAccount.getBank().getId(), coinIds);
+        List<Account> bankCoinAccounts = accountRepository.findByBankCoinAccountWithLock(bankTokenAccount.getBank().getId(), coinIds);
         Account bankCoinAccount = bankCoinAccounts.stream()
                 .filter(acc -> acc.getCoin().getCurrency().equalsIgnoreCase(isCoinToToken? fromCurrency: toCurrency))
                 .findFirst()
