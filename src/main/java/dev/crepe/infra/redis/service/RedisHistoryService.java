@@ -50,16 +50,6 @@ public class RedisHistoryService {
     }
 
     /**
-     * 거래 내역 캐시 조회
-     */
-    @Cacheable(value = "transactionHistory",
-            key = "#email + ':' + #currency + ':' + #page + ':' + #size")
-    public Slice<GetTransactionHistoryResponse> getTransactionHistory(String email, String currency, int page, int size) {
-        log.debug("거래 내역 캐시 조회 - email: {}, currency: {}, page: {}", email, currency, page);
-        return null;
-    }
-
-    /**
      * 환전 내역 캐시 조회
      */
     @Cacheable(value = "exchangeHistory",
@@ -174,6 +164,76 @@ public class RedisHistoryService {
         }
 
         return List.of();
+    }
+    /**
+     * 거래 내역 캐시 조회 - Spring Cache 어노테이션 방식
+     */
+    @Cacheable(value = "transactionHistory",
+            key = "#email + ':' + #currency + ':' + #page + ':' + #size")
+    public Slice<GetTransactionHistoryResponse> getTransactionHistory(String email, String currency, int page, int size) {
+        log.debug("거래 내역 캐시 조회 - email: {}, currency: {}, page: {}", email, currency, page);
+        return null; // 캐시 미스 시 null 반환하여 실제 로직에서 DB 조회
+    }
+
+    /**
+     * 거래 내역 캐시 저장
+     */
+    @CachePut(value = "transactionHistory",
+            key = "#email + ':' + #currency + ':' + #page + ':' + #size")
+    public Slice<GetTransactionHistoryResponse> updateTransactionHistoryCache(
+            String email, String currency, int page, int size,
+            Slice<GetTransactionHistoryResponse> data) {
+        log.debug("거래 내역 캐시 갱신 - email: {}, currency: {}, page: {}", email, currency, page);
+        return data;
+    }
+
+    /**
+     * 특정 사용자의 거래내역 캐시 삭제
+     */
+    @CacheEvict(value = {"transactionHistory", "exchangeHistory"}, allEntries = true)
+    public void evictUserTransactionHistoryCache(String email) {
+        log.info("사용자 거래내역 캐시 삭제 - email: {}", email);
+
+        // 패턴 매칭으로 관련 캐시 삭제
+        String[] patterns = {
+                TRANSACTION_HISTORY_PREFIX + email + "*",
+                EXCHANGE_HISTORY_PREFIX + email + "*",
+                "tx_histories_by_account:*",
+                "exchange_histories_by_accounts:*",
+                "user_accounts:" + email
+        };
+
+        for (String pattern : patterns) {
+            Set<String> keys = redisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                redisTemplate.delete(keys);
+                log.debug("패턴 {} 매칭 거래내역 캐시 {} 개 삭제", pattern, keys.size());
+            }
+        }
+    }
+
+    /**
+     * 특정 계좌 관련 캐시 삭제
+     */
+    public void evictAccountRelatedCache(Long accountId, String userEmail) {
+        // 계좌별 거래내역 캐시 삭제
+        String accountCacheKey = "tx_histories_by_account:" + accountId;
+        redisTemplate.delete(accountCacheKey);
+
+        // 사용자 계좌 정보 캐시 삭제
+        if (userEmail != null) {
+            String userAccountKey = "user_accounts:" + userEmail;
+            redisTemplate.delete(userAccountKey);
+        }
+
+        // 환전내역 캐시는 계좌 ID 조합이므로 패턴 삭제
+        String exchangePattern = "exchange_histories_by_accounts:*" + accountId + "*";
+        Set<String> exchangeKeys = redisTemplate.keys(exchangePattern);
+        if (exchangeKeys != null && !exchangeKeys.isEmpty()) {
+            redisTemplate.delete(exchangeKeys);
+        }
+
+        log.info("계좌 관련 캐시 삭제 완료 - accountId: {}, userEmail: {}", accountId, userEmail);
     }
 
     /**
