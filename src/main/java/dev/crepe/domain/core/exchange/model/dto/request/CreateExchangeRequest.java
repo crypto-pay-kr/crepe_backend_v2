@@ -1,5 +1,6 @@
 package dev.crepe.domain.core.exchange.model.dto.request;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +9,7 @@ import java.util.Map;
 
 
 @Getter
+@Builder
 @Setter
 public class CreateExchangeRequest {
 

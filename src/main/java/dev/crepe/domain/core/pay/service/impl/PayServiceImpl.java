@@ -48,16 +48,20 @@ public class PayServiceImpl implements PayService {
     private final SubscribeRepository subscribeRepository;
     private final CoinRepository coinRepository;
 
-    @Override
+
     @Transactional
     public void payForOrder(Order order) {
-        log.info("결제 내역 생성");
-        // 1. 유저와 가맹점의 계좌 정보 조회
-        Account userAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getUser().getEmail(), order.getCurrency())
-                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
-        Account storeAccount = accountRepository.findByActor_EmailAndCoin_Currency(order.getStore().getEmail(), order.getCurrency())
-                .orElseThrow(()->exceptionDbService.getException("ACCOUNT_002"));
+        log.info("결제 내역 생성");
+
+        // 1. 유저와 가맹점의 계좌 정보 조회 - 낙관적 락 적용
+        Account userAccount = accountRepository.findCoinAccountWithLock(
+                        order.getUser().getEmail(), order.getCurrency())
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_001"));
+
+        Account storeAccount = accountRepository.findCoinAccountWithLock(
+                        order.getStore().getEmail(), order.getCurrency())
+                .orElseThrow(() -> exceptionDbService.getException("ACCOUNT_002"));
 
         accountService.validateAccountNotHold(userAccount);
         accountService.validateAccountNotHold(storeAccount);
@@ -68,7 +72,7 @@ public class PayServiceImpl implements PayService {
 
         // 3. 유저 잔액 부족 여부 확인
         if (userAccount.getBalance().compareTo(totalAmount) < 0) {
-           throw exceptionDbService.getException("ACCOUNT_006");
+            throw exceptionDbService.getException("ACCOUNT_006");
         }
 
         // 4. 유저 계좌에서 결제 금액 차감
@@ -172,7 +176,6 @@ public class PayServiceImpl implements PayService {
         payHistoryRepository.save(payHistory);
         subscribeHistoryRepository.save(history);
         transactionHistoryRepository.save(storeHistory);
-
     }
 
     // 유효한 상품권인지 검증

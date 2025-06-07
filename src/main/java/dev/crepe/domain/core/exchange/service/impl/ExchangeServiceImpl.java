@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 
 @Service
@@ -45,9 +46,21 @@ public class ExchangeServiceImpl implements ExchangeService {
 
         // 3. 은행이 지급할 수 있는 토큰 충분한지 검증
         if (accounts.getBankTokenAccount().getBalance().compareTo(request.getTokenAmount()) < 0) {
-            throw exceptionDbService.getException("ACCOUNT_006");
+            throw exceptionDbService.getException("BANK_ACCOUNT_001");
         }
+        // 4. 은행의 해당 코인 계좌에 포트폴리오 수량 이상으로 들어가지 않도록 검증
+        Optional<Portfolio> matchedPortfolio = accounts.getPortfolios().stream()
+                .filter(p -> p.getCoin().getCurrency().equals(request.getFromCurrency()))
+                .findFirst();
 
+
+        BigDecimal portfolioMaxAmount = matchedPortfolio.get().getAmount(); // 예: 200 XRP
+        BigDecimal currentBankCoinBalance = accounts.getBankCoinAccount().getBalance(); // 현재 은행 보유량
+        BigDecimal afterBalance = currentBankCoinBalance.add(request.getCoinAmount());
+
+        if (afterBalance.compareTo(portfolioMaxAmount) > 0) {
+            throw exceptionDbService.getException("BANK_ACCOUNT_001"); // 제한 초과
+        }
         // 4. 환전 수량 계산 (전체 자산 기준 환산 비율로 HTK 수량 계산)
         BigDecimal result = validator.validateRequestedTokenAmount(
                 request,
@@ -137,13 +150,13 @@ public class ExchangeServiceImpl implements ExchangeService {
         String fromCurrency = request.getFromCurrency();
         String toCurrency = request.getToCurrency();
 
-        Account actorCoinAccount = accountRepository.findByActor_EmailAndCoin_Currency(email, isCoinToToken ? fromCurrency: toCurrency)
+        Account actorCoinAccount = accountRepository.findCoinAccountWithLock(email, isCoinToToken ? fromCurrency: toCurrency)
                 .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
-        Account actorTokenAccount = accountRepository.findByActor_EmailAndBankToken_Currency(email, isCoinToToken ? toCurrency: fromCurrency)
+        Account actorTokenAccount = accountRepository.findTokenAccountWithLock(email, isCoinToToken ? toCurrency: fromCurrency)
                 .orElseGet(() -> accountService.getOrCreateTokenAccount(email, toCurrency));
 
-        Account bankTokenAccount = accountRepository.findByBankToken_CurrencyAndActorIsNull(
+        Account bankTokenAccount = accountRepository.findBankTokenAccountWithLock(
                         isCoinToToken ? toCurrency : fromCurrency)
                 .orElseThrow(()->exceptionDbService.getException("ACCOUNT_001"));
 
@@ -154,7 +167,7 @@ public class ExchangeServiceImpl implements ExchangeService {
                 .map(p -> p.getCoin().getId())
                 .toList();
 
-        List<Account> bankCoinAccounts = accountRepository.findByBank_IdAndCoin_IdIn(bankTokenAccount.getBank().getId(), coinIds);
+        List<Account> bankCoinAccounts = accountRepository.findByBankCoinAccountWithLock(bankTokenAccount.getBank().getId(), coinIds);
         Account bankCoinAccount = bankCoinAccounts.stream()
                 .filter(acc -> acc.getCoin().getCurrency().equalsIgnoreCase(isCoinToToken? fromCurrency: toCurrency))
                 .findFirst()
