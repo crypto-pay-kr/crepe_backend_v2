@@ -72,8 +72,21 @@
         <logger name="dev.crepe" level="TRACE" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
+            <appender-ref ref="JSON_FILE"/>
         </logger>
-        
+
+        <!-- 외부 라이브러리 - 최소한만 -->
+        <logger name="org.springframework.web" level="TRACE"/>
+        <logger name="org.springframework.security" level="TRACE"/>
+        <logger name="org.hibernate.SQL" level="TRACE"/>
+        <logger name="org.hibernate.type" level="TRACE"/>
+
+        <!-- Root Logger -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+            <appender-ref ref="JSON_FILE"/>
+        </root>
         <!-- 외부 라이브러리 - 개발시 디버깅용 -->
     </springProfile>
     
