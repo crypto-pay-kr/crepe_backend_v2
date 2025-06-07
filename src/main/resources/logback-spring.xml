@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    
     <!-- 로그 파일 경로 설정 -->
     <property name="LOG_PATH" value="./logs"/>
     <property name="LOG_FILE_NAME" value="application"/>
-    
     <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
@@ -13,11 +11,9 @@
             </pattern>
         </encoder>
     </appender>
-    
     <!-- File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
-        
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
@@ -26,19 +22,16 @@
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
-        
         <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
             <pattern>
                 %d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %5level [%X{requestId:-}] [%X{method:-}] [%X{uri:-}] [%X{remoteAddr:-}] [%X{userEmail:-}] %logger{36} - %msg%n
             </pattern>
         </encoder>
     </appender>
-    
     <!-- JSON 형식 로그 (Production 전용) -->
     <springProfile name="prod">
         <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/${LOG_FILE_NAME}-json.log</file>
-            
             <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
                 <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-json-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
                 <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
@@ -46,7 +39,6 @@
                 </timeBasedFileNamingAndTriggeringPolicy>
                 <maxHistory>30</maxHistory>
             </rollingPolicy>
-            
             <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
                 <providers>
                     <timestamp/>
@@ -61,11 +53,9 @@
             </encoder>
         </appender>
     </springProfile>
-    
     <!-- ============================ -->
     <!-- 프로파일별 로거 설정 -->
     <!-- ============================ -->
-    
     <!-- DEV 환경: TRACE, DEBUG, INFO, WARN, ERROR 모두 출력 -->
     <springProfile name="dev,local,default">
         <!-- 애플리케이션 로거 -->
@@ -74,22 +64,10 @@
             <appender-ref ref="FILE"/>
             <appender-ref ref="JSON_FILE"/>
         </logger>
-
         <!-- 외부 라이브러리 - 최소한만 -->
         <logger name="org.springframework.web" level="TRACE"/>
         <logger name="org.springframework.security" level="TRACE"/>
-        <logger name="org.hibernate.SQL" level="TRACE"/>
-        <logger name="org.hibernate.type" level="TRACE"/>
-
-        <!-- Root Logger -->
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
-            <appender-ref ref="JSON_FILE"/>
-        </root>
-        <!-- 외부 라이브러리 - 개발시 디버깅용 -->
     </springProfile>
-    
     <!-- PROD 환경: INFO와 ERROR만 출력 -->
     <springProfile name="prod">
         <!-- 애플리케이션 로거 - INFO와 ERROR만 -->
@@ -98,13 +76,9 @@
             <appender-ref ref="FILE"/>
             <appender-ref ref="JSON_FILE"/>
         </logger>
-        
         <!-- 외부 라이브러리 - 최소한만 -->
         <logger name="org.springframework.web" level="WARN"/>
         <logger name="org.springframework.security" level="WARN"/>
-        <logger name="org.hibernate.SQL" level="WARN"/>
-        <logger name="org.hibernate.type" level="WARN"/>
-        
         <!-- Root Logger -->
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
@@ -112,5 +86,4 @@
             <appender-ref ref="JSON_FILE"/>
         </root>
     </springProfile>
-    
 </configuration>
