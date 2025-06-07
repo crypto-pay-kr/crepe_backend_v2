@@ -24,6 +24,7 @@ import dev.crepe.domain.core.util.coin.non_regulation.model.entity.Coin;
 import dev.crepe.domain.core.util.upbit.Service.UpbitExchangeService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 
+import dev.crepe.global.util.RedisDeduplicationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,7 +53,7 @@ public class OrderServiceImpl implements OrderService {
     private final UpbitExchangeService upbitExchangeService;
     private final PayService payService;
     private final ExceptionDbService exceptionDbService;
-
+    private final RedisDeduplicationUtil redisDeduplicationUtil;
 
 //******************************************** 주문 내역 조회 start ******************************************/
 
@@ -115,7 +117,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public String createOrder(CreateOrderRequest request, String userEmail) {
+    public String createOrder(CreateOrderRequest request, String userEmail,String traceId) {
+        String redisKey = "dedup:order:" + userEmail + ":" + traceId;
+        redisDeduplicationUtil.checkAndStoreIfDuplicate(redisKey);
 
         log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
         Actor user = actorRepository.findByEmail(userEmail)

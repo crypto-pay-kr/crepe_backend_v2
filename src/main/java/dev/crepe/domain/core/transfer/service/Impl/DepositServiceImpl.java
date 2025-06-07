@@ -15,11 +15,14 @@ import dev.crepe.domain.core.util.history.business.model.entity.TransactionHisto
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
 import dev.crepe.domain.core.util.upbit.Service.UpbitDepositService;
 import dev.crepe.global.error.exception.ExceptionDbService;
+import dev.crepe.global.util.RedisDeduplicationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.List;
 
 @Service
@@ -36,7 +39,9 @@ public class DepositServiceImpl implements DepositService {
     private final UpbitDepositService upbitDepositService;
     private final ActorRepository actorRepository;
     private final ExceptionDbService exceptionDbService;
+    private final RedisDeduplicationUtil redisDeduplicationUtil;
 
+    @Transactional
     @Override
     public void requestDeposit(GetDepositRequest request, String email) {
         log.info("입금 요청 처리 시작: {}", email);
@@ -51,7 +56,7 @@ public class DepositServiceImpl implements DepositService {
 
 
         // 2. 해당 이메일, 코인에 해당하는 계좌 조회
-        Account account = accountRepository.findByActor_EmailAndCoin_Currency(email, currency)
+        Account account = accountRepository.findCoinAccountWithLock(email, currency)
                 .orElseThrow(()-> exceptionDbService.getException("ACCOUNT_001"));
 
         // 3. 이미 처리된 txid인지 확인

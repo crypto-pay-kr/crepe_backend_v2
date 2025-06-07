@@ -2,7 +2,9 @@ package dev.crepe.domain.channel.actor.controller;
 
 import dev.crepe.domain.auth.jwt.util.AppAuthentication;
 import dev.crepe.domain.auth.role.ActorAuth;
+import dev.crepe.domain.auth.role.UserAuth;
 import dev.crepe.domain.channel.actor.service.ActorTransferService;
+import dev.crepe.domain.core.deposit.model.dto.request.TokenDepositRequest;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetDepositRequest;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetTransferRequest;
 import dev.crepe.domain.core.transfer.model.dto.requset.GetWithdrawRequest;
@@ -19,7 +21,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Withdraw API", description = "이체 관련 API")
 public class ActorTransferController {
 
-    private final ActorTransferService actorWithdrawService;
+    private final ActorTransferService actorTransferService;
 
     @Operation(
             summary = "정산 요청",
@@ -30,9 +32,10 @@ public class ActorTransferController {
     @PostMapping("/withdraw")
     public ResponseEntity<String> requestWithdraw(
             AppAuthentication auth,
-            @RequestBody GetWithdrawRequest request
+            @RequestBody GetWithdrawRequest request,
+            @RequestHeader("Trace-Id") String traceId
     ) {
-        actorWithdrawService.requestWithdraw(request, auth.getUserEmail());
+        actorTransferService.requestWithdraw(request, auth.getUserEmail(),traceId);
         return ResponseEntity.ok("정산요청 완료");
     }
 
@@ -46,9 +49,10 @@ public class ActorTransferController {
     @PostMapping("/transfer")
     public ResponseEntity<String> requestTransfer(
             AppAuthentication auth,
-            @RequestBody GetTransferRequest request
+            @RequestBody GetTransferRequest request,
+            @RequestHeader("Trace-Id") String traceId
     ) {
-        actorWithdrawService.requestTransfer(request, auth.getUserEmail());
+        actorTransferService.requestTransfer(request, auth.getUserEmail(),traceId);
         return ResponseEntity.ok("송금요청 완료");
     }
 
@@ -63,7 +67,7 @@ public class ActorTransferController {
     public ResponseEntity<String> getReceiverName(@RequestParam String email,
                                                   @RequestParam String currency,
        AppAuthentication auth) {
-        String name = actorWithdrawService.getAccountHolderName(email,auth.getUserEmail(), currency);
+        String name = actorTransferService.getAccountHolderName(email,auth.getUserEmail(), currency);
         return ResponseEntity.ok(name);
     }
 
@@ -77,9 +81,23 @@ public class ActorTransferController {
     @ActorAuth
     @PostMapping("/deposit")
     public ResponseEntity<String> requestDeposit(@RequestBody GetDepositRequest request,
-                                                 AppAuthentication auth) {
-        actorWithdrawService.requestDeposit(request, auth.getUserEmail());
+                                                 AppAuthentication auth,
+                                                 @RequestHeader("Trace-Id") String traceId) {
+        actorTransferService.requestDeposit(request, auth.getUserEmail(), traceId);
         return ResponseEntity.ok("입금 처리가 완료되었습니다.");
+    }
+
+
+
+    @PostMapping("/deposit/token")
+    @UserAuth
+    @Operation(summary = "토큰 예치", description = "상품에 은행 토큰을 예치합니다.")
+    public ResponseEntity<?> depositToProduct(@RequestBody TokenDepositRequest request,
+                                              AppAuthentication auth,
+                                              @RequestHeader("Trace-Id") String traceId) {
+        String result = actorTransferService.requestTokenDeposit(auth.getUserEmail(),
+                request.getSubscribeId(), request.getAmount(),traceId);
+        return ResponseEntity.ok(result);
     }
 
 }
