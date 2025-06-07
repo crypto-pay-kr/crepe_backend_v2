@@ -14,11 +14,10 @@
     <!-- File Appender -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${LOG_FILE_NAME}.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+        <!-- 경고 해결: SizeAndTimeBasedRollingPolicy 사용 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>100MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxFileSize>100MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>3GB</totalSizeCap>
         </rollingPolicy>
@@ -32,11 +31,9 @@
     <springProfile name="prod">
         <appender name="JSON_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>${LOG_PATH}/${LOG_FILE_NAME}-json.log</file>
-            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
                 <fileNamePattern>${LOG_PATH}/${LOG_FILE_NAME}-json-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-                <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                    <maxFileSize>100MB</maxFileSize>
-                </timeBasedFileNamingAndTriggeringPolicy>
+                <maxFileSize>100MB</maxFileSize>
                 <maxHistory>30</maxHistory>
             </rollingPolicy>
             <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
@@ -62,8 +59,15 @@
         <logger name="dev.crepe" level="TRACE" additivity="false">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>
-            <appender-ref ref="JSON_FILE"/>
         </logger>
+        <!-- 외부 라이브러리 -->
+        <logger name="org.springframework.web" level="DEBUG"/>
+        <logger name="org.springframework.security" level="DEBUG"/>
+        <!-- 중요: Root Logger 추가! -->
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="FILE"/>
+        </root>
     </springProfile>
     <!-- PROD 환경: INFO와 ERROR만 출력 -->
     <springProfile name="prod">
@@ -82,5 +86,9 @@
             <appender-ref ref="FILE"/>
             <appender-ref ref="JSON_FILE"/>
         </root>
+    </springProfile>
+    <!-- 프로파일이 설정되지 않은 경우를 위한 기본 설정 -->
+    <springProfile name="!prod">
+        <!-- 이미 위에서 처리됨 -->
     </springProfile>
 </configuration>
