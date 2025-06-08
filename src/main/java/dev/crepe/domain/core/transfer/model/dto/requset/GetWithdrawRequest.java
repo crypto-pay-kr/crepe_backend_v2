@@ -17,5 +17,6 @@ public class GetWithdrawRequest {
 
     private String currency;
     private String amount;
+    private String traceId;
 
 }
