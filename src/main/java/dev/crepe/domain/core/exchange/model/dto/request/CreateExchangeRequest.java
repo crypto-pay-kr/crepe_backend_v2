@@ -16,5 +16,6 @@ public class CreateExchangeRequest {
     private Map<String, BigDecimal> coinRates;
     private BigDecimal tokenAmount;
     private BigDecimal coinAmount;
+    private String traceId;
 
 }

@@ -10,5 +10,6 @@ public class GetDepositRequest {
 
     private String txid;
     private String currency;
+    private String traceId;
 
 }

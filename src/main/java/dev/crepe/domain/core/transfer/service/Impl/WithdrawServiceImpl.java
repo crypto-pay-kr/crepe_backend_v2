@@ -69,7 +69,7 @@ public class WithdrawServiceImpl implements WithdrawService {
                 account, TransactionStatus.PENDING, TransactionType.WITHDRAW
         );
         if (existsPending) {
-            throw exceptionDbService.getException("이미 출금 요청이 진행 중입니다.");
+            throw exceptionDbService.getException("DUPLICATE_REQUEST_001");
         }
     }
 

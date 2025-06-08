@@ -45,8 +45,9 @@ public class OrderController {
     @PostMapping("/create")
     @UserAuth
     @Operation(summary = "주문 생성", description = "새로운 주문을 생성합니다.", security = @SecurityRequirement(name = "bearer-jwt"))
-    public ResponseEntity<String> createOrder(@RequestBody CreateOrderRequest orderRequest, AppAuthentication auth, @RequestHeader("Trace-Id") String traceId) {
-        String orderId = orderService.createOrder(orderRequest, auth.getUserEmail(), traceId);
+    public ResponseEntity<String> createOrder(@RequestBody CreateOrderRequest orderRequest,
+                                              AppAuthentication auth) {
+        String orderId = orderService.createOrder(orderRequest, auth.getUserEmail(), orderRequest.getTraceId());
         return ResponseEntity.ok(orderId);
     }
 

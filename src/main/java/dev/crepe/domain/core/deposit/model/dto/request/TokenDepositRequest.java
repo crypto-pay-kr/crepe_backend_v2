@@ -8,4 +8,5 @@ import java.math.BigDecimal;
 public class TokenDepositRequest {
     private Long subscribeId;
     private BigDecimal amount;
+    private String traceId;
 }

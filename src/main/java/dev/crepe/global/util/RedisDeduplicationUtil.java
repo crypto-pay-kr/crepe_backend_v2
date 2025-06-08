@@ -24,4 +24,8 @@ public class RedisDeduplicationUtil {
             throw exceptionDbService.getException("DUPLICATE_REQUEST_001");
         }
     }
+
+    public void deleteKey(String key) {
+        redisTemplate.delete(key);
+    }
 }

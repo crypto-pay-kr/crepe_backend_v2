@@ -120,88 +120,92 @@ public class OrderServiceImpl implements OrderService {
     public String createOrder(CreateOrderRequest request, String userEmail,String traceId) {
         String redisKey = "dedup:order:" + userEmail + ":" + traceId;
         redisDeduplicationUtil.checkAndStoreIfDuplicate(redisKey);
+        try {
 
-        log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
-        Actor user = actorRepository.findByEmail(userEmail)
-                .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
+            log.info("주문 생성 시작 - 사용자 이메일: {}, 요청 정보: {}", userEmail, request);
+            Actor user = actorRepository.findByEmail(userEmail)
+                    .orElseThrow(() -> exceptionDbService.getException("ACTOR_002"));
 
-        Actor store = actorRepository.findById(request.getStoreId())
-                .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
+            Actor store = actorRepository.findById(request.getStoreId())
+                    .orElseThrow(() -> exceptionDbService.getException("STORE_001"));
 
-        System.out.println("가맹점의 이메일 " + store.getEmail());
+            System.out.println("가맹점의 이메일 " + store.getEmail());
 
-        // 결제 타입에 따라 필수값 체크
-        PaymentType paymentType = request.getPaymentType();
-        log.info("요청된 결제 타입: {}", paymentType);
+            // 결제 타입에 따라 필수값 체크
+            PaymentType paymentType = request.getPaymentType();
+            log.info("요청된 결제 타입: {}", paymentType);
 
 
-        // 결제 타입에 따라 OrderRequest 분기
-        switch (paymentType) {
-            case COIN -> {
-                if (request.getCurrency() == null || request.getExchangeRate() == null) {
-                    throw exceptionDbService.getException("ORDER_006");
+            // 결제 타입에 따라 OrderRequest 분기
+            switch (paymentType) {
+                case COIN -> {
+                    if (request.getCurrency() == null || request.getExchangeRate() == null) {
+                        throw exceptionDbService.getException("ORDER_006");
+                    }
+                    upbitExchangeService.validateRateWithinThreshold(
+                            request.getExchangeRate(),
+                            request.getCurrency(),
+                            BigDecimal.valueOf(1)
+                    );
                 }
-                upbitExchangeService.validateRateWithinThreshold(
-                        request.getExchangeRate(),
-                        request.getCurrency(),
-                        BigDecimal.valueOf(1)
-                );
-            }
-            case VOUCHER -> {
-                if (request.getVoucherSubscribeId() == null) {
-                    throw exceptionDbService.getException("ORDER_007");
+                case VOUCHER -> {
+                    if (request.getVoucherSubscribeId() == null) {
+                        throw exceptionDbService.getException("ORDER_007");
+                    }
                 }
+                default -> throw exceptionDbService.getException("ORDER_008");
             }
-            default -> throw exceptionDbService.getException("ORDER_008");
+
+
+            Map<Long, Menu> menuMap = request.getOrderDetails().stream()
+                    .map(detail -> menuRepository.findById(detail.getMenuId())
+                            .orElseThrow(() -> exceptionDbService.getException("MENU_001")))
+                    .collect(Collectors.toMap(Menu::getId, menu -> menu));
+
+
+            int totalPrice = request.getOrderDetails().stream()
+                    .mapToInt(detail -> menuMap.get(detail.getMenuId()).getPrice() * detail.getMenuCount())
+                    .sum();
+
+            log.info("총 주문 금액 계산 완료: {}", totalPrice);
+
+            Order orders = Order.builder()
+                    .totalPrice(totalPrice)
+                    .status(OrderStatus.WAITING)
+                    .type(OrderType.TAKE_OUT)
+                    .currency(request.getCurrency())
+                    .exchangeRate(request.getExchangeRate())
+                    .user(user)
+                    .store(store)
+                    .build();
+
+            orderRepository.save(orders);
+
+            List<OrderDetail> orderDetails = request.getOrderDetails().stream()
+                    .map(detail -> OrderDetail.builder()
+                            .menuCount(detail.getMenuCount())
+                            .order(orders)
+                            .menu(menuMap.get(detail.getMenuId()))
+                            .build())
+                    .collect(Collectors.toList());
+
+            orderDetailRepository.saveAll(orderDetails);
+            log.info("주문 상세 저장 완료 - 주문 ID: {}", orders.getId());
+
+
+            // 결제 처리
+            switch (paymentType) {
+                case VOUCHER -> payService.payWithVoucher(orders, request.getVoucherSubscribeId());
+                case COIN -> payService.payForOrder(orders);
+            }
+
+            log.info("결제 처리 완료 - 주문 ID: {}", orders.getId());
+
+            return orders.getId();
+        }catch (Exception e) {
+            redisDeduplicationUtil.deleteKey(redisKey);
+            throw e;
         }
-
-
-        Map<Long, Menu> menuMap = request.getOrderDetails().stream()
-                .map(detail -> menuRepository.findById(detail.getMenuId())
-                        .orElseThrow(() -> exceptionDbService.getException("MENU_001")))
-                .collect(Collectors.toMap(Menu::getId, menu -> menu));
-
-
-        int totalPrice = request.getOrderDetails().stream()
-                .mapToInt(detail -> menuMap.get(detail.getMenuId()).getPrice() * detail.getMenuCount())
-                .sum();
-
-        log.info("총 주문 금액 계산 완료: {}", totalPrice);
-
-        Order orders = Order.builder()
-                .totalPrice(totalPrice)
-                .status(OrderStatus.WAITING)
-                .type(OrderType.TAKE_OUT)
-                .currency(request.getCurrency())
-                .exchangeRate(request.getExchangeRate())
-                .user(user)
-                .store(store)
-                .build();
-
-        orderRepository.save(orders);
-
-        List<OrderDetail> orderDetails = request.getOrderDetails().stream()
-                .map(detail -> OrderDetail.builder()
-                        .menuCount(detail.getMenuCount())
-                        .order(orders)
-                        .menu(menuMap.get(detail.getMenuId()))
-                        .build())
-                .collect(Collectors.toList());
-
-        orderDetailRepository.saveAll(orderDetails);
-        log.info("주문 상세 저장 완료 - 주문 ID: {}", orders.getId());
-
-
-        // 결제 처리
-        switch (paymentType) {
-            case VOUCHER -> payService.payWithVoucher(orders, request.getVoucherSubscribeId());
-            case COIN -> payService.payForOrder(orders);
-        }
-
-        log.info("결제 처리 완료 - 주문 ID: {}", orders.getId());
-
-        return orders.getId();
-
     }
 
 
