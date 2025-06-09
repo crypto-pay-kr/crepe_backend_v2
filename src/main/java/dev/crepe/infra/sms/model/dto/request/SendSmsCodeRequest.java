@@ -2,14 +2,12 @@ package dev.crepe.infra.sms.model.dto.request;
 
 import dev.crepe.infra.sms.model.SmsType;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class SendSmsCodeRequest {
 
     @NotBlank
