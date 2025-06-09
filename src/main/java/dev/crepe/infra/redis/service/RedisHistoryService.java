@@ -92,24 +92,7 @@ public class RedisHistoryService {
         }
     }
 
-    /**
-     * 특정 가맹점의 히스토리 캐시 삭제 (정산 내역만)
-     */
-    @CacheEvict(value = {"settlementHistory"}, allEntries = true)
-    public void evictStoreHistoryCache(Long storeId) {
-        log.info("가맹점 정산 히스토리 캐시 삭제 - storeId: {}", storeId);
 
-        String pattern = SETTLEMENT_HISTORY_PREFIX + storeId + "*";
-        Set<String> keys = redisTemplate.keys(pattern);
-        if (keys != null && !keys.isEmpty()) {
-            redisTemplate.delete(keys);
-            log.debug("가맹점 정산 히스토리 캐시 {} 개 삭제", keys.size());
-        }
-    }
-
-    /**
-     * 히스토리 통계 정보 캐시
-     */
     public void cacheHistoryStats(String key, Object stats, Duration ttl) {
         redisTemplate.opsForValue().set("stats:" + key, stats, ttl);
         log.debug("히스토리 통계 캐시 저장 - key: {}, ttl: {}", key, ttl);
@@ -165,15 +148,7 @@ public class RedisHistoryService {
 
         return List.of();
     }
-    /**
-     * 거래 내역 캐시 조회 - Spring Cache 어노테이션 방식
-     */
-    @Cacheable(value = "transactionHistory",
-            key = "#email + ':' + #currency + ':' + #page + ':' + #size")
-    public Slice<GetTransactionHistoryResponse> getTransactionHistory(String email, String currency, int page, int size) {
-        log.debug("거래 내역 캐시 조회 - email: {}, currency: {}, page: {}", email, currency, page);
-        return null; // 캐시 미스 시 null 반환하여 실제 로직에서 DB 조회
-    }
+
 
     /**
      * 거래 내역 캐시 저장

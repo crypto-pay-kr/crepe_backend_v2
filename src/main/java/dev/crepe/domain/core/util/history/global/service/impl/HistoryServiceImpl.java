@@ -56,7 +56,7 @@ public class HistoryServiceImpl implements HistoryService {
         String cacheKey = String.format("transactionHistory::%s:%s:%d:%d", email, currency, page, size);
         Slice<GetTransactionHistoryResponse> cachedResult = getCachedTransactionHistoryDirect(cacheKey);
 
-        if (cachedResult != null && !cachedResult.getContent().isEmpty()) {
+        if (cachedResult != null) {
             log.debug("거래내역 캐시 히트 - email: {}, currency: {}, page: {}", email, currency, page);
             return cachedResult;
         }
@@ -82,21 +82,25 @@ public class HistoryServiceImpl implements HistoryService {
     /**
      * 직접 Redis에서 캐시 조회 (RedisHistoryService의 @Cacheable 우회)
      */
-    @SuppressWarnings("unchecked")
     private Slice<GetTransactionHistoryResponse> getCachedTransactionHistoryDirect(String cacheKey) {
+        log.debug("캐시 조회 시도 - key: {}", cacheKey); // 추가
+
         try {
             String cachedData = (String) redisTemplate.opsForValue().get(cacheKey);
+            log.debug("캐시 데이터 존재 여부 - key: {}, 존재: {}", cacheKey, cachedData != null); // 추가
+
             if (cachedData != null) {
+                log.debug("캐시 데이터 내용 - key: {}, data: {}", cacheKey, cachedData.substring(0, Math.min(100, cachedData.length()))); // 추가
+
                 CachedSliceWrapper wrapper = objectMapper.readValue(cachedData, CachedSliceWrapper.class);
                 log.debug("캐시에서 거래내역 조회 성공 - key: {}", cacheKey);
                 return wrapper.toSlice();
             }
         } catch (Exception e) {
-            log.warn("거래내역 캐시 조회 실패 - key: {}, error: {}", cacheKey, e.getMessage());
+            log.warn("거래내역 캐시 조회 실패 - key: {}, error: {}", cacheKey, e.getMessage()); // 이 로그 확인!
         }
         return null;
     }
-
     /**
      * 실제 DB 조회 로직 분리
      */

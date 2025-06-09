@@ -1,8 +1,11 @@
 package dev.crepe.infra.redis.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,6 +90,31 @@ public class RedisConfig extends CachingConfigurerSupport {
                 .withInitialCacheConfigurations(cacheConfigurations)
                 .build();
     }
+    /**
+     * 공통 ObjectMapper 생성 - Hibernate 프록시 처리 포함
+     */
+    private ObjectMapper createObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+        objectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL
+        );
+        objectMapper.registerModule(new JavaTimeModule());
+
+        // Hibernate 프록시 처리 추가
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+        // Hibernate5Module 추가 (의존성 필요)
+        // objectMapper.registerModule(new Hibernate5Module());
+
+        // 또는 간단한 프록시 처리
+        objectMapper.addMixIn(Object.class, IgnoreHibernatePropertiesInJackson.class);
+
+        return objectMapper;
+    }
+
     @Bean
     public TaskExecutor cacheTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
@@ -110,5 +138,9 @@ public class RedisConfig extends CachingConfigurerSupport {
         // 새로운 생성자 사용
         return new Jackson2JsonRedisSerializer<>(objectMapper, Object.class);
     }
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private abstract static class IgnoreHibernatePropertiesInJackson {
+    }
+
 
 }
