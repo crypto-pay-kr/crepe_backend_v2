@@ -51,56 +51,8 @@ public class HistoryServiceImpl implements HistoryService {
     private static final Duration FINAL_RESULT_CACHE_TTL = Duration.ofMinutes(3);
 
 
-    @Override
-    public Slice<GetTransactionHistoryResponse> getNonRegulationHistory(String email, String currency, int page, int size) {
-        String cacheKey = String.format("transactionHistory::%s:%s:%d:%d", email, currency, page, size);
-        Slice<GetTransactionHistoryResponse> cachedResult = getCachedTransactionHistoryDirect(cacheKey);
 
-        if (cachedResult != null) {
-            log.debug("거래내역 캐시 히트 - email: {}, currency: {}, page: {}", email, currency, page);
-            return cachedResult;
-        }
 
-        log.debug("거래내역 캐시 미스, DB 조회 시작 - email: {}, currency: {}", email, currency);
-
-        // 2단계: 실제 DB 조회 수행
-        Slice<GetTransactionHistoryResponse> result = performDatabaseQuery(email, currency, page, size);
-
-        // 3단계: 조회 결과를 캐시에 저장
-        cacheTransactionHistory(email, currency, page, size, result);
-
-        // 4단계: 최근 거래내역도 별도 캐시 (실시간 조회용)
-        if (page == 0 && !result.getContent().isEmpty()) {
-            for (GetTransactionHistoryResponse transaction : result.getContent()) {
-                redisHistoryService.cacheRecentTransaction(email, transaction);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * 직접 Redis에서 캐시 조회 (RedisHistoryService의 @Cacheable 우회)
-     */
-    private Slice<GetTransactionHistoryResponse> getCachedTransactionHistoryDirect(String cacheKey) {
-        log.debug("캐시 조회 시도 - key: {}", cacheKey); // 추가
-
-        try {
-            String cachedData = (String) redisTemplate.opsForValue().get(cacheKey);
-            log.debug("캐시 데이터 존재 여부 - key: {}, 존재: {}", cacheKey, cachedData != null); // 추가
-
-            if (cachedData != null) {
-                log.debug("캐시 데이터 내용 - key: {}, data: {}", cacheKey, cachedData.substring(0, Math.min(100, cachedData.length()))); // 추가
-
-                CachedSliceWrapper wrapper = objectMapper.readValue(cachedData, CachedSliceWrapper.class);
-                log.debug("캐시에서 거래내역 조회 성공 - key: {}", cacheKey);
-                return wrapper.toSlice();
-            }
-        } catch (Exception e) {
-            log.warn("거래내역 캐시 조회 실패 - key: {}, error: {}", cacheKey, e.getMessage()); // 이 로그 확인!
-        }
-        return null;
-    }
     /**
      * 실제 DB 조회 로직 분리
      */
@@ -160,7 +112,7 @@ public class HistoryServiceImpl implements HistoryService {
         return new SliceImpl<>(pageContent, pageRequest, hasNext);
     }
 
-    // 사용자 계좌 캐시 조회 (기존과 동일)
+    // 사용자 계좌 캐시 조회
     @SuppressWarnings("unchecked")
     private List<Account> getCachedUserAccounts(String email) {
         String cacheKey = "user_accounts:" + email;
@@ -189,7 +141,7 @@ public class HistoryServiceImpl implements HistoryService {
         return userAccounts;
     }
 
-    // 계좌별 거래내역 캐시 조회 (기존과 동일)
+    // 계좌별 거래내역 캐시 조회
     @SuppressWarnings("unchecked")
     private List<GetTransactionHistoryResponse> getCachedTransactionHistoriesByAccount(Long accountId) {
         String cacheKey = "tx_histories_by_account:" + accountId;
@@ -221,7 +173,7 @@ public class HistoryServiceImpl implements HistoryService {
         return responses;
     }
 
-    // 환전내역 캐시 조회 (기존과 동일)
+    // 환전내역 캐시 조회
     @SuppressWarnings("unchecked")
     private List<GetTransactionHistoryResponse> getCachedExchangeHistoriesByAccounts(
             List<Long> relevantAccountIds, List<Account> relevantAccounts) {
@@ -266,7 +218,7 @@ public class HistoryServiceImpl implements HistoryService {
     }
 
     /**
-     * 거래내역 결과 캐시 저장 - 확실히 저장되도록 개선
+     * 거래내역 결과 캐시 저장
      */
     private void cacheTransactionHistory(String email, String currency, int page, int size,
                                          Slice<GetTransactionHistoryResponse> result) {
@@ -295,42 +247,6 @@ public class HistoryServiceImpl implements HistoryService {
         }
     }
 
-    // 캐시 무효화 메서드들 (기존과 동일하지만 로그 개선)
-    public void invalidateUserAccountsCache(String email) {
-        String cacheKey = "user_accounts:" + email;
-        Boolean deleted = redisTemplate.delete(cacheKey);
-        log.info("사용자 계좌 캐시 무효화 - email: {}, 삭제 성공: {}", email, deleted);
-    }
-
-    public void invalidateTransactionHistoryByAccountCache(Long accountId) {
-        String cacheKey = "tx_histories_by_account:" + accountId;
-        Boolean deleted = redisTemplate.delete(cacheKey);
-        log.info("계좌별 거래내역 캐시 무효화 - accountId: {}, 삭제 성공: {}", accountId, deleted);
-    }
-
-    public void invalidateUserTransactionHistoryCache(String email, String currency) {
-        // 1. RedisHistoryService의 기존 메서드 활용
-        try {
-            redisHistoryService.evictUserHistoryCache(null); // userId는 사용하지 않으므로 null
-        } catch (Exception e) {
-            log.warn("RedisHistoryService 캐시 무효화 실패: {}", e.getMessage());
-        }
-
-        // 2. 직접 생성한 캐시도 무효화
-        String pattern = String.format("transactionHistory::%s:%s:*", email, currency);
-        Set<String> keys = redisTemplate.keys(pattern);
-        if (keys != null && !keys.isEmpty()) {
-            Long deletedCount = redisTemplate.delete(keys);
-            log.info("사용자 거래내역 캐시 무효화 완료 - email: {}, currency: {}, 삭제된 키: {}/{}",
-                    email, currency, deletedCount, keys.size());
-        } else {
-            log.debug("무효화할 거래내역 캐시가 없음 - email: {}, currency: {}", email, currency);
-        }
-
-        // 3. 사용자 계좌 캐시도 함께 무효화
-        invalidateUserAccountsCache(email);
-    }
-
     /**
      * 캐시 상태 확인용 메서드 (개발/디버깅용)
      */
@@ -353,32 +269,222 @@ public class HistoryServiceImpl implements HistoryService {
     }
 
     /**
-     * 특정 사용자의 모든 거래내역 캐시 무효화 (관리자용)
+     * 사용자 계좌 캐시 무효화 + 즉시 재생성
      */
-    public void invalidateAllUserCaches(String email) {
-        // 1. 사용자 계좌 캐시
-        invalidateUserAccountsCache(email);
-
-        // 2. 모든 화폐의 거래내역 캐시
-        String pattern = "transactionHistory::" + email + ":*";
-        Set<String> keys = redisTemplate.keys(pattern);
-        if (keys != null && !keys.isEmpty()) {
-            Long deletedCount = redisTemplate.delete(keys);
-            log.info("사용자 모든 거래내역 캐시 무효화 - email: {}, 삭제된 키: {}", email, deletedCount);
-        }
-
-        // 3. 최근 거래 캐시
-        String recentKey = "recent:transaction:" + email;
-        Boolean recentDeleted = redisTemplate.delete(recentKey);
-        log.info("사용자 최근 거래 캐시 무효화 - email: {}, 삭제 성공: {}", email, recentDeleted);
-
-        // 4. RedisHistoryService의 캐시도 정리
+    public void invalidateUserAccountsCache(String email) {
         try {
-            redisHistoryService.evictUserHistoryCache(null);
+            String cacheKey = "user_accounts:" + email;
+            Boolean deleted = redisTemplate.delete(cacheKey);
+            log.info("사용자 계좌 캐시 삭제 - email: {}, 삭제 성공: {}", email, deleted);
+
+            // 즉시 최신 데이터로 재생성
+            List<Account> freshData = getCachedUserAccounts(email);
+            log.info("사용자 계좌 캐시 재생성 완료 - email: {}, 계좌 수: {}", email, freshData.size());
+
         } catch (Exception e) {
-            log.warn("RedisHistoryService 전체 캐시 무효화 실패: {}", e.getMessage());
+            log.error("사용자 계좌 캐시 갱신 실패 - email: {}, error: {}", email, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 계좌별 거래내역 캐시 무효화 + 즉시 재생성
+     */
+    public void invalidateTransactionHistoryByAccountCache(Long accountId) {
+        try {
+            String cacheKey = "tx_histories_by_account:" + accountId;
+            Boolean deleted = redisTemplate.delete(cacheKey);
+            log.info("계좌별 거래내역 캐시 삭제 - accountId: {}, 삭제 성공: {}", accountId, deleted);
+
+            // 즉시 최신 데이터로 재생성
+            List<GetTransactionHistoryResponse> freshData = getCachedTransactionHistoriesByAccount(accountId);
+            log.info("계좌별 거래내역 캐시 재생성 완료 - accountId: {}, 내역 수: {}", accountId, freshData.size());
+
+        } catch (Exception e) {
+            log.error("계좌별 거래내역 캐시 갱신 실패 - accountId: {}, error: {}", accountId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 사용자 거래내역 캐시 무효화 + 첫 페이지 재생성
+     */
+    public void invalidateUserTransactionHistoryCache(String email, String currency) {
+        try {
+            // 1. RedisHistoryService의 사용자 거래내역 캐시 삭제
+            try {
+                redisHistoryService.evictUserTransactionHistoryCache(email);
+            } catch (Exception e) {
+                log.warn("RedisHistoryService 캐시 무효화 실패: {}", e.getMessage());
+            }
+
+            // 2. 특정 통화의 모든 페이지 캐시 삭제 (수정된 패턴)
+            String specificPattern = String.format("transactionHistory::%s:%s:*", email, currency);
+            Set<String> specificKeys = redisTemplate.keys(specificPattern);
+            if (specificKeys != null && !specificKeys.isEmpty()) {
+                Long deletedCount = redisTemplate.delete(specificKeys);
+                log.info("특정 통화 거래내역 캐시 삭제 완료 - email: {}, currency: {}, 삭제된 키: {}/{}",
+                        email, currency, deletedCount, specificKeys.size());
+            }
+
+            // 3. 사용자의 모든 거래내역 캐시도 삭제 (전체 패턴)
+            String allPattern = String.format("transactionHistory::%s:*", email);
+            Set<String> allKeys = redisTemplate.keys(allPattern);
+            if (allKeys != null && !allKeys.isEmpty()) {
+                Long allDeletedCount = redisTemplate.delete(allKeys);
+                log.info("사용자 모든 거래내역 캐시 삭제 완료 - email: {}, 삭제된 키: {}", email, allDeletedCount);
+            }
+
+            // 4. 사용자 계좌 캐시도 갱신
+            invalidateUserAccountsCache(email);
+
+            // 5. 첫 번째 페이지 즉시 재생성 (가장 많이 조회되는 페이지)
+            int defaultPage = 0;
+            int defaultSize = 20;
+
+            log.info("사용자 거래내역 첫 페이지 재생성 시작 - email: {}, currency: {}", email, currency);
+            Slice<GetTransactionHistoryResponse> firstPageData = performDatabaseQuery(email, currency, defaultPage, defaultSize);
+            cacheTransactionHistory(email, currency, defaultPage, defaultSize, firstPageData);
+
+            log.info("사용자 거래내역 캐시 갱신 완료 - email: {}, currency: {}, 첫 페이지 데이터 수: {}",
+                    email, currency, firstPageData.getContent().size());
+
+        } catch (Exception e) {
+            log.error("사용자 거래내역 캐시 갱신 실패 - email: {}, currency: {}, error: {}",
+                    email, currency, e.getMessage(), e);
         }
     }
 
 
+
+    public void forceEvictUserCurrencyCache(String email, String currency) {
+        try {
+            log.info("특정 통화 캐시 강제 삭제 시작 - email: {}, currency: {}", email, currency);
+
+            // 1. 해당 통화의 모든 페이지 캐시 삭제
+            String pattern = String.format("transactionHistory::%s:%s:*", email, currency);
+            Set<String> keys = redisTemplate.keys(pattern);
+
+            if (keys != null && !keys.isEmpty()) {
+                log.info("삭제할 캐시 키들: {}", keys);
+                Long deletedCount = redisTemplate.delete(keys);
+                log.info("특정 통화 캐시 강제 삭제 완료 - email: {}, currency: {}, 삭제된 키: {}",
+                        email, currency, deletedCount);
+            } else {
+                log.info("삭제할 캐시가 없음 - email: {}, currency: {}", email, currency);
+            }
+
+            // 2. 최근 거래 캐시도 삭제
+            String recentKey = "recent:transaction:" + email;
+            Boolean recentDeleted = redisTemplate.delete(recentKey);
+            log.info("최근 거래 캐시 삭제 - email: {}, 삭제 성공: {}", email, recentDeleted);
+
+        } catch (Exception e) {
+            log.error("특정 통화 캐시 강제 삭제 실패 - email: {}, currency: {}, error: {}",
+                    email, currency, e.getMessage(), e);
+        }
+    }
+
+
+
+
+    public Slice<GetTransactionHistoryResponse> getNonRegulationHistoryPureDB(String email, String currency, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+
+        // 사용자 계좌 정보 직접 DB 조회 (캐시 없이)
+        List<Account> userAccounts = accountRepository.findByActor_Email(email);
+        if (userAccounts.isEmpty()) {
+            return new SliceImpl<>(List.of(), pageRequest, false);
+        }
+
+        // 관련 계좌 필터링
+        List<Account> relevantAccounts = userAccounts.stream()
+                .filter(acc -> acc.getCoin() != null &&
+                        acc.getCoin().getCurrency().equalsIgnoreCase(currency))
+                .collect(Collectors.toList());
+
+        if (relevantAccounts.isEmpty()) {
+            return new SliceImpl<>(List.of(), pageRequest, false);
+        }
+
+        List<Long> relevantAccountIds = relevantAccounts.stream()
+                .map(Account::getId)
+                .collect(Collectors.toList());
+
+        List<GetTransactionHistoryResponse> resultList = new ArrayList<>();
+
+        // 일반 거래 이력 직접 DB 조회 (캐시 없이)
+        for (Account acc : relevantAccounts) {
+            if (acc.getCoin() != null) {
+                List<TransactionHistory> txList = txhRepo.findByAccount_Id(acc.getId());
+                List<GetTransactionHistoryResponse> responses = txList.stream()
+                        .map(txhService::getTransactionHistory)
+                        .collect(Collectors.toList());
+                resultList.addAll(responses);
+            }
+        }
+
+        // 환전 이력 직접 DB 조회 (캐시 없이)
+        if (!relevantAccountIds.isEmpty()) {
+            List<ExchangeHistory> exList = exhRepo.findByFromAccount_IdInOrToAccount_IdIn(
+                    relevantAccountIds, relevantAccountIds);
+
+            List<GetTransactionHistoryResponse> exchangeResponses = exList.stream()
+                    .map(e -> {
+                        Account matchedAccount = relevantAccounts.stream()
+                                .filter(acc -> acc.getId().equals(e.getFromAccount().getId()) ||
+                                        acc.getId().equals(e.getToAccount().getId()))
+                                .findFirst()
+                                .orElse(null);
+                        return exhService.getExchangeHistory(e, matchedAccount);
+                    })
+                    .collect(Collectors.toList());
+            resultList.addAll(exchangeResponses);
+        }
+
+        // 정렬 및 페이징
+        resultList.sort(Comparator.comparing(GetTransactionHistoryResponse::getTransferredAt).reversed());
+
+        int start = page * size;
+        int end = Math.min(start + size, resultList.size());
+
+        if (start >= resultList.size()) {
+            return new SliceImpl<>(List.of(), pageRequest, false);
+        }
+
+        List<GetTransactionHistoryResponse> pageContent = resultList.subList(start, end);
+        boolean hasNext = resultList.size() > end;
+
+        return new SliceImpl<>(pageContent, pageRequest, hasNext);
+    }
+
+    @Override
+    public Slice<GetTransactionHistoryResponse> getNonRegulationHistoryOptimizedCache(String email, String currency, int page, int size) {
+        // 최종 결과 캐시만 확인 (다른 중간 캐시는 건너뛰기)
+        String cacheKey = String.format("transactionHistory::%s:%s:%d:%d", email, currency, page, size);
+
+        try {
+            String cachedData = (String) redisTemplate.opsForValue().get(cacheKey);
+            if (cachedData != null) {
+                CachedSliceWrapper wrapper = objectMapper.readValue(cachedData, CachedSliceWrapper.class);
+                log.debug("최적화 캐시 히트 - key: {}", cacheKey);
+                return wrapper.toSlice();
+            }
+        } catch (Exception e) {
+            log.warn("최적화 캐시 조회 실패 - key: {}, error: {}", cacheKey, e.getMessage());
+        }
+
+        // 캐시 미스 시 순수 DB 조회 후 캐시 저장
+        Slice<GetTransactionHistoryResponse> result = getNonRegulationHistoryPureDB(email, currency, page, size);
+
+        // 결과만 캐시에 저장 (중간 단계 캐시는 생략)
+        try {
+            CachedSliceWrapper wrapper = CachedSliceWrapper.from(result);
+            String jsonData = objectMapper.writeValueAsString(wrapper);
+            redisTemplate.opsForValue().set(cacheKey, jsonData, FINAL_RESULT_CACHE_TTL);
+            log.debug("최적화 캐시 저장 완료 - key: {}", cacheKey);
+        } catch (Exception e) {
+            log.warn("최적화 캐시 저장 실패 - key: {}, error: {}", cacheKey, e.getMessage());
+        }
+
+        return result;
+    }
 }

@@ -30,86 +30,27 @@ public class RedisHistoryService {
     private static final String TRANSACTION_HISTORY_PREFIX = "history:transaction:";
     private static final String EXCHANGE_HISTORY_PREFIX = "history:exchange:";
 
-    /**
-     * 결제 내역 캐시 조회
-     */
-    @Cacheable(value = "settlementHistory", key="#userId + ':' + #type + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    public Page<GetPayHistoryResponse> getPayHistoriesByUserId(Long userId, String type, Pageable pageable) {
-        log.debug("결제 내역 캐시 조회 - userId: {}, type: {}, page: {}", userId, type, pageable.getPageNumber());
-        return null;
-    }
 
     /**
-     * 정산 내역 캐시 조회
+     * 거래내역 캐시 업데이트
      */
-    @Cacheable(value = "settlementHistory",
-            key = "#storeId + ':' + (#status != null ? #status.name() : 'ALL') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    public Page<GetSettlementHistoryResponse> getSettlementHistoriesByStoreId(Long storeId, Object status, Pageable pageable) {
-        log.debug("정산 내역 캐시 조회 - storeId: {}, status: {}, page: {}", storeId, status, pageable.getPageNumber());
-        return null;
-    }
-
-    /**
-     * 환전 내역 캐시 조회
-     */
-    @Cacheable(value = "exchangeHistory",
+    @CachePut(value = "transactionHistory",
             key = "#email + ':' + #currency + ':' + #page + ':' + #size")
-    public Slice<GetTransactionHistoryResponse> getExchangeHistory(String email, String currency, int page, int size) {
-        log.debug("환전 내역 캐시 조회 - email: {}, currency: {}, page: {}", email, currency, page);
-        return null;
-    }
+    public Slice<GetTransactionHistoryResponse> updateTransactionHistoryCache(
+            String email, String currency, int page, int size,
+            Slice<GetTransactionHistoryResponse> data) {
 
-    /**
-     * 사용자별 히스토리 캐시 갱신
-     */
-    @CachePut(value = "payHistory", key = "#userId + ':' + #type + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    public Page<GetPayHistoryResponse> updatePayHistoryCache(Long userId, String type, Pageable pageable, Page<GetPayHistoryResponse> data) {
-        log.debug("결제 내역 캐시 갱신 - userId: {}, type: {}", userId, type);
+        log.debug("거래내역 캐시 업데이트 - email: {}, currency: {}, page: {}, size: {}, 데이터 수: {}",
+                email, currency, page, size, data.getContent().size());
+
+        // 첫 페이지인 경우 최근 거래도 함께 캐시
+        if (page == 0 && !data.getContent().isEmpty()) {
+            GetTransactionHistoryResponse latestTransaction = data.getContent().get(0);
+            cacheRecentTransaction(email, latestTransaction);
+            log.debug("최근 거래 캐시도 함께 업데이트 - email: {}", email);
+        }
+
         return data;
-    }
-
-    /**
-     * 사용자별 히스토리 캐시 삭제 (히스토리 데이터만)
-     */
-    @CacheEvict(value = {"payHistory", "settlementHistory", "transactionHistory", "exchangeHistory"},
-            allEntries = true)
-    public void evictUserHistoryCache(Long userId) {
-        log.info("사용자 히스토리 캐시 삭제 - userId: {}", userId);
-
-        // 히스토리 관련 캐시만 패턴 매칭으로 삭제
-        String[] patterns = {
-                PAY_HISTORY_PREFIX + userId + "*",
-                TRANSACTION_HISTORY_PREFIX + "*:" + userId + "*",
-                EXCHANGE_HISTORY_PREFIX + "*:" + userId + "*"
-        };
-
-        for (String pattern : patterns) {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.debug("패턴 {} 매칭 히스토리 캐시 {} 개 삭제", pattern, keys.size());
-            }
-        }
-    }
-
-
-    public void cacheHistoryStats(String key, Object stats, Duration ttl) {
-        redisTemplate.opsForValue().set("stats:" + key, stats, ttl);
-        log.debug("히스토리 통계 캐시 저장 - key: {}, ttl: {}", key, ttl);
-    }
-
-    /**
-     * 히스토리 통계 정보 조회
-     */
-    @SuppressWarnings("unchecked")
-    public <T> T getHistoryStats(String key, Class<T> type) {
-        Object result = redisTemplate.opsForValue().get("stats:" + key);
-        if (type.isInstance(result)) {
-            log.debug("히스토리 통계 캐시 조회 성공 - key: {}", key);
-            return type.cast(result);
-        }
-        log.debug("히스토리 통계 캐시 없음 - key: {}", key);
-        return null;
     }
 
     /**
@@ -149,41 +90,21 @@ public class RedisHistoryService {
         return List.of();
     }
 
-
     /**
-     * 거래 내역 캐시 저장
+     * 최근 거래 캐시 갱신
      */
-    @CachePut(value = "transactionHistory",
-            key = "#email + ':' + #currency + ':' + #page + ':' + #size")
-    public Slice<GetTransactionHistoryResponse> updateTransactionHistoryCache(
-            String email, String currency, int page, int size,
-            Slice<GetTransactionHistoryResponse> data) {
-        log.debug("거래 내역 캐시 갱신 - email: {}, currency: {}, page: {}", email, currency, page);
-        return data;
-    }
+    public void refreshRecentTransactionCache(String userEmail) {
+        try {
+            String recentKey = "recent:transaction:" + userEmail;
 
-    /**
-     * 특정 사용자의 거래내역 캐시 삭제
-     */
-    @CacheEvict(value = {"transactionHistory", "exchangeHistory"}, allEntries = true)
-    public void evictUserTransactionHistoryCache(String email) {
-        log.info("사용자 거래내역 캐시 삭제 - email: {}", email);
+            // 기존 캐시 삭제
+            Boolean deleted = redisTemplate.delete(recentKey);
+            log.debug("최근 거래 캐시 삭제 - email: {}, 삭제 성공: {}", userEmail, deleted);
 
-        // 패턴 매칭으로 관련 캐시 삭제
-        String[] patterns = {
-                TRANSACTION_HISTORY_PREFIX + email + "*",
-                EXCHANGE_HISTORY_PREFIX + email + "*",
-                "tx_histories_by_account:*",
-                "exchange_histories_by_accounts:*",
-                "user_accounts:" + email
-        };
+            // 새로운 최근 거래는 다음 거래 발생 시 자동으로 추가됨
 
-        for (String pattern : patterns) {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.debug("패턴 {} 매칭 거래내역 캐시 {} 개 삭제", pattern, keys.size());
-            }
+        } catch (Exception e) {
+            log.error("최근 거래 캐시 갱신 실패 - email: {}, error: {}", userEmail, e.getMessage(), e);
         }
     }
 
@@ -191,48 +112,136 @@ public class RedisHistoryService {
      * 특정 계좌 관련 캐시 삭제
      */
     public void evictAccountRelatedCache(Long accountId, String userEmail) {
-        // 계좌별 거래내역 캐시 삭제
-        String accountCacheKey = "tx_histories_by_account:" + accountId;
-        redisTemplate.delete(accountCacheKey);
+        try {
+            // 계좌별 거래내역 캐시 삭제
+            String accountCacheKey = "tx_histories_by_account:" + accountId;
+            Boolean accountDeleted = redisTemplate.delete(accountCacheKey);
+            log.debug("계좌별 거래내역 캐시 삭제 - accountId: {}, 삭제 성공: {}", accountId, accountDeleted);
 
-        // 사용자 계좌 정보 캐시 삭제
-        if (userEmail != null) {
-            String userAccountKey = "user_accounts:" + userEmail;
-            redisTemplate.delete(userAccountKey);
+            // 사용자 계좌 정보 캐시 삭제
+            if (userEmail != null) {
+                String userAccountKey = "user_accounts:" + userEmail;
+                Boolean userAccountDeleted = redisTemplate.delete(userAccountKey);
+                log.debug("사용자 계좌 캐시 삭제 - email: {}, 삭제 성공: {}", userEmail, userAccountDeleted);
+            }
+
+            // 환전내역 캐시는 계좌 ID 조합이므로 패턴 삭제
+            String exchangePattern = "exchange_histories_by_accounts:*" + accountId + "*";
+            Set<String> exchangeKeys = redisTemplate.keys(exchangePattern);
+            if (exchangeKeys != null && !exchangeKeys.isEmpty()) {
+                Long exchangeDeleted = redisTemplate.delete(exchangeKeys);
+                log.debug("환전내역 캐시 삭제 - accountId: {}, 삭제된 키: {}", accountId, exchangeDeleted);
+            }
+
+            log.info("계좌 관련 캐시 삭제 완료 - accountId: {}, userEmail: {}", accountId, userEmail);
+
+        } catch (Exception e) {
+            log.error("계좌 관련 캐시 삭제 실패 - accountId: {}, userEmail: {}, error: {}",
+                    accountId, userEmail, e.getMessage(), e);
         }
+    }
 
-        // 환전내역 캐시는 계좌 ID 조합이므로 패턴 삭제
-        String exchangePattern = "exchange_histories_by_accounts:*" + accountId + "*";
-        Set<String> exchangeKeys = redisTemplate.keys(exchangePattern);
-        if (exchangeKeys != null && !exchangeKeys.isEmpty()) {
-            redisTemplate.delete(exchangeKeys);
-        }
 
-        log.info("계좌 관련 캐시 삭제 완료 - accountId: {}, userEmail: {}", accountId, userEmail);
+    /**
+     * 특정 사용자의 거래내역 캐시 삭제
+     */
+    @CacheEvict(value = {"transactionHistory", "exchangeHistory"}, allEntries = true)
+    public void evictUserTransactionHistoryCache(String email) {
+        evictUserTransactionHistoryCacheAndRefresh(email);
     }
 
     /**
-     * 모든 히스토리 캐시 초기화 (관리자용)
+     * 사용자 거래내역 캐시 무효화 + 기본 페이지 재생성
+     */
+    @CacheEvict(value = {"transactionHistory", "exchangeHistory"}, allEntries = true)
+    public void evictUserTransactionHistoryCacheAndRefresh(String email) {
+        try {
+            log.info("사용자 거래내역 캐시 무효화 시작 - email: {}", email);
+
+            // 1. 기존 사용자 거래내역 캐시 모두 삭제
+            String[] patterns = {
+                    TRANSACTION_HISTORY_PREFIX + email + "*",
+                    EXCHANGE_HISTORY_PREFIX + email + "*",
+                    "transactionHistory::" + email + ":*"
+            };
+
+            int totalDeleted = 0;
+            for (String pattern : patterns) {
+                Set<String> keys = redisTemplate.keys(pattern);
+                if (keys != null && !keys.isEmpty()) {
+                    Long deletedCount = redisTemplate.delete(keys);
+                    totalDeleted += deletedCount != null ? deletedCount.intValue() : 0;
+                    log.debug("패턴 {} 매칭 캐시 {} 개 삭제", pattern, deletedCount);
+                }
+            }
+
+            log.info("사용자 거래내역 캐시 무효화 완료 - email: {}, 총 삭제된 키: {}", email, totalDeleted);
+
+            // 2. 최근 거래 캐시 갱신
+            refreshRecentTransactionCache(email);
+
+        } catch (Exception e) {
+            log.error("사용자 거래내역 캐시 갱신 실패 - email: {}, error: {}", email, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 모든 히스토리 캐시 초기화
      */
     @CacheEvict(value = {"payHistory", "settlementHistory", "transactionHistory", "exchangeHistory"},
             allEntries = true)
     public void evictAllHistoryCache() {
-        log.info("모든 히스토리 캐시 초기화");
+        try {
+            log.info("모든 히스토리 캐시 초기화 시작");
 
-        // Redis에서 히스토리 관련 모든 키 삭제
-        String[] patterns = {
-                "history:*",
-                "stats:*",
-                "recent:*"
-        };
+            // Redis에서 히스토리 관련 모든 키 삭제
+            String[] patterns = {
+                    "history:*",
+                    "stats:*",
+                    "recent:*",
+                    "transactionHistory::*",
+                    "tx_histories_by_account:*",
+                    "exchange_histories_by_accounts:*",
+                    "user_accounts:*"
+            };
 
-        for (String pattern : patterns) {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (!keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.info("패턴 {} 매칭 캐시 {} 개 삭제", pattern, keys.size());
+            int totalDeleted = 0;
+            for (String pattern : patterns) {
+                Set<String> keys = redisTemplate.keys(pattern);
+                if (keys != null && !keys.isEmpty()) {
+                    Long deletedCount = redisTemplate.delete(keys);
+                    totalDeleted += deletedCount != null ? deletedCount.intValue() : 0;
+                    log.info("패턴 {} 매칭 캐시 {} 개 삭제", pattern, deletedCount);
+                }
             }
+
+            log.info("모든 히스토리 캐시 초기화 완료 - 총 삭제된 키: {}", totalDeleted);
+
+        } catch (Exception e) {
+            log.error("모든 히스토리 캐시 초기화 실패", e);
         }
+    }
+
+    /**
+     * 히스토리 통계 캐시 저장
+     */
+    public void cacheHistoryStats(String key, Object stats, Duration ttl) {
+        redisTemplate.opsForValue().set("stats:" + key, stats, ttl);
+        log.debug("히스토리 통계 캐시 저장 - key: {}, ttl: {}", key, ttl);
+    }
+
+    /**
+     * 히스토리 통계 정보 조회
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T getHistoryStats(String key, Class<T> type) {
+        Object result = redisTemplate.opsForValue().get("stats:" + key);
+        if (type.isInstance(result)) {
+            log.debug("히스토리 통계 캐시 조회 성공 - key: {}", key);
+            return type.cast(result);
+        }
+        log.debug("히스토리 통계 캐시 없음 - key: {}", key);
+        return null;
     }
 
     /**
@@ -248,5 +257,6 @@ public class RedisHistoryService {
             return false;
         }
     }
+
 
 }

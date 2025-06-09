@@ -6,5 +6,5 @@ import org.springframework.data.domain.Slice;
 public interface HistoryService {
 
 
-    Slice<GetTransactionHistoryResponse> getNonRegulationHistory(String email, String currency, int page, int size);
+    Slice<GetTransactionHistoryResponse> getNonRegulationHistoryOptimizedCache(String email, String currency, int page, int size);
 }
