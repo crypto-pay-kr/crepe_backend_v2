@@ -73,6 +73,7 @@ dependencies {
     // **기타**
     testImplementation 'org.springframework.security:spring-security-test'
     implementation 'commons-io:commons-io:2.11.0'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5'
 
     implementation 'net.logstash.logback:logstash-logback-encoder:7.4'
 
