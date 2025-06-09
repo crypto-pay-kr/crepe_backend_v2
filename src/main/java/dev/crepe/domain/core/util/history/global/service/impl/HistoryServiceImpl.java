@@ -58,6 +58,8 @@ public class HistoryServiceImpl implements HistoryService {
 
     @Override
     public Slice<GetTransactionHistoryResponse> getNonRegulationHistory(String email, String currency, int page, int size) {
+        log.info("=== 거래내역 조회 시작 === email: {}, currency: {}, page: {}, size: {}", email, currency, page, size);
+
         String cacheKey = String.format("transactionHistory::%s:%s:%d:%d", sanitizeKey(email), currency, page, size);
 
         // 1단계: 캐시 조회
@@ -92,24 +94,28 @@ public class HistoryServiceImpl implements HistoryService {
         log.debug("캐시 조회 시도 - key: {}", cacheKey);
 
         try {
-            // RedisTemplate의 ValueSerializer를 사용해서 역직렬화
             Object cachedObject = redisTemplate.opsForValue().get(cacheKey);
             log.debug("캐시 데이터 존재 여부 - key: {}, 존재: {}", cacheKey, cachedObject != null);
 
             if (cachedObject != null) {
-                // GenericJackson2JsonRedisSerializer가 이미 역직렬화한 객체를 받음
+                log.debug("캐시 데이터 타입 - key: {}, 타입: {}", cacheKey, cachedObject.getClass().getSimpleName());
+
+                CachedSliceWrapper wrapper;
+
                 if (cachedObject instanceof CachedSliceWrapper) {
-                    log.debug("캐시에서 거래내역 조회 성공 (CachedSliceWrapper) - key: {}", cacheKey);
-                    return ((CachedSliceWrapper) cachedObject).toSlice();
+                    wrapper = (CachedSliceWrapper) cachedObject;
+                } else {
+                    // LinkedHashMap 등으로 역직렬화된 경우 변환
+                    wrapper = objectMapper.convertValue(cachedObject, CachedSliceWrapper.class);
                 }
 
-                // 만약 Map이나 다른 형태로 역직렬화되었다면 ObjectMapper로 변환
-                CachedSliceWrapper wrapper = objectMapper.convertValue(cachedObject, CachedSliceWrapper.class);
-                log.debug("캐시에서 거래내역 조회 성공 (convertValue) - key: {}", cacheKey);
+                log.debug("캐시에서 거래내역 조회 성공 - key: {}, 내용 수: {}", cacheKey, wrapper.getContent().size());
                 return wrapper.toSlice();
             }
         } catch (Exception e) {
             log.warn("거래내역 캐시 조회 실패 - key: {}, error: {}", cacheKey, e.getMessage(), e);
+            // 문제가 있는 캐시 삭제
+            redisTemplate.delete(cacheKey);
         }
         return null;
     }
@@ -180,16 +186,36 @@ public class HistoryServiceImpl implements HistoryService {
         try {
             Object cachedObject = redisTemplate.opsForValue().get(cacheKey);
             if (cachedObject != null) {
-                // GenericJackson2JsonRedisSerializer가 List로 역직렬화했는지 확인
+                log.debug("사용자 계좌 캐시 조회 - 타입: {}", cachedObject.getClass().getSimpleName());
+
+                // 타입별 안전한 변환
                 if (cachedObject instanceof List) {
-                    return (List<Account>) cachedObject;
+                    List<?> rawList = (List<?>) cachedObject;
+
+                    // 빈 리스트 처리
+                    if (rawList.isEmpty()) {
+                        return new ArrayList<>();
+                    }
+
+                    // 첫 번째 요소로 타입 확인
+                    Object firstElement = rawList.get(0);
+                    if (firstElement instanceof Account) {
+                        return (List<Account>) rawList;
+                    } else {
+                        // LinkedHashMap 등으로 역직렬화된 경우 ObjectMapper로 변환
+                        return objectMapper.convertValue(cachedObject,
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, Account.class));
+                    }
+                } else {
+                    // 다른 형태로 역직렬화된 경우
+                    return objectMapper.convertValue(cachedObject,
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, Account.class));
                 }
-                // 다른 형태로 역직렬화되었다면 변환
-                return objectMapper.convertValue(cachedObject,
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, Account.class));
             }
         } catch (Exception e) {
-            log.warn("사용자 계좌 캐시 조회 실패: {}", e.getMessage());
+            log.warn("사용자 계좌 캐시 조회 실패 - email: {}, error: {}", email, e.getMessage());
+            // 캐시 조회 실패 시 해당 키 삭제
+            redisTemplate.delete(cacheKey);
         }
 
         // 캐시 미스 시 DB에서 조회 후 캐시 저장
@@ -199,7 +225,7 @@ public class HistoryServiceImpl implements HistoryService {
             redisTemplate.opsForValue().set(cacheKey, userAccounts, ACCOUNT_CACHE_TTL);
             log.debug("사용자 계좌 캐시 저장 완료 - email: {}, 계좌 수: {}", email, userAccounts.size());
         } catch (Exception e) {
-            log.warn("사용자 계좌 캐시 저장 실패: {}", e.getMessage());
+            log.warn("사용자 계좌 캐시 저장 실패 - email: {}, error: {}", email, e.getMessage());
         }
 
         return userAccounts;
@@ -212,14 +238,30 @@ public class HistoryServiceImpl implements HistoryService {
         try {
             Object cachedObject = redisTemplate.opsForValue().get(cacheKey);
             if (cachedObject != null) {
+                log.debug("거래내역 캐시 조회 - 타입: {}", cachedObject.getClass().getSimpleName());
+
                 if (cachedObject instanceof List) {
-                    return (List<GetTransactionHistoryResponse>) cachedObject;
+                    List<?> rawList = (List<?>) cachedObject;
+
+                    if (rawList.isEmpty()) {
+                        return new ArrayList<>();
+                    }
+
+                    Object firstElement = rawList.get(0);
+                    if (firstElement instanceof GetTransactionHistoryResponse) {
+                        return (List<GetTransactionHistoryResponse>) rawList;
+                    } else {
+                        return objectMapper.convertValue(cachedObject,
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, GetTransactionHistoryResponse.class));
+                    }
+                } else {
+                    return objectMapper.convertValue(cachedObject,
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, GetTransactionHistoryResponse.class));
                 }
-                return objectMapper.convertValue(cachedObject,
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, GetTransactionHistoryResponse.class));
             }
         } catch (Exception e) {
-            log.warn("계좌별 거래내역 캐시 조회 실패: {}", e.getMessage());
+            log.warn("계좌별 거래내역 캐시 조회 실패 - accountId: {}, error: {}", accountId, e.getMessage());
+            redisTemplate.delete(cacheKey);
         }
 
         // 캐시 미스 시 DB에서 조회 후 캐시 저장
@@ -232,13 +274,12 @@ public class HistoryServiceImpl implements HistoryService {
             redisTemplate.opsForValue().set(cacheKey, responses, TX_HISTORY_CACHE_TTL);
             log.debug("계좌별 거래내역 캐시 저장 완료 - accountId: {}, 내역 수: {}", accountId, responses.size());
         } catch (Exception e) {
-            log.warn("계좌별 거래내역 캐시 저장 실패: {}", e.getMessage());
+            log.warn("계좌별 거래내역 캐시 저장 실패 - accountId: {}, error: {}", accountId, e.getMessage());
         }
 
         return responses;
     }
 
-    // 환전내역 캐시 조회 (기존과 동일)
     @SuppressWarnings("unchecked")
     private List<GetTransactionHistoryResponse> getCachedExchangeHistoriesByAccounts(
             List<Long> relevantAccountIds, List<Account> relevantAccounts) {
@@ -249,14 +290,30 @@ public class HistoryServiceImpl implements HistoryService {
         try {
             Object cachedObject = redisTemplate.opsForValue().get(cacheKey);
             if (cachedObject != null) {
+                log.debug("환전내역 캐시 조회 - 타입: {}", cachedObject.getClass().getSimpleName());
+
                 if (cachedObject instanceof List) {
-                    return (List<GetTransactionHistoryResponse>) cachedObject;
+                    List<?> rawList = (List<?>) cachedObject;
+
+                    if (rawList.isEmpty()) {
+                        return new ArrayList<>();
+                    }
+
+                    Object firstElement = rawList.get(0);
+                    if (firstElement instanceof GetTransactionHistoryResponse) {
+                        return (List<GetTransactionHistoryResponse>) rawList;
+                    } else {
+                        return objectMapper.convertValue(cachedObject,
+                                objectMapper.getTypeFactory().constructCollectionType(List.class, GetTransactionHistoryResponse.class));
+                    }
+                } else {
+                    return objectMapper.convertValue(cachedObject,
+                            objectMapper.getTypeFactory().constructCollectionType(List.class, GetTransactionHistoryResponse.class));
                 }
-                return objectMapper.convertValue(cachedObject,
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, GetTransactionHistoryResponse.class));
             }
         } catch (Exception e) {
-            log.warn("환전내역 캐시 조회 실패: {}", e.getMessage());
+            log.warn("환전내역 캐시 조회 실패 - error: {}", e.getMessage());
+            redisTemplate.delete(cacheKey);
         }
 
         // 캐시 미스 시 DB에서 조회 후 캐시 저장
@@ -278,7 +335,7 @@ public class HistoryServiceImpl implements HistoryService {
             redisTemplate.opsForValue().set(cacheKey, responses, EXCHANGE_HISTORY_CACHE_TTL);
             log.debug("환전내역 캐시 저장 완료 - 계좌 수: {}, 내역 수: {}", relevantAccountIds.size(), responses.size());
         } catch (Exception e) {
-            log.warn("환전내역 캐시 저장 실패: {}", e.getMessage());
+            log.warn("환전내역 캐시 저장 실패 - error: {}", e.getMessage());
         }
 
         return responses;
@@ -291,14 +348,24 @@ public class HistoryServiceImpl implements HistoryService {
                                          Slice<GetTransactionHistoryResponse> result) {
         try {
             String cacheKey = String.format("transactionHistory::%s:%s:%d:%d", sanitizeKey(email), currency, page, size);
+            log.info("캐시 저장 시작 - key: {}", cacheKey);
 
             CachedSliceWrapper wrapper = CachedSliceWrapper.from(result);
+            log.info("CachedSliceWrapper 생성 완료 - content size: {}", wrapper.getContent().size());
 
-            // RedisTemplate의 ValueSerializer를 사용해서 직렬화
+            // Redis 연결 테스트
+            redisTemplate.opsForValue().set("test:connection", "ok", Duration.ofSeconds(10));
+            String testResult = (String) redisTemplate.opsForValue().get("test:connection");
+            log.info("Redis 연결 테스트 - 결과: {}", testResult);
+
+            // 실제 캐시 저장
             redisTemplate.opsForValue().set(cacheKey, wrapper, FINAL_RESULT_CACHE_TTL);
+            log.info("Redis 저장 완료 - key: {}", cacheKey);
 
-            log.info("거래내역 결과 캐시 저장 완료 - email: {}, currency: {}, page: {}, size: {}, 결과 수: {}",
-                    email, currency, page, size, result.getContent().size());
+            // 즉시 조회 테스트
+            Object retrieved = redisTemplate.opsForValue().get(cacheKey);
+            log.info("즉시 조회 테스트 - 존재: {}, 타입: {}",
+                    retrieved != null, retrieved != null ? retrieved.getClass().getSimpleName() : "null");
 
         } catch (Exception e) {
             log.error("거래내역 결과 캐시 저장 실패 - email: {}, currency: {}, error: {}",
