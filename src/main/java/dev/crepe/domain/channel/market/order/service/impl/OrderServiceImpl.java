@@ -93,9 +93,6 @@ public class OrderServiceImpl implements OrderService {
 
         // orderId로 OrderDetail 조회
         List<OrderDetail> orderDetails = orderDetailRepository.findByOrderId(orderId);
-        if (orderDetails.size() != 1) {
-            throw exceptionDbService.getException("ORDER_003");
-        }
 
         return CreateOrderResponse.builder()
                 .orderId(order.getId())
