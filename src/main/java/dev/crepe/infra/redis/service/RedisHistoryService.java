@@ -30,67 +30,6 @@ public class RedisHistoryService {
     private static final String TRANSACTION_HISTORY_PREFIX = "history:transaction:";
     private static final String EXCHANGE_HISTORY_PREFIX = "history:exchange:";
 
-    /**
-     * 결제 내역 캐시 조회
-     */
-    @Cacheable(value = "settlementHistory", key="#userId + ':' + #type + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    public Page<GetPayHistoryResponse> getPayHistoriesByUserId(Long userId, String type, Pageable pageable) {
-        log.debug("결제 내역 캐시 조회 - userId: {}, type: {}, page: {}", userId, type, pageable.getPageNumber());
-        return null;
-    }
-
-    /**
-     * 정산 내역 캐시 조회
-     */
-    @Cacheable(value = "settlementHistory",
-            key = "#storeId + ':' + (#status != null ? #status.name() : 'ALL') + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    public Page<GetSettlementHistoryResponse> getSettlementHistoriesByStoreId(Long storeId, Object status, Pageable pageable) {
-        log.debug("정산 내역 캐시 조회 - storeId: {}, status: {}, page: {}", storeId, status, pageable.getPageNumber());
-        return null;
-    }
-
-    /**
-     * 환전 내역 캐시 조회
-     */
-    @Cacheable(value = "exchangeHistory",
-            key = "#email + ':' + #currency + ':' + #page + ':' + #size")
-    public Slice<GetTransactionHistoryResponse> getExchangeHistory(String email, String currency, int page, int size) {
-        log.debug("환전 내역 캐시 조회 - email: {}, currency: {}, page: {}", email, currency, page);
-        return null;
-    }
-
-    /**
-     * 사용자별 히스토리 캐시 갱신
-     */
-    @CachePut(value = "payHistory", key = "#userId + ':' + #type + ':' + #pageable.pageNumber + ':' + #pageable.pageSize")
-    public Page<GetPayHistoryResponse> updatePayHistoryCache(Long userId, String type, Pageable pageable, Page<GetPayHistoryResponse> data) {
-        log.debug("결제 내역 캐시 갱신 - userId: {}, type: {}", userId, type);
-        return data;
-    }
-
-    /**
-     * 사용자별 히스토리 캐시 삭제 (히스토리 데이터만)
-     */
-    @CacheEvict(value = {"payHistory", "settlementHistory", "transactionHistory", "exchangeHistory"},
-            allEntries = true)
-    public void evictUserHistoryCache(Long userId) {
-        log.info("사용자 히스토리 캐시 삭제 - userId: {}", userId);
-
-        // 히스토리 관련 캐시만 패턴 매칭으로 삭제
-        String[] patterns = {
-                PAY_HISTORY_PREFIX + userId + "*",
-                TRANSACTION_HISTORY_PREFIX + "*:" + userId + "*",
-                EXCHANGE_HISTORY_PREFIX + "*:" + userId + "*"
-        };
-
-        for (String pattern : patterns) {
-            Set<String> keys = redisTemplate.keys(pattern);
-            if (keys != null && !keys.isEmpty()) {
-                redisTemplate.delete(keys);
-                log.debug("패턴 {} 매칭 히스토리 캐시 {} 개 삭제", pattern, keys.size());
-            }
-        }
-    }
 
 
     public void cacheHistoryStats(String key, Object stats, Duration ttl) {
