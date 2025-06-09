@@ -389,13 +389,13 @@ public class HistoryServiceImpl implements HistoryService {
     public Slice<GetTransactionHistoryResponse> getNonRegulationHistoryPureDB(String email, String currency, int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
 
-        // 사용자 계좌 정보 직접 DB 조회 (캐시 없이)
+        // 병목 1: 사용자 계좌 조회
         List<Account> userAccounts = accountRepository.findByActor_Email(email);
         if (userAccounts.isEmpty()) {
             return new SliceImpl<>(List.of(), pageRequest, false);
         }
 
-        // 관련 계좌 필터링
+        // 병목 2: 계좌별 거래내역 조회 (반복문!)
         List<Account> relevantAccounts = userAccounts.stream()
                 .filter(acc -> acc.getCoin() != null &&
                         acc.getCoin().getCurrency().equalsIgnoreCase(currency))
@@ -422,11 +422,11 @@ public class HistoryServiceImpl implements HistoryService {
             }
         }
 
-        // 환전 이력 직접 DB 조회 (캐시 없이)
+        // 병목 3: 환전내역 조회
         if (!relevantAccountIds.isEmpty()) {
             List<ExchangeHistory> exList = exhRepo.findByFromAccount_IdInOrToAccount_IdIn(
                     relevantAccountIds, relevantAccountIds);
-
+            // 병목 4: 데이터 변환 및 병합
             List<GetTransactionHistoryResponse> exchangeResponses = exList.stream()
                     .map(e -> {
                         Account matchedAccount = relevantAccounts.stream()
@@ -440,7 +440,7 @@ public class HistoryServiceImpl implements HistoryService {
             resultList.addAll(exchangeResponses);
         }
 
-        // 정렬 및 페이징
+        // 병목 5: 정렬 및 페이징
         resultList.sort(Comparator.comparing(GetTransactionHistoryResponse::getTransferredAt).reversed());
 
         int start = page * size;
