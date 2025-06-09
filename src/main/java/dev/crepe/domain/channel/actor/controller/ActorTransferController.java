@@ -12,11 +12,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping
+@Slf4j
 @AllArgsConstructor
 @Tag(name = "Withdraw API", description = "이체 관련 API")
 public class ActorTransferController {
@@ -32,10 +34,9 @@ public class ActorTransferController {
     @PostMapping("/withdraw")
     public ResponseEntity<String> requestWithdraw(
             AppAuthentication auth,
-            @RequestBody GetWithdrawRequest request,
-            @RequestHeader("Trace-Id") String traceId
+            @RequestBody GetWithdrawRequest request
     ) {
-        actorTransferService.requestWithdraw(request, auth.getUserEmail(),traceId);
+        actorTransferService.requestWithdraw(request, auth.getUserEmail(), request.getTraceId());
         return ResponseEntity.ok("정산요청 완료");
     }
 
@@ -49,10 +50,9 @@ public class ActorTransferController {
     @PostMapping("/transfer")
     public ResponseEntity<String> requestTransfer(
             AppAuthentication auth,
-            @RequestBody GetTransferRequest request,
-            @RequestHeader("Trace-Id") String traceId
+            @RequestBody GetTransferRequest request
     ) {
-        actorTransferService.requestTransfer(request, auth.getUserEmail(),traceId);
+        actorTransferService.requestTransfer(request, auth.getUserEmail(), request.getTraceId());
         return ResponseEntity.ok("송금요청 완료");
     }
 
@@ -81,9 +81,8 @@ public class ActorTransferController {
     @ActorAuth
     @PostMapping("/deposit")
     public ResponseEntity<String> requestDeposit(@RequestBody GetDepositRequest request,
-                                                 AppAuthentication auth,
-                                                 @RequestHeader("Trace-Id") String traceId) {
-        actorTransferService.requestDeposit(request, auth.getUserEmail(), traceId);
+                                                 AppAuthentication auth) {
+        actorTransferService.requestDeposit(request, auth.getUserEmail(), request.getTraceId());
         return ResponseEntity.ok("입금 처리가 완료되었습니다.");
     }
 
@@ -93,10 +92,9 @@ public class ActorTransferController {
     @UserAuth
     @Operation(summary = "토큰 예치", description = "상품에 은행 토큰을 예치합니다.")
     public ResponseEntity<?> depositToProduct(@RequestBody TokenDepositRequest request,
-                                              AppAuthentication auth,
-                                              @RequestHeader("Trace-Id") String traceId) {
+                                              AppAuthentication auth) {
         String result = actorTransferService.requestTokenDeposit(auth.getUserEmail(),
-                request.getSubscribeId(), request.getAmount(),traceId);
+                request.getSubscribeId(), request.getAmount(),request.getTraceId());
         return ResponseEntity.ok(result);
     }
 

@@ -154,6 +154,29 @@ public class ActorController {
         }
     }
 
+    @PostMapping("/auth/verify-otp")
+    @Operation(summary = "로그인용 OTP 검증", description = "이미 활성화된 OTP 코드 검증 (로그인용)")
+    public ResponseEntity<?> verifyOtpForLogin(@RequestParam String email, @RequestParam int otpCode) {
+        try {
+            OtpCredential credential = otpService.getOtpCredential(email);
+
+            if (credential == null || !credential.isEnabled()) {
+                // OTP 미설정 또는 비활성화 상태
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "OTP가 설정되지 않았습니다"));
+            }
+
+            boolean isValid = otpService.verifyCode(credential.getSecretKey(), otpCode);
+
+            if (isValid) {
+                return ResponseEntity.ok(ApiResponse.success("OTP 검증 성공", true));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("success", false, "message", "잘못된 OTP 코드입니다"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
     @PostMapping("/otp/status")
     @Operation(summary = "OTP 상태 조회", description = "사용자의 OTP 설정 상태 조회")
     public ResponseEntity<?> getOtpStatus(@RequestBody Map<String, String> request) {

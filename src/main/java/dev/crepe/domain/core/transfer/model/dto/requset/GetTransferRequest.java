@@ -19,5 +19,6 @@ public class GetTransferRequest {
     private String receiverEmail;
     private String currency;
     private BigDecimal amount;
+    private String traceId;
 
 }

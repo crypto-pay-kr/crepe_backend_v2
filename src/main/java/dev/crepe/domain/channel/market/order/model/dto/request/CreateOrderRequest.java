@@ -18,7 +18,7 @@ public class CreateOrderRequest {
     private BigDecimal exchangeRate;
     private PaymentType paymentType;
     private Long voucherSubscribeId;
-
+    private String traceId;
 
     @Getter
     public static class OrderDetailRequest{
