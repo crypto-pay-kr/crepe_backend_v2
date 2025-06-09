@@ -27,6 +27,7 @@ public class CoinServiceImpl implements CoinService {
                 .currency(coin.getCurrency())
                 .address(coin.getAddress())
                 .tag(coin.getTag())
+                .minAmount(coin.getMinDeposit())
                 .build();
     }
 
