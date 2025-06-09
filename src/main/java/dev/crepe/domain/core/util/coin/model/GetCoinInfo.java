@@ -14,4 +14,5 @@ public class GetCoinInfo {
     private String currency;
     private String address;
     private String tag;
+    private String minAmount;
 }
