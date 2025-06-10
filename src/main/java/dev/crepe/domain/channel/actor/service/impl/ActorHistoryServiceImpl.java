@@ -18,7 +18,7 @@ public class ActorHistoryServiceImpl implements ActorHistoryService {
 
     @Override
     public Slice<GetTransactionHistoryResponse> getNonRegulationHistory(String email, String currency, int page, int size) {
-        return historyService.getNonRegulationHistory(email, currency, page, size);
+        return historyService.getNonRegulationHistoryOptimizedCache(email, currency, page, size);
     }
 
     @Override

@@ -26,7 +26,7 @@ public class SecurityConfig {
             "/user/signup", "/store/signup", "/check/**", "/login", "/bank/login", "/admin/login","/auth/**","/otp/**",
 
             // API 서비스
-            "/sms/**", "/ocr/**", "/upbit/**", "/api/**",
+            "/sms/**", "/ocr/**", "/upbit/**", "/api/**","/history/**","/performance/**",
 
             // 문서/개발도구
             "/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**",
