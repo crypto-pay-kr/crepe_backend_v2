@@ -51,8 +51,6 @@ public class HistoryServiceImpl implements HistoryService {
     private static final Duration FINAL_RESULT_CACHE_TTL = Duration.ofMinutes(3);
 
 
-
-
     /**
      * 실제 DB 조회 로직 분리
      */
@@ -456,9 +454,7 @@ public class HistoryServiceImpl implements HistoryService {
         return new SliceImpl<>(pageContent, pageRequest, hasNext);
     }
 
-    @Override
     public Slice<GetTransactionHistoryResponse> getNonRegulationHistoryOptimizedCache(String email, String currency, int page, int size) {
-        // 최종 결과 캐시만 확인 (다른 중간 캐시는 건너뛰기)
         String cacheKey = String.format("transactionHistory::%s:%s:%d:%d", email, currency, page, size);
 
         try {
@@ -475,7 +471,7 @@ public class HistoryServiceImpl implements HistoryService {
         // 캐시 미스 시 순수 DB 조회 후 캐시 저장
         Slice<GetTransactionHistoryResponse> result = getNonRegulationHistoryPureDB(email, currency, page, size);
 
-        // 결과만 캐시에 저장 (중간 단계 캐시는 생략)
+        // 결과만 캐시에 저장
         try {
             CachedSliceWrapper wrapper = CachedSliceWrapper.from(result);
             String jsonData = objectMapper.writeValueAsString(wrapper);
@@ -486,5 +482,26 @@ public class HistoryServiceImpl implements HistoryService {
         }
 
         return result;
+    }
+
+    public void invalidateTransactionHistoryCache(String email, String currency) {
+        try {
+            // 해당 사용자의 모든 거래내역 캐시 삭제
+            String pattern = String.format("transactionHistory::%s:%s:*", email, currency);
+            Set<String> keys = redisTemplate.keys(pattern);
+
+            if (keys != null && !keys.isEmpty()) {
+                Long deletedCount = redisTemplate.delete(keys);
+                log.info("거래내역 캐시 무효화 완료 - email: {}, currency: {}, 삭제된 키: {}",
+                        email, currency, deletedCount);
+            }
+
+            // 최근 거래 캐시도 갱신
+            redisHistoryService.refreshRecentTransactionCache(email);
+
+        } catch (Exception e) {
+            log.error("거래내역 캐시 무효화 실패 - email: {}, currency: {}, error: {}",
+                    email, currency, e.getMessage(), e);
+        }
     }
 }

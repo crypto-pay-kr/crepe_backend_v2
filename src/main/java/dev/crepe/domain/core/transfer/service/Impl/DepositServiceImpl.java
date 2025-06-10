@@ -13,6 +13,7 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.global.service.impl.HistoryServiceImpl;
 import dev.crepe.domain.core.util.upbit.Service.UpbitDepositService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.util.RedisDeduplicationUtil;
@@ -40,6 +41,7 @@ public class DepositServiceImpl implements DepositService {
     private final ActorRepository actorRepository;
     private final ExceptionDbService exceptionDbService;
     private final RedisDeduplicationUtil redisDeduplicationUtil;
+    private final HistoryServiceImpl historyService;
 
     @Transactional
     @Override
@@ -122,5 +124,7 @@ public class DepositServiceImpl implements DepositService {
 
         // 8. 입금 내역 저장
         transactionHistoryRepository.save(history);
+        historyService.invalidateTransactionHistoryCache(actor.getEmail(), currency);
+
     }
 }

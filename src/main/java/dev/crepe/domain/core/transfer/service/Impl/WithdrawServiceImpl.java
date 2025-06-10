@@ -12,6 +12,8 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.global.service.HistoryService;
+import dev.crepe.domain.core.util.history.global.service.impl.HistoryServiceImpl;
 import dev.crepe.domain.core.util.upbit.Service.UpbitWithdrawService;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.util.RedisDeduplicationUtil;
@@ -34,7 +36,7 @@ public class WithdrawServiceImpl implements WithdrawService {
     private final CoinRepository coinRepository;
     private final ExceptionDbService exceptionDbService;
     private final RedisDeduplicationUtil redisDeduplicationUtil;
-
+    private final HistoryServiceImpl historyService;
     @Transactional
     @Override
     public void requestWithdraw(GetWithdrawRequest request, String email) {
@@ -53,6 +55,7 @@ public class WithdrawServiceImpl implements WithdrawService {
 
         GetWithdrawResponse response = requestWithdrawToUpbit(request, account, coin);
         saveWithdrawHistory(account, requestAmount, response.getUuid());
+        historyService.invalidateTransactionHistoryCache(email, request.getCurrency());
     }
 
 
