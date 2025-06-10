@@ -11,6 +11,7 @@ import dev.crepe.domain.core.util.history.business.model.TransactionStatus;
 import dev.crepe.domain.core.util.history.business.model.TransactionType;
 import dev.crepe.domain.core.util.history.business.model.entity.TransactionHistory;
 import dev.crepe.domain.core.util.history.business.repository.TransactionHistoryRepository;
+import dev.crepe.domain.core.util.history.global.service.impl.HistoryServiceImpl;
 import dev.crepe.global.error.exception.ExceptionDbService;
 import dev.crepe.global.util.RedisDeduplicationUtil;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,7 @@ public class TransferServiceImpl implements TransferService {
     private final ExceptionDbService exceptionDbService;
     private final TransactionHistoryRepository transactionHistoryRepository;
     private final ActorRepository actorRepository;
-
+    private final HistoryServiceImpl historyService;
 
     @Override
     @Transactional
@@ -50,6 +51,8 @@ public class TransferServiceImpl implements TransferService {
         validateBalance(senderAccount, request.getAmount());
         moveBalance(senderAccount, receiverAccount, request.getAmount());
         saveTransferHistories(senderAccount, receiverAccount, senderActor, receiverActor, request.getAmount());
+        historyService.invalidateTransactionHistoryCache(email, request.getCurrency());
+
     }
 
 
@@ -93,5 +96,6 @@ public class TransferServiceImpl implements TransferService {
 
         transactionHistoryRepository.save(senderHistory);
         transactionHistoryRepository.save(receiverHistory);
+
     }
 }
