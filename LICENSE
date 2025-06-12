@@ -1,0 +1,152 @@
+# Dual License Agreement
+
+## CREPE Project Dual Licensing
+
+This software is available under two licensing options:
+
+### 1. GNU General Public License v3.0 (GPL-3.0)
+
+**Free for Open Source Use**
+
+This project is licensed under the GNU General Public License v3.0 for open source use. You may use, modify, and distribute this software under the following conditions:
+
+- **Source Code Disclosure**: Any derivative work or application that incorporates this code must also be released under GPL-3.0
+- **Copyleft**: All modifications and derivative works must be made available under the same license terms
+- **Attribution**: You must include appropriate copyright notices and license information
+- **No Warranty**: This software is provided "as is" without warranty of any kind
+
+**Permitted Uses Under GPL-3.0:**
+- Personal use and experimentation
+- Academic research and education
+- Non-commercial open source projects
+- Internal use within organizations (without distribution)
+
+**GPL-3.0 Full License Text:** https://www.gnu.org/licenses/gpl-3.0.html
+
+---
+
+### 2. Commercial License
+
+**For Commercial and Proprietary Use**
+
+If you wish to use this software in commercial applications or proprietary products without the GPL-3.0 copyleft requirements, you must obtain a commercial license.
+
+**Commercial License Required For:**
+- Incorporating this code into proprietary software products
+- SaaS applications that use this code
+- Commercial products where source code cannot be disclosed
+- OEM distribution or embedding in hardware
+- Any commercial use where GPL-3.0 compliance is not feasible
+
+**Commercial License Benefits:**
+- No requirement to disclose your source code
+- No copyleft obligations
+- Freedom to create proprietary derivative works
+- Commercial distribution rights
+- Priority technical support (optional)
+- Legal protection and indemnification
+
+**License Fees:**
+- Startup License (< $1M annual revenue): $5,000/year
+- SME License ($1M - $10M annual revenue): $15,000/year
+- Enterprise License (> $10M annual revenue): $50,000/year
+- OEM/Embedded License: Contact for custom pricing
+
+---
+
+## License Selection Guide
+
+| Use Case | GPL-3.0 | Commercial License |
+|----------|---------|-------------------|
+| Open source projects | ✅ Free | ❌ Not needed |
+| Academic research | ✅ Free | ❌ Not needed |
+| Internal company tools | ✅ Free | ❌ Not needed |
+| Commercial SaaS | ❌ Must disclose code | ✅ Required |
+| Proprietary software | ❌ Must disclose code | ✅ Required |
+| Mobile/Desktop apps (commercial) | ❌ Must disclose code | ✅ Required |
+
+---
+
+## How to Obtain a Commercial License
+
+1. **Contact Us**: Send licensing inquiry to `licensing@crepe-project.com`
+2. **Evaluation**: We'll assess your use case and provide appropriate license terms
+3. **Agreement**: Sign the commercial license agreement
+4. **Payment**: Complete license fee payment
+5. **Delivery**: Receive commercial license and usage rights
+
+---
+
+## Compliance and Enforcement
+
+**GPL-3.0 Compliance:**
+- You must include this license notice in all copies
+- Source code of derivative works must be made available
+- Any modifications must be clearly documented
+- Network use triggers copyleft obligations (AGPL-like interpretation)
+
+**Commercial License Compliance:**
+- Valid license required before commercial use
+- Annual license renewal (unless perpetual license purchased)
+- Compliance audits may be conducted
+- Violations may result in legal action
+
+---
+
+## Copyright Notice
+
+```
+Copyright (C) 2025 CREPE Project Contributors
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+For commercial licensing options, please contact: licensing@crepe-project.com
+```
+
+---
+
+## Frequently Asked Questions
+
+**Q: Can I evaluate the software before purchasing a commercial license?**
+A: Yes, you can evaluate under GPL-3.0 terms for up to 30 days for commercial evaluation purposes.
+
+**Q: What happens if I start as open source but later want to go commercial?**
+A: You can upgrade to a commercial license at any time. Previous GPL-3.0 versions remain under GPL-3.0.
+
+**Q: Can I contribute code back under GPL-3.0 while having a commercial license?**
+A: Yes, contributions are welcome under GPL-3.0 regardless of your licensing choice.
+
+**Q: What about patents?**
+A: Commercial license includes patent grants. GPL-3.0 includes standard GPL patent provisions.
+
+**Q: Is technical support included?**
+A: Basic community support is available for all users. Priority support is available for commercial license holders.
+
+---
+
+## Contact Information
+
+- **General Inquiries**: info@crepe-project.com
+- **Commercial Licensing**: licensing@crepe-project.com
+- **Technical Support**: support@crepe-project.com
+- **Legal Questions**: legal@crepe-project.com
+
+**Business Address:**
+CREPE Project Licensing
+[Your Business Address]
+[City, Country, ZIP]
+
+---
+
+*This dual licensing approach ensures that open source users can freely use and contribute to the project while providing a sustainable business model for commercial users who require proprietary licensing terms.*
