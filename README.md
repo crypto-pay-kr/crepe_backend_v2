@@ -3,6 +3,9 @@
 
 코드 문의: fivesidedish@gmail.com
 
+### 비즈니스 개요 문서
+https://file.notion.so/f/f/b40aaa3a-ae67-42cc-85a7-ac481fb59d77/4df9bc80-1db4-4a80-8b1d-aa8202a73dd6/pdf_%ED%81%AC%EB%A0%88%ED%8E%98_%EC%B5%9C%EC%A2%85%EB%B0%9C%ED%91%9C%EC%9E%90%EB%A3%8C.pdf?table=block&id=21d1d6a9-425e-80cf-9ae2-f03993f17611&spaceId=b40aaa3a-ae67-42cc-85a7-ac481fb59d77&expirationTimestamp=1750845600000&signature=4VnMdv-UNyy9dZl1jb3NWuAiX8fuWX_gzljFZ1q5aBw&downloadName=pdf_%ED%81%AC%EB%A0%88%ED%8E%98_%EC%B5%9C%EC%A2%85%EB%B0%9C%ED%91%9C%EC%9E%90%EB%A3%8C.pdf
+
 ## 프로젝트 개요
 
 국가에서 관리하는 원화 및 국채, 암호화폐를 기반으로 한 스테이블 코인 발행 및 운영 시스템입니다. 
